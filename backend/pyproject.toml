@@ -1,0 +1,41 @@
+[project]
+name = "supplier-portal-backend"
+version = "0.1.0"
+description = "SRS Supplier Portal prototype: REST API, connector core, mock ERP adapters, MCP server"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.141",
+    "uvicorn[standard]>=0.54",
+    "pydantic>=2.13",
+    "pydantic-settings>=2.15",
+    "sqlmodel>=0.0.47",
+    "alembic>=1.20",
+    "python-multipart>=0.0.32",   # file uploads (drawings, photos, packing lists)
+    "apscheduler>=3.11,<4",       # deadline locking and email alerts
+    "anthropic>=1.9",             # Claude API
+    "mcp>=2.2",                   # MCP Python SDK (FastMCP)
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16",
+    "pytest>=9.1",
+    "pytest-asyncio>=1.4",
+    "httpx>=0.28",                # FastAPI TestClient
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["app/db/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"

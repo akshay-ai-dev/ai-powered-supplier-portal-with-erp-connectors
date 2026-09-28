@@ -1,0 +1,21 @@
+{
+  "name": "supplier-portal",
+  "private": true,
+  "workspaces": ["frontend"],
+  "scripts": {
+    "setup": "npm install && uv sync --directory backend",
+    "dev": "concurrently -n api,web,mail -c blue,green,magenta \"npm:dev:backend\" \"npm:dev:frontend\" \"npm:dev:mailpit\"",
+    "dev:backend": "uv run --directory backend uvicorn app.main:app --reload --port 8000",
+    "dev:frontend": "npm run dev -w frontend",
+    "dev:mailpit": "docker run --rm --name mailpit -p 1025:1025 -p 8025:8025 axllent/mailpit",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "uv run --directory backend ruff check . && uv run --directory backend ruff format --check .",
+    "lint:frontend": "npm run lint -w frontend",
+    "format": "uv run --directory backend ruff format . && uv run --directory backend ruff check --fix .",
+    "test": "uv run --directory backend pytest",
+    "gen:api": "npm run gen:api -w frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

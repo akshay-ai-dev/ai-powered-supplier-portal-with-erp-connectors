@@ -1,0 +1,9 @@
+# Store text files with LF endings in the repo, whatever OS the author is on
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.pdf binary
+*.db binary
