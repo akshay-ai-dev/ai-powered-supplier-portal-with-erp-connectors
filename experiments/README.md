@@ -12,6 +12,7 @@ experiments/
     ├── script.py          # the code being tried out
     ├── FINDINGS.md        # system design worked out for the feature
     └── API_REFERENCE.md   # APIs and tech-stack references gathered for the feature
+    └── Proof              # Could be a video, screenshot, dashboard (a visual proof helps in taking decisions) 
 ```
 
 ## Starting a new experiment
