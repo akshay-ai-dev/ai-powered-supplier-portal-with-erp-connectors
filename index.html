@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Packing List Draft</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    label { display: block; margin-top: 16px; }
+    input { box-sizing: border-box; width: 100%; padding: 8px; }
+    button { margin-top: 20px; padding: 10px; }
+    #message { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Packing List Draft</h1>
+  <p>Review the extracted information and fill any missing fields.</p>
+
+  <form id="draft-form" novalidate>
+    <label>
+      Supplier name
+      <input id="supplier" type="text">
+    </label>
+
+    <label>
+      Item description
+      <input id="item" type="text">
+    </label>
+
+    <label>
+      Quantity (pieces)
+      <input id="quantity" type="number" min="1" step="1">
+    </label>
+
+    <label>
+      Gross weight (kg)
+      <input id="weight" type="number" min="0.01" step="any">
+    </label>
+
+    <button type="submit">Check draft</button>
+  </form>
+
+  <p id="message" role="status"></p>
+
+  <script>
+    // Pretend these values were extracted from a packing list.
+    // Later, your backend's AI extraction will provide this data.
+    const extractedData = {
+      supplier: "Sunrise Textiles",
+      item: "Cotton shirts",
+      quantity: 100,
+      weight: null
+    };
+
+    const fieldNames = {
+      supplier: "Supplier name",
+      item: "Item description",
+      quantity: "Quantity",
+      weight: "Gross weight"
+    };
+
+    // Pre-fill the form. Missing values become empty inputs.
+    for (const field in extractedData) {
+      document.getElementById(field).value =
+        extractedData[field] ?? "";
+    }
+
+    function checkDraft() {
+      const problems = [];
+
+      for (const field in fieldNames) {
+        const input = document.getElementById(field);
+
+        if (input.value.trim() === "") {
+          problems.push(`${fieldNames[field]} is missing.`);
+        } else if (!input.checkValidity()) {
+          problems.push(`${fieldNames[field]} is invalid.`);
+        }
+      }
+
+      document.getElementById("message").textContent =
+        problems.length > 0
+          ? problems.join(" ")
+          : "All fields are filled. Review their accuracy before submitting.";
+    }
+
+    document.getElementById("draft-form")
+      .addEventListener("submit", function (event) {
+        event.preventDefault();
+        checkDraft();
+      });
+
+    // Show missing fields immediately when the page opens.
+    checkDraft();
+  </script>
+</body>
+</html>
