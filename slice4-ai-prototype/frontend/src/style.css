@@ -1,0 +1,15 @@
+
+:root{font:16px system-ui,sans-serif;color:#1b2936;background:#f1f5f9}*{box-sizing:border-box}body{margin:0}
+header{background:#142f4b;color:white;padding:22px 4vw;display:flex;justify-content:space-between;gap:1rem;align-items:center}
+header h1{font-size:1.5rem;margin:0}small{opacity:.8}.pill{background:#d0eef2;color:#154558;padding:6px 12px;border-radius:99px;font-size:.8rem}
+main{max-width:1200px;margin:28px auto;padding:0 18px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:white;border:1px solid #dbe4ec;border-radius:14px;padding:22px;box-shadow:0 3px 14px #163b5910}
+h2{font-size:1.14rem;margin:0 0 6px}.sub{color:#586879;font-size:.88rem;margin:0 0 20px}button{background:#166987;border:0;color:white;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:650}button:disabled{opacity:.45;cursor:default}button.secondary{background:#e6f1f5;color:#184b63}
+input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padding:10px;font:inherit;background:white}label{display:block;font-weight:600;font-size:.87rem;margin:10px 0 5px}.row{display:flex;gap:10px;align-items:center}.row>*{flex:1}
+.list{display:grid;gap:8px}.request{border:1px solid #d6e2e8;background:#fff;border-radius:9px;padding:12px;text-align:left;color:#243a49;font-weight:normal}.request.active{border:2px solid #167fa4;background:#f1fbff}.request strong{display:block}.muted{color:#657786;font-size:.85rem}
+.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.85rem}td,th{text-align:left;border-bottom:1px solid #e5ebef;padding:9px 5px}th{color:#566575}tr.top{background:#e6f9f0}tr.late{color:#81501e}
+.notice{background:#e9f6fb;border-left:4px solid #1783a4;padding:10px;margin:15px 0;font-size:.86rem}.warn{background:#fff1e1;border-color:#e19620}.error{color:#9a2b2b;white-space:pre-wrap}.feed{height:230px;overflow:auto;border:1px solid #dae5ec;padding:12px;border-radius:8px;background:#fafcfd}.msg{margin:7px 0;padding:9px;border-radius:8px;white-space:pre-wrap}.msg.user{background:#e7f3f8}.msg.bot{background:#eef8ed}.full{grid-column:1/-1}.hidden{display:none}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.8rem;background:#f6f8fa;padding:10px;border-radius:8px}
+@media(max-width:750px){main{grid-template-columns:1fr}.full{grid-column:auto}header{display:block}}
+
+.notice.success{background:#e6f9f0;border-color:#2e8b57}
+.notice .rate{font-size:1.05rem;font-weight:700;margin:6px 0}
