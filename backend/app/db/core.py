@@ -3,7 +3,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from .config import settings
+from ..config import settings
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS suppliers (

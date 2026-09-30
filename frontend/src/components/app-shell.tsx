@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ERP Copilot
       </div>
       {nav.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+        const active = pathname === href || (href !== "/dashboard" && !!pathname?.startsWith(href));
         return (
           <Link
             key={href}
