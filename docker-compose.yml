@@ -1,0 +1,75 @@
+services:
+  database:
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+    environment:
+      DATABASE_PATH: /data/erp.db
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      ERP_BACKEND: ${ERP_BACKEND:-sap}
+    volumes:
+      - erp_data:/data
+    networks: [erp]
+
+  backend:
+    build: ./backend
+    depends_on:
+      database:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      DATABASE_PATH: /data/erp.db
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-use-32-plus-random-bytes}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-60}
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      MAILPIT_URL: http://mailpit:8025
+      SMTP_FROM: erp-copilot@example.com
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      MCP_API_KEY: ${MCP_API_KEY:-}
+      ERP_BACKEND: ${ERP_BACKEND:-sap}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+    volumes:
+      - erp_data:/data
+    ports:
+      - "8000:8000"
+    networks: [erp]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks: [erp]
+
+  dbviewer:
+    image: coleifer/sqlite-web:latest
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      SQLITE_DATABASE: erp.db
+      SQLITE_WEB_PASSWORD: ${DBVIEWER_PASSWORD:-}
+    volumes:
+      - erp_data:/data
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks: [erp]
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+    networks: [erp]
+
+volumes:
+  erp_data:
+
+networks:
+  erp:
