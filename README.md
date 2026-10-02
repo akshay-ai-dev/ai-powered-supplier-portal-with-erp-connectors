@@ -5,7 +5,7 @@ Prototype supplier portal that reads suppliers, parts and demand from SAP and In
 
 ## Slice 3 – Communication: Demo video
 
-▶️ **Demo (≈3 min):** [Watch the demo] (https://srsconsultinc-my.sharepoint.com/:v:/g/personal/nagamani_ch_srsconsultinginc_com/IQBSLtcMjol7QpAb8M055JIYAT7t3TawPVy66s_ho6BOWGw?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=z2c11m)
+▶️ **Demo :** [Watch the demo](https://srsconsultinc-my.sharepoint.com/:v:/g/personal/nagamani_ch_srsconsultinginc_com/IQBSLtcMjol7QpAb8M055JIYAT7t3TawPVy66s_ho6BOWGw?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=z2c11m)
 
 The demo shows starting the app with Docker Compose, the 20 passing tests, all 10 notification events
 sent as email alerts to Mailpit, the notification bell, private buyer–supplier message threads with
