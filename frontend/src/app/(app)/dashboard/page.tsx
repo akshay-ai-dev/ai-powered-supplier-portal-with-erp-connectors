@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorNote, PageHeader } from "@/components/page-header";
 import { AgentBadge } from "@/components/agent-badge";
+import { InventoryDashboard } from "@/components/inventory-dashboard";
 
 function Stat({ label, value, hint, href }: { label: string; value: number | string; hint?: string; href?: string }) {
   const body = (
@@ -107,10 +108,14 @@ export default function DashboardPage() {
     return (
       <>
         <PageHeader title={`Welcome, ${user?.name}`} description="Your orders and deliveries at a glance." />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Stat label="Active orders" value={data.active_orders} href="/purchase-orders" />
-          <Stat label="Pending deliveries" value={data.pending_deliveries} hint="Approved orders not yet delivered" href="/purchase-orders" />
-        </div>
+        <InventoryDashboard
+          stats={
+            <>
+              <Stat label="Active orders" value={data.active_orders} href="/purchase-orders" />
+              <Stat label="Pending deliveries" value={data.pending_deliveries} href="/purchase-orders" />
+            </>
+          }
+        />
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>Notifications</CardTitle>
