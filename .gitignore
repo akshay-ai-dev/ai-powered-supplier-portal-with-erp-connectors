@@ -24,3 +24,6 @@ frontend/dist/
 .DS_Store
 .idea/
 .vscode/
+
+# AI Assistant browser models (served from public/, set up by `npm run fetch:models`)
+frontend/public/models/

@@ -45,7 +45,9 @@ Everything is audited, and actions that arrived through an AI agent carry an **A
 ## MCP / AI agents
 
 The FastMCP server is at `/mcp/` (Streamable HTTP). Tools: `get_inventory`, `search_supplier`, `create_purchase_order` (Draft only),
-`get_purchase_order`, `list_requirements`, `get_requirement`, `list_purchase_orders`. Approving, awarding and closing stay human-only.
+`get_purchase_order`, `list_requirements`, `get_requirement`, `list_purchase_orders`, and the buyer-assistant tools (SRS §6.1)
+`list_requests`, `get_request_detail`, `compare_responses` (ranking computed in code) and `draft_award` (saves nothing).
+Approving, awarding and closing stay human-only.
 The same tools exist as OpenAPI endpoints under `POST /api/mcp/<tool>` (schema at `/openapi.json`, discovery at `GET /api/mcp/tools`).
 
 **Authentication**: `Authorization: Bearer <token>`. Each buyer (or admin) creates their own token under **API access** in the app:
@@ -70,6 +72,26 @@ cd backend
 - MCP Inspector (interactive): `npx @modelcontextprotocol/inspector`, choose Streamable HTTP, URL `http://localhost:8000/mcp/`, add the Authorization header.
 - Clients that only speak stdio (for example Claude Desktop) can bridge with `npx mcp-remote http://localhost:8000/mcp/ --header "Authorization: Bearer <token>"`.
 - Custom agents: any MCP SDK client works, for example `fastmcp.Client("http://localhost:8000/mcp/", auth="<token>")`.
+
+## AI Assistant (buyers)
+
+**AI Assistant** in the buyer menu answers four kinds of questions: list requests, show one request, compare responses,
+and draft an award. Everything runs in the browser:
+- A semantic router (all-MiniLM-L6-v2 in a Web Worker) picks the tool. Its example phrasings are in
+  `frontend/src/lib/router/routes.json`; after editing them, run `npm run build:centroids`.
+- The page calls that tool's `POST /api/mcp/<tool>` and shows the result in a fixed template. No LLM writes the answers.
+- **Confirm award** calls the normal award endpoint. Nothing is saved before that click.
+- The mic button transcribes speech with Moonshine (English). The ~385 MB model loads on the first press.
+
+**Models (once, before `docker compose up --build`).** They are served from `frontend/public/models/`, which is
+gitignored, and never fetched from Hugging Face or a CDN at runtime:
+
+```
+cd frontend && npm run fetch:models
+```
+
+Moonshine is copied from `experiments/moonshine_browser_stt/models/` when present; otherwise it is downloaded and
+re-saved, which needs `uv`. To serve the models from file storage later, set `NEXT_PUBLIC_MODELS_URL`.
 
 ## Local dev (without Docker)
 
