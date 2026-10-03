@@ -1,0 +1,20 @@
+{
+  "sourceFile": "pdf-3.pdf",
+  "shipDate": null,
+  "carrier": "DPL/LOGIFISH",
+  "trackingNumbers": [],
+  "shippedQuantity": 150,
+  "unitOfMeasure": null,
+  "lotNumbers": ["9399"],
+  "serialNumbers": [],
+  "poQuantity": null,
+  "quantityMismatch": null,
+  "fieldIssues": [
+    {"field": "shipDate", "reason": "ambiguous", "note": "Only an unlabelled document 'DATE 04/11/2025'; not marked as a ship date, and month/day order is unclear."},
+    {"field": "trackingNumbers", "reason": "not_present", "note": "None printed; Order # 111569 and 'FREIGHT Collect' are not tracking numbers."},
+    {"field": "unitOfMeasure", "reason": "ambiguous", "note": "Qty 150 has no unit ('Box' column empty); 'Lb' belongs to the 1,500.00 weight."},
+    {"field": "serialNumbers", "reason": "not_present", "note": "No serials; 692003-692152 are box numbers."},
+    {"field": "poQuantity", "reason": "not_present", "note": "No PO quantity supplied, so no mismatch check."}
+  ],
+  "status": "draft_for_supplier_review"
+}

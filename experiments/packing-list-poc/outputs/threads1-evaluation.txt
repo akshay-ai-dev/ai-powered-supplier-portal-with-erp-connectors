@@ -1,0 +1,43 @@
+Loading weights:   0%|          | 0/770 [00:00<?, ?it/s]Loading weights:  12%|█▏        | 92/770 [00:00<00:00, 795.70it/s]Loading weights:  22%|██▏       | 172/770 [00:00<00:01, 564.41it/s]Loading weights:  30%|███       | 232/770 [00:00<00:01, 318.15it/s]Loading weights:  41%|████▏     | 319/770 [00:00<00:01, 437.94it/s]Loading weights:  49%|████▉     | 378/770 [00:01<00:01, 261.72it/s]Loading weights:  55%|█████▍    | 421/770 [00:01<00:01, 243.32it/s]Loading weights: 100%|██████████| 770/770 [00:01<00:00, 529.93it/s]
+Windows fatal exception: access violation
+
+Current thread 0x000042f8 (most recent call first):
+  File "C:\packing-list-poc\.venv\Lib\site-packages\pydantic\main.py", line 107 in _private_setattr_handler
+  File "C:\packing-list-poc\.venv\Lib\site-packages\pydantic\main.py", line 1046 in __setattr__
+  File "C:\packing-list-poc\.venv\Lib\site-packages\docling\pipeline\standard_pdf_pipeline.py", line 723 in _release_page_resources
+  File "C:\packing-list-poc\.venv\Lib\site-packages\docling\pipeline\standard_pdf_pipeline.py", line 408 in _emit
+  File "C:\packing-list-poc\.venv\Lib\site-packages\docling\pipeline\standard_pdf_pipeline.py", line 297 in _run
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 982 in run
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 1045 in _bootstrap_inner
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 1002 in _bootstrap
+
+Thread 0x00003268 (most recent call first):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 331 in wait
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 629 in wait
+  File "C:\packing-list-poc\.venv\Lib\site-packages\tqdm\_monitor.py", line 69 in run
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 1045 in _bootstrap_inner
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 1002 in _bootstrap
+
+Thread 0x00006a40 (most recent call first):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 331 in wait
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 629 in wait
+  File "C:\packing-list-poc\.venv\Lib\site-packages\tqdm\_monitor.py", line 69 in run
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 1045 in _bootstrap_inner
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 1002 in _bootstrap
+
+Thread 0x00005ab8 (most recent call first):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\threading.py", line 331 in wait
+  File "C:\packing-list-poc\.venv\Lib\site-packages\docling\pipeline\standard_pdf_pipeline.py", line 207 in get_batch
+  File "C:\packing-list-poc\.venv\Lib\site-packages\docling\pipeline\standard_pdf_pipeline.py", line 915 in _build_document
+  File "C:\packing-list-poc\.venv\Lib\site-packages\docling\pipeline\base_pipeline.py", line 86 in execute
+  File "C:\packing-list-poc\.venv\Lib\site-packages\docling\document_converter.py", line 875 in _execute_pipeline
+  File "C:\packing-list-poc\.venv\Lib\site-packages\docling\document_converter.py", line 846 in _process_document
+  File "C:\packing-list-poc\.venv\Lib\site-packages\docling\document_converter.py", line 799 in _convert
+  File "C:\packing-list-poc\.venv\Lib\site-packages\docling\document_converter.py", line 670 in convert_all
+  File "C:\packing-list-poc\.venv\Lib\site-packages\docling\document_converter.py", line 608 in convert
+  File "C:\packing-list-poc\.venv\Lib\site-packages\pydantic\_internal\_validate_call.py", line 137 in __call__
+  File "C:\packing-list-poc\.venv\Lib\site-packages\pydantic\_internal\_validate_call.py", line 40 in wrapper_function
+  File "C:\packing-list-poc\layout.py", line 123 in convert_pdf
+  File "C:\packing-list-poc\extractor.py", line 101 in extract_pdf
+  File "C:\packing-list-poc\evaluate.py", line 161 in main
+  File "C:\packing-list-poc\evaluate.py", line 217 in <module>

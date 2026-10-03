@@ -1,0 +1,229 @@
+{
+  "sourceFile": "pdf-2.pdf",
+  "extractorVersion": "0.2.0",
+  "shipDate": "2024-02-07",
+  "carrier": "FedEx",
+  "trackingNumbers": [
+    "775101717550",
+    "775101716369",
+    "775101716370",
+    "775101717159"
+  ],
+  "shippedQuantity": 280.0,
+  "unitOfMeasure": null,
+  "lotNumbers": [],
+  "serialNumbers": [],
+  "sublots": [],
+  "items": [
+    {
+      "lineNumber": "1",
+      "itemNumber": "F-615-B130-DH",
+      "customerItemNumber": null,
+      "description": "pH Fermprobe, T-pull, 130mm",
+      "salesOrder": null,
+      "customerReference": null,
+      "quantityOrdered": null,
+      "quantityRequired": null,
+      "quantityShipped": 280.0,
+      "quantityOutstanding": null,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        1
+      ],
+      "evidence": [
+        {
+          "page": 1,
+          "text": "1 280 F-615-B130-DH pH Fermprobe, T-pull, 130mm (280)",
+          "rule": "quantity table row"
+        }
+      ]
+    }
+  ],
+  "quantitySummary": [
+    {
+      "itemNumber": "F-615-B130-DH",
+      "description": null,
+      "unit": null,
+      "quantityShipped": 280.0,
+      "lineCount": 1,
+      "salesOrders": []
+    }
+  ],
+  "references": {
+    "purchaseOrders": [
+      {
+        "value": "DR6341448",
+        "label": "PO Number",
+        "page": 1
+      }
+    ],
+    "salesOrders": [
+      {
+        "value": "SO205641",
+        "label": "Order Number",
+        "page": 1
+      }
+    ],
+    "accountNumbers": [
+      {
+        "value": "DC4744",
+        "label": "Customer",
+        "page": 1
+      }
+    ]
+  },
+  "shippingDetails": {
+    "serviceLevel": "2DAY",
+    "shipMethodRaw": "FDX 2Day",
+    "freightTerms": [
+      "THIRD PARTY"
+    ],
+    "packageCount": null,
+    "packages": []
+  },
+  "rawValues": {
+    "shipDate": "2/7/2024",
+    "carrier": "FDX 2Day",
+    "shippedQuantity": [
+      280.0
+    ]
+  },
+  "fieldIssues": [
+    {
+      "field": "shipDate",
+      "severity": "review",
+      "code": "ambiguous_date",
+      "message": "'2/7/2024' can be read as 2024-02-07 or 2024-07-02; MDY assumed from document context.",
+      "rawValue": "2/7/2024",
+      "page": 1
+    },
+    {
+      "field": "lotNumbers",
+      "severity": "review",
+      "code": "ambiguous_lot_or_serial",
+      "message": "'(280)' under 'Serial/Lot#': parenthesised number: may be a quantity or reference, not a lot/serial. Not recorded as a lot or serial number.",
+      "rawValue": "(280)",
+      "page": 1
+    },
+    {
+      "field": "serialNumbers",
+      "severity": "review",
+      "code": "ambiguous_lot_or_serial",
+      "message": "'(280)' under 'Serial/Lot#': parenthesised number: may be a quantity or reference, not a lot/serial. Not recorded as a lot or serial number.",
+      "rawValue": "(280)",
+      "page": 1
+    },
+    {
+      "field": "shippedQuantity",
+      "severity": "review",
+      "code": "unlabelled_leading_value",
+      "message": "Row starts with unlabelled value '1'; quantity 280 was taken from the 'Qty Shipped' column by position. Confirm.",
+      "rawValue": "1 280 F-615-B130-DH pH Fermprobe, T-pull, 130mm (280)",
+      "page": 1
+    },
+    {
+      "field": "unitOfMeasure",
+      "severity": "review",
+      "code": "unit_not_stated",
+      "message": "No unit of measure is printed for the shipped quantity; PO comparison needs a unit."
+    }
+  ],
+  "evidence": {
+    "shipDate": [
+      {
+        "page": 1,
+        "text": "Ship Date: | 2/7/2024",
+        "rule": "ship-date label (right)"
+      }
+    ],
+    "carrier": [
+      {
+        "page": 1,
+        "text": "Ship Method: | FDX 2Day",
+        "rule": "carrier label (right)"
+      }
+    ],
+    "freightTerms": [
+      {
+        "page": 1,
+        "text": "Shipping Terms: | Third Party",
+        "rule": "label 'Shipping Terms'"
+      }
+    ],
+    "trackingNumbers": [
+      {
+        "page": 1,
+        "text": "775101717550",
+        "rule": "value in 'Tracking Number' column"
+      },
+      {
+        "page": 1,
+        "text": "775101716369",
+        "rule": "value in 'Tracking Number' column"
+      },
+      {
+        "page": 1,
+        "text": "775101716370",
+        "rule": "value in 'Tracking Number' column"
+      },
+      {
+        "page": 1,
+        "text": "775101717159",
+        "rule": "value in 'Tracking Number' column"
+      }
+    ],
+    "items": [
+      {
+        "page": 1,
+        "text": "1 280 F-615-B130-DH pH Fermprobe, T-pull, 130mm (280)",
+        "rule": "quantity table row"
+      }
+    ],
+    "shippedQuantity": [
+      {
+        "page": 1,
+        "text": "1 280 F-615-B130-DH pH Fermprobe, T-pull, 130mm (280)",
+        "rule": "quantity table row"
+      }
+    ]
+  },
+  "document": {
+    "pageCount": 1,
+    "pageTypes": {
+      "1": "packing"
+    },
+    "textLayer": true,
+    "ocrUsed": false,
+    "doclingTableCount": 2,
+    "datePreference": "MDY"
+  },
+  "timings": {
+    "converterInitSeconds": 17.316,
+    "conversionSeconds": 5.639,
+    "layoutSeconds": 0.05,
+    "extractionSeconds": 0.019,
+    "totalSeconds": 23.182,
+    "isolation": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ok",
+          "reason": null,
+          "exitCode": 0,
+          "seconds": 24.71,
+          "log": "outputs\\final-validation\\logs\\pdf-2.attempt1.log"
+        }
+      ],
+      "attemptCount": 1,
+      "timeoutSeconds": 600.0
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "sourceFile": "pdf-4.pdf",
+  "_note": "verified=true: fact stated in the project brief (2026-10-02). verified=false: proposed by reading the PDF; a person must confirm against the document and then set verified=true and verifiedBy.",
+  "checks": [
+    {"field": "salesOrders", "minCount": 2, "verified": true, "basis": "brief: multiple sales orders"},
+    {"field": "itemLines", "minCount": 2, "verified": true, "basis": "brief: multiple line quantities"},
+    {"field": "salesOrders", "expected": ["SO00305748", "SO00305742", "SO00305734"], "verified": false, "basis": "proposed: 'Sales Order No.' group rows"},
+    {"field": "itemLines", "expected": [
+      ["SO00305748", "NAL31016", 1], ["SO00305748", "NAL31019", 3], ["SO00305748", "NAL31020", 1], ["SO00305748", "NAL31021", 3],
+      ["SO00305742", "NAL31016", 1], ["SO00305742", "NAL31017", 2], ["SO00305742", "NAL31019", 21], ["SO00305742", "NAL31021", 23],
+      ["SO00305734", "NAL31016", 2], ["SO00305734", "NAL31019", 2], ["SO00305734", "NAL31020", 1], ["SO00305734", "NAL31021", 28]
+    ], "verified": false, "basis": "proposed: Quantity Shipped column; page-2 lines before SO00305734 continue SO00305742"},
+    {"field": "shipDate", "expected": "2022-08-26", "verified": false, "basis": "proposed: 'Shipment Date: 26 Aug 2022'"},
+    {"field": "carrier", "expected": null, "verified": false, "basis": "proposed: 'Delivery Method: COLLECTION' (customer collection, no carrier)"},
+    {"field": "carrier", "expectReview": true, "verified": false, "basis": "proposed: collection must be flagged rather than left silently empty"},
+    {"field": "trackingNumbers", "expected": [], "verified": false, "basis": "proposed: 'Our Reference SH00040386' is the delivery-note number, not tracking"},
+    {"field": "shippedQuantity", "expected": null, "verified": false, "basis": "proposed design decision: 5 different items, so no single total; compare per item"},
+    {"field": "shippedQuantity", "expectReview": true, "verified": false, "basis": "proposed: multiple items must be flagged"},
+    {"field": "unitOfMeasure", "expected": null, "verified": false, "basis": "proposed: no unit printed"},
+    {"field": "lotNumbers", "expected": ["MO00043408", "MO00043409", "MO00043410", "MO00043411", "MO00043419"], "verified": false, "basis": "proposed: 'Batch No.' values"}
+  ]
+}

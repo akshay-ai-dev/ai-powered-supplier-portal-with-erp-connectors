@@ -1,0 +1,336 @@
+{
+  "sourceFile": "unseen-2.pdf",
+  "extractorVersion": "0.2.0",
+  "shipDate": "2013-10-21",
+  "carrier": "FedEx",
+  "trackingNumbers": [
+    "983083025917",
+    "983083025928",
+    "983083025939",
+    "983083025940",
+    "983083025950",
+    "983083025961",
+    "983083025972"
+  ],
+  "shippedQuantity": 1000.0,
+  "unitOfMeasure": "EA",
+  "lotNumbers": [],
+  "serialNumbers": [],
+  "sublots": [],
+  "items": [
+    {
+      "lineNumber": "1",
+      "itemNumber": "8350",
+      "customerItemNumber": null,
+      "description": "Non-Woven Shopping Tote",
+      "salesOrder": null,
+      "customerReference": null,
+      "quantityOrdered": null,
+      "quantityRequired": null,
+      "quantityShipped": 1000.0,
+      "quantityOutstanding": null,
+      "quantityBackordered": null,
+      "unitOfMeasure": "EA",
+      "unitRaw": "EA",
+      "quantitySource": "shipped column",
+      "lots": [],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": {
+        "value": 0.0,
+        "unit": null
+      },
+      "pages": [
+        6
+      ],
+      "evidence": [
+        {
+          "page": 6,
+          "text": "1 8350 Non-Woven Shopping Tote 1000 EA 0.00",
+          "rule": "quantity table row"
+        }
+      ]
+    }
+  ],
+  "quantitySummary": [
+    {
+      "itemNumber": "8350",
+      "description": null,
+      "unit": "EA",
+      "quantityShipped": 1000.0,
+      "lineCount": 1,
+      "salesOrders": []
+    }
+  ],
+  "references": {
+    "purchaseOrders": [
+      {
+        "value": "5698-1",
+        "label": "Customer PO No",
+        "page": 6
+      }
+    ],
+    "salesOrders": [
+      {
+        "value": "828480",
+        "label": "Order No",
+        "page": 6
+      }
+    ],
+    "internalShippingNumbers": [
+      {
+        "value": "1456158",
+        "label": "Shipping No",
+        "page": 6
+      }
+    ],
+    "accountNumbers": [
+      {
+        "value": "6355",
+        "label": "Customer No",
+        "page": 6
+      }
+    ]
+  },
+  "shippingDetails": {
+    "serviceLevel": "EXPRESS",
+    "shipMethodRaw": "Fed-Ex Express Saver",
+    "freightTerms": [],
+    "packageCount": 7,
+    "packages": [
+      {
+        "packageNumber": "1",
+        "quantity": 100.0,
+        "unit": null,
+        "weight": 11.0,
+        "trackingNumber": "983083025917",
+        "page": 6
+      },
+      {
+        "packageNumber": "2",
+        "quantity": 150.0,
+        "unit": null,
+        "weight": 17.0,
+        "trackingNumber": "983083025928",
+        "page": 6
+      },
+      {
+        "packageNumber": "3",
+        "quantity": 150.0,
+        "unit": null,
+        "weight": 17.0,
+        "trackingNumber": "983083025939",
+        "page": 6
+      },
+      {
+        "packageNumber": "4",
+        "quantity": 150.0,
+        "unit": null,
+        "weight": 17.0,
+        "trackingNumber": "983083025940",
+        "page": 6
+      },
+      {
+        "packageNumber": "5",
+        "quantity": 150.0,
+        "unit": null,
+        "weight": 17.0,
+        "trackingNumber": "983083025950",
+        "page": 6
+      },
+      {
+        "packageNumber": "6",
+        "quantity": 150.0,
+        "unit": null,
+        "weight": 17.0,
+        "trackingNumber": "983083025961",
+        "page": 6
+      },
+      {
+        "packageNumber": "7",
+        "quantity": 150.0,
+        "unit": null,
+        "weight": 17.0,
+        "trackingNumber": "983083025972",
+        "page": 6
+      }
+    ]
+  },
+  "rawValues": {
+    "shipDate": "10/21/2013",
+    "carrier": "Fed-Ex Express Saver",
+    "shippedQuantity": [
+      1000.0
+    ]
+  },
+  "fieldIssues": [
+    {
+      "field": "lotNumbers",
+      "severity": "warning",
+      "code": "not_found",
+      "message": "No lotNumbers found in the document."
+    },
+    {
+      "field": "serialNumbers",
+      "severity": "info",
+      "code": "not_found",
+      "message": "No serialNumbers found in the document."
+    }
+  ],
+  "evidence": {
+    "shipDate": [
+      {
+        "page": 6,
+        "text": "Ship Date: | 10/21/2013",
+        "rule": "ship-date label (right)"
+      }
+    ],
+    "carrier": [
+      {
+        "page": 6,
+        "text": "Ship Via: | Fed-Ex Express Saver",
+        "rule": "carrier label (right)"
+      }
+    ],
+    "trackingNumbers": [
+      {
+        "page": 6,
+        "text": "983083025917",
+        "rule": "value in 'Tracking No' column"
+      },
+      {
+        "page": 6,
+        "text": "983083025928",
+        "rule": "value in 'Tracking No' column"
+      },
+      {
+        "page": 6,
+        "text": "983083025939",
+        "rule": "value in 'Tracking No' column"
+      },
+      {
+        "page": 6,
+        "text": "983083025940",
+        "rule": "value in 'Tracking No' column"
+      },
+      {
+        "page": 6,
+        "text": "983083025950",
+        "rule": "value in 'Tracking No' column"
+      },
+      {
+        "page": 6,
+        "text": "983083025961",
+        "rule": "value in 'Tracking No' column"
+      },
+      {
+        "page": 6,
+        "text": "983083025972",
+        "rule": "value in 'Tracking No' column"
+      },
+      {
+        "page": 6,
+        "text": "Tracking No / 983083025917",
+        "rule": "label 'Tracking No' (below)"
+      }
+    ],
+    "packages": [
+      {
+        "page": 6,
+        "text": "1 11 100 983083025917",
+        "rule": "package/box table row"
+      },
+      {
+        "page": 6,
+        "text": "2 17 150 983083025928",
+        "rule": "package/box table row"
+      },
+      {
+        "page": 6,
+        "text": "3 17 150 983083025939",
+        "rule": "package/box table row"
+      },
+      {
+        "page": 6,
+        "text": "4 17 150 983083025940",
+        "rule": "package/box table row"
+      },
+      {
+        "page": 6,
+        "text": "5 17 150 983083025950",
+        "rule": "package/box table row"
+      },
+      {
+        "page": 6,
+        "text": "6 17 150 983083025961",
+        "rule": "package/box table row"
+      },
+      {
+        "page": 6,
+        "text": "7 17 150 983083025972",
+        "rule": "package/box table row"
+      }
+    ],
+    "items": [
+      {
+        "page": 6,
+        "text": "1 8350 Non-Woven Shopping Tote 1000 EA 0.00",
+        "rule": "quantity table row"
+      }
+    ],
+    "shippedQuantity": [
+      {
+        "page": 6,
+        "text": "Total Pack List Quantity Shipped: 1,000.00",
+        "rule": "printed total agrees with line total"
+      },
+      {
+        "page": 6,
+        "text": "1 8350 Non-Woven Shopping Tote 1000 EA 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 6,
+        "text": "7 package rows total 1000.0",
+        "rule": "box/package quantities agree with the line total (not added to it)"
+      }
+    ]
+  },
+  "document": {
+    "pageCount": 6,
+    "pageTypes": {
+      "1": "unknown",
+      "2": "unknown",
+      "3": "unknown",
+      "4": "unknown",
+      "5": "unknown",
+      "6": "packing"
+    },
+    "textLayer": false,
+    "ocrUsed": true,
+    "doclingTableCount": 6,
+    "datePreference": "MDY"
+  },
+  "timings": {
+    "converterInitSeconds": 23.386,
+    "conversionSeconds": 141.062,
+    "layoutSeconds": 0.38,
+    "extractionSeconds": 0.028,
+    "totalSeconds": 164.98,
+    "isolation": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ok",
+          "reason": null,
+          "exitCode": 0,
+          "seconds": 168.897,
+          "log": null
+        }
+      ],
+      "attemptCount": 1,
+      "timeoutSeconds": 600.0
+    }
+  }
+}

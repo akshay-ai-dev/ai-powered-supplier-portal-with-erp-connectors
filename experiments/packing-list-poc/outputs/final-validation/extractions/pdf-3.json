@@ -1,0 +1,229 @@
+{
+  "sourceFile": "pdf-3.pdf",
+  "extractorVersion": "0.2.0",
+  "shipDate": "2025-04-11",
+  "carrier": "DPL/LOGIFISH",
+  "trackingNumbers": [],
+  "shippedQuantity": 150.0,
+  "unitOfMeasure": null,
+  "lotNumbers": [
+    "9399"
+  ],
+  "serialNumbers": [],
+  "sublots": [],
+  "items": [
+    {
+      "lineNumber": null,
+      "itemNumber": null,
+      "customerItemNumber": null,
+      "description": "9399 COD 16 WHOLE FRESH RED TILAPIA OF OREOCHROMIS NILOTICUS OF 450-950 GRAMS",
+      "salesOrder": null,
+      "customerReference": null,
+      "quantityOrdered": null,
+      "quantityRequired": null,
+      "quantityShipped": 150.0,
+      "quantityOutstanding": null,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "quantity column",
+      "lots": [
+        {
+          "lotNumber": "9399",
+          "quantity": null,
+          "unit": null,
+          "page": 1
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": {
+        "value": 1500.0,
+        "unit": "LB"
+      },
+      "pages": [
+        1
+      ],
+      "evidence": [
+        {
+          "page": 1,
+          "text": "Rf: 9399 COLOMBIA FRESH TILAPIA OF OREOCHROMIS 150 Lb 1,500.00",
+          "rule": "lot row / lot column"
+        },
+        {
+          "page": 1,
+          "text": "Rf: 9399 COLOMBIA FRESH TILAPIA OF OREOCHROMIS 150 Lb 1,500.00",
+          "rule": "quantity table row"
+        }
+      ]
+    }
+  ],
+  "quantitySummary": [
+    {
+      "itemNumber": null,
+      "description": "9399 COD 16 WHOLE FRESH RED TILAPIA OF OREOCHROMIS NILOTICUS OF 450-950 GRAMS",
+      "unit": null,
+      "quantityShipped": 150.0,
+      "lineCount": 1,
+      "salesOrders": []
+    }
+  ],
+  "references": {
+    "purchaseOrders": [
+      {
+        "value": "JACOB0411",
+        "label": "PO #",
+        "page": 1
+      }
+    ],
+    "salesOrders": [
+      {
+        "value": "111569",
+        "label": "Order #",
+        "page": 1
+      }
+    ]
+  },
+  "shippingDetails": {
+    "serviceLevel": null,
+    "shipMethodRaw": "DPL/LOGIFISH",
+    "freightTerms": [
+      "FREIGHT COLLECT"
+    ],
+    "packageCount": null,
+    "packages": []
+  },
+  "rawValues": {
+    "shipDate": "04/11/2025",
+    "carrier": "DPL/LOGIFISH",
+    "shippedQuantity": [
+      150.0
+    ]
+  },
+  "fieldIssues": [
+    {
+      "field": "shipDate",
+      "severity": "review",
+      "code": "inferred_from_document_date",
+      "message": "No ship-date label; the document DATE was used. Confirm it is the ship date.",
+      "rawValue": "04/11/2025",
+      "page": 1
+    },
+    {
+      "field": "shipDate",
+      "severity": "review",
+      "code": "ambiguous_date",
+      "message": "'04/11/2025' can be read as 2025-04-11 or 2025-11-04; MDY assumed from document context.",
+      "rawValue": "04/11/2025",
+      "page": 1
+    },
+    {
+      "field": "carrier",
+      "severity": "info",
+      "code": "carrier_not_in_reference_list",
+      "message": "'DPL/LOGIFISH' is not a recognised parcel carrier; kept as written.",
+      "rawValue": "DPL/LOGIFISH",
+      "page": 1
+    },
+    {
+      "field": "unitOfMeasure",
+      "severity": "review",
+      "code": "unit_not_stated",
+      "message": "No unit of measure is printed for the shipped quantity; PO comparison needs a unit."
+    },
+    {
+      "field": "trackingNumbers",
+      "severity": "warning",
+      "code": "not_found",
+      "message": "No trackingNumbers found in the document."
+    },
+    {
+      "field": "serialNumbers",
+      "severity": "info",
+      "code": "not_found",
+      "message": "No serialNumbers found in the document."
+    }
+  ],
+  "evidence": {
+    "shipDate": [
+      {
+        "page": 1,
+        "text": "DATE / 04/11/2025",
+        "rule": "document date label (no ship-date label found)"
+      }
+    ],
+    "freightTerms": [
+      {
+        "page": 1,
+        "text": "Ship Via DPL/LOGIFISH FREIGHT",
+        "rule": "freight term next to ship-via value"
+      }
+    ],
+    "carrier": [
+      {
+        "page": 1,
+        "text": "Ship Via DPL/LOGIFISH FREIGHT",
+        "rule": "carrier label (inline)"
+      }
+    ],
+    "items": [
+      {
+        "page": 1,
+        "text": "Rf: 9399 COLOMBIA FRESH TILAPIA OF OREOCHROMIS 150 Lb 1,500.00",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 1,
+        "text": "Rf: 9399 COLOMBIA FRESH TILAPIA OF OREOCHROMIS 150 Lb 1,500.00",
+        "rule": "quantity table row"
+      }
+    ],
+    "shippedQuantity": [
+      {
+        "page": 1,
+        "text": "Rf: 9399 COLOMBIA FRESH TILAPIA OF OREOCHROMIS 150 Lb 1,500.00",
+        "rule": "lot row / lot column"
+      }
+    ],
+    "lotNumbers": [
+      {
+        "page": 1,
+        "text": "9399",
+        "rule": "lot on a shipped line"
+      }
+    ]
+  },
+  "document": {
+    "pageCount": 2,
+    "pageTypes": {
+      "1": "packing",
+      "2": "packing"
+    },
+    "textLayer": true,
+    "ocrUsed": false,
+    "doclingTableCount": 2,
+    "datePreference": "MDY"
+  },
+  "timings": {
+    "converterInitSeconds": 19.942,
+    "conversionSeconds": 50.701,
+    "layoutSeconds": 0.203,
+    "extractionSeconds": 0.019,
+    "totalSeconds": 71.029,
+    "isolation": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ok",
+          "reason": null,
+          "exitCode": 0,
+          "seconds": 72.609,
+          "log": "outputs\\final-validation\\logs\\pdf-3.attempt1.log"
+        }
+      ],
+      "attemptCount": 1,
+      "timeoutSeconds": 600.0
+    }
+  }
+}
