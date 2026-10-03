@@ -1,0 +1,137 @@
+{
+  "sourceFile": "unseen-2.pdf",
+  "extractorVersion": "0.2.0",
+  "shipDate": "2013-10-21",
+  "carrier": "FedEx",
+  "trackingNumbers": [
+    "983083025917"
+  ],
+  "shippedQuantity": 1000.0,
+  "unitOfMeasure": null,
+  "lotNumbers": [],
+  "serialNumbers": [],
+  "sublots": [],
+  "items": [],
+  "quantitySummary": [],
+  "references": {
+    "purchaseOrders": [
+      {
+        "value": "5698-1",
+        "label": "Customer PO No",
+        "page": 6
+      }
+    ],
+    "salesOrders": [
+      {
+        "value": "828480",
+        "label": "Order No",
+        "page": 6
+      }
+    ],
+    "internalShippingNumbers": [
+      {
+        "value": "1456158",
+        "label": "Shipping No",
+        "page": 6
+      }
+    ],
+    "accountNumbers": [
+      {
+        "value": "6355",
+        "label": "Customer No",
+        "page": 6
+      }
+    ]
+  },
+  "shippingDetails": {
+    "serviceLevel": "EXPRESS",
+    "shipMethodRaw": "Fed-Ex Express Saver",
+    "freightTerms": [],
+    "packageCount": null
+  },
+  "rawValues": {
+    "shipDate": "10/21/2013",
+    "carrier": "Fed-Ex Express Saver",
+    "shippedQuantity": "1000"
+  },
+  "fieldIssues": [
+    {
+      "field": "shippedQuantity",
+      "severity": "review",
+      "code": "quantity_from_label_only",
+      "message": "No quantity table was found; the value comes from a quantity label. Confirm.",
+      "rawValue": "1000",
+      "page": 6
+    },
+    {
+      "field": "unitOfMeasure",
+      "severity": "warning",
+      "code": "not_found",
+      "message": "No unitOfMeasure found in the document."
+    },
+    {
+      "field": "lotNumbers",
+      "severity": "warning",
+      "code": "not_found",
+      "message": "No lotNumbers found in the document."
+    },
+    {
+      "field": "serialNumbers",
+      "severity": "info",
+      "code": "not_found",
+      "message": "No serialNumbers found in the document."
+    }
+  ],
+  "evidence": {
+    "shipDate": [
+      {
+        "page": 6,
+        "text": "Ship Date: | 10/21/2013",
+        "rule": "ship-date label (right)"
+      }
+    ],
+    "carrier": [
+      {
+        "page": 6,
+        "text": "Ship Via: | Fed-Ex Express Saver",
+        "rule": "carrier label (right)"
+      }
+    ],
+    "trackingNumbers": [
+      {
+        "page": 6,
+        "text": "Tracking No / 983083025917",
+        "rule": "label 'Tracking No' (below)"
+      }
+    ],
+    "shippedQuantity": [
+      {
+        "page": 6,
+        "text": "Qty Shipped / 1000",
+        "rule": "quantity label 'Qty Shipped' (no line table found)"
+      }
+    ]
+  },
+  "document": {
+    "pageCount": 6,
+    "pageTypes": {
+      "1": "unknown",
+      "2": "unknown",
+      "3": "unknown",
+      "4": "unknown",
+      "5": "unknown",
+      "6": "packing"
+    },
+    "textLayer": false,
+    "ocrUsed": true,
+    "doclingTableCount": 6,
+    "datePreference": "MDY"
+  },
+  "timings": {
+    "converterInitSeconds": 17.998,
+    "conversionSeconds": 102.097,
+    "layoutSeconds": 0.086,
+    "extractionSeconds": 0.018,
+    "totalSeconds": 120.367
+  }
+}

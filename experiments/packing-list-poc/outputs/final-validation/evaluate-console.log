@@ -1,0 +1,105 @@
+
+=== pdf-1.pdf  pages=5  conversion=18.2s  extraction=0.03s  total=37.4s
+  CORRECT   V sublotCount                          expected=2  extracted=2
+  CORRECT   V sublotQuantities                     expected=[[750, "SF"], [750, "SF"]]  extracted=[[750.0, "SF"], [750.0, "SF"]]
+  CORRECT   V shippedQuantity                      expected=1500  extracted=1500.0
+  CORRECT   V unitOfMeasure                        expected=SF  extracted=SF
+  CORRECT   u shipDate                             expected=2020-10-01  extracted=2020-10-01
+  CORRECT   u carrier                              expected=FedEx  extracted=FedEx
+  CORRECT   u trackingNumbers                      expected=[]  extracted=[] [flagged]
+  AMBIGUOUS u trackingNumbers                      expected=review flag on '149752137'  extracted=unclassified_identifier
+  CORRECT   u lotNumbers                           expected=["6446"]  extracted=["6446"]
+  CORRECT   u sublotNumbers                        expected=["6446-0001", "6446-0002"]  extracted=["6446-0001", "6446-0002"]
+  CORRECT   u serialNumbers                        expected=[]  extracted=[]
+  CORRECT   u references.salesOrders               expected=["703071376"]  extracted=["703071376"]
+  CORRECT   u references.purchaseOrders            expected=["CS-20028"]  extracted=["CS-20028"]
+  verified  : correct=4 incorrect=0 missing=0 ambiguous=0
+  unverified: correct=8 incorrect=0 missing=0 ambiguous=1
+  issues for supplier review: 1
+    - trackingNumbers.unclassified_identifier: 'SHIP VIA FED EX# 149752137': follows 'FED EX' but does not match a FedEx tracking format (often a carrier account nu...
+
+=== pdf-2.pdf  pages=1  conversion=5.6s  extraction=0.02s  total=23.2s
+  CORRECT   V trackingNumbers                      expected=>= 2 values  extracted=4 values
+  AMBIGUOUS V lotNumbers                           expected=review flag on '(280)'  extracted=ambiguous_lot_or_serial
+  CORRECT   V lotNumbers                           expected=[]  extracted=[] [flagged]
+  CORRECT   V serialNumbers                        expected=[]  extracted=[] [flagged]
+  CORRECT   u trackingNumbers                      expected=["775101717550", "775101716369", "775101716370"...  extracted=["775101716369", "775101716370", "775101717159", "7751017...
+  CORRECT   u shipDate                             expected=2024-02-07  extracted=2024-02-07 [flagged]
+  AMBIGUOUS u shipDate                             expected=review flag  extracted=ambiguous_date
+  CORRECT   u carrier                              expected=FedEx  extracted=FedEx
+  CORRECT   u shippedQuantity                      expected=280  extracted=280.0 [flagged]
+  CORRECT   u unitOfMeasure                        expected=null  extracted=null [flagged]
+  CORRECT   u references.salesOrders               expected=["SO205641"]  extracted=["SO205641"]
+  CORRECT   u references.purchaseOrders            expected=["DR6341448"]  extracted=["DR6341448"]
+  verified  : correct=3 incorrect=0 missing=0 ambiguous=1
+  unverified: correct=7 incorrect=0 missing=0 ambiguous=1
+  issues for supplier review: 5
+    - shipDate.ambiguous_date: '2/7/2024' can be read as 2024-02-07 or 2024-07-02; MDY assumed from document context.
+    - lotNumbers.ambiguous_lot_or_serial: '(280)' under 'Serial/Lot#': parenthesised number: may be a quantity or reference, not a lot/serial. Not recorded as ...
+    - serialNumbers.ambiguous_lot_or_serial: '(280)' under 'Serial/Lot#': parenthesised number: may be a quantity or reference, not a lot/serial. Not recorded as ...
+    - shippedQuantity.unlabelled_leading_value: Row starts with unlabelled value '1'; quantity 280 was taken from the 'Qty Shipped' column by position. Confirm.
+    - unitOfMeasure.unit_not_stated: No unit of measure is printed for the shipped quantity; PO comparison needs a unit.
+
+=== pdf-3.pdf  pages=2  conversion=50.7s  extraction=0.02s  total=71.0s
+  CORRECT   V carrier                              expected=DPL/LOGIFISH  extracted=DPL/LOGIFISH
+  CORRECT   V shippingDetails.freightTerms         expected=contains 'FREIGHT COLLECT'  extracted=["FREIGHT COLLECT"]
+  CORRECT   V trackingNumbers                      expected=[]  extracted=[]
+  CORRECT   V references.salesOrders               expected=["111569"]  extracted=["111569"]
+  CORRECT   V lotNumbers                           expected=["9399"]  extracted=["9399"]
+  CORRECT   u shipDate                             expected=2025-04-11  extracted=2025-04-11 [flagged]
+  AMBIGUOUS u shipDate                             expected=review flag  extracted=inferred_from_document_date
+  CORRECT   u shippedQuantity                      expected=150  extracted=150.0
+  CORRECT   u unitOfMeasure                        expected=null  extracted=null [flagged]
+  CORRECT   u references.purchaseOrders            expected=["JACOB0411"]  extracted=["JACOB0411"]
+  CORRECT   u serialNumbers                        expected=[]  extracted=[]
+  verified  : correct=5 incorrect=0 missing=0 ambiguous=0
+  unverified: correct=5 incorrect=0 missing=0 ambiguous=1
+  issues for supplier review: 3
+    - shipDate.inferred_from_document_date: No ship-date label; the document DATE was used. Confirm it is the ship date.
+    - shipDate.ambiguous_date: '04/11/2025' can be read as 2025-04-11 or 2025-11-04; MDY assumed from document context.
+    - unitOfMeasure.unit_not_stated: No unit of measure is printed for the shipped quantity; PO comparison needs a unit.
+
+=== pdf-4.pdf  pages=2  conversion=12.8s  extraction=0.03s  total=31.4s
+  CORRECT   V salesOrders                          expected=>= 2 values  extracted=3 values
+  CORRECT   V itemLines                            expected=>= 2 values  extracted=12 values
+  CORRECT   u salesOrders                          expected=["SO00305748", "SO00305742", "SO00305734"]  extracted=["SO00305734", "SO00305742", "SO00305748"]
+  CORRECT   u itemLines                            expected=[["SO00305748", "NAL31016", 1], ["SO00305748", ...  extracted=[["SO00305734", "NAL31016", 2.0], ["SO00305734", "NAL3101...
+  CORRECT   u shipDate                             expected=2022-08-26  extracted=2022-08-26
+  CORRECT   u carrier                              expected=null  extracted=null [flagged]
+  AMBIGUOUS u carrier                              expected=review flag  extracted=customer_collection
+  CORRECT   u trackingNumbers                      expected=[]  extracted=[]
+  CORRECT   u shippedQuantity                      expected=null  extracted=null [flagged]
+  AMBIGUOUS u shippedQuantity                      expected=review flag  extracted=multiple_items
+  CORRECT   u unitOfMeasure                        expected=null  extracted=null [flagged]
+  CORRECT   u lotNumbers                           expected=["MO00043408", "MO00043409", "MO00043410", "MO0...  extracted=["MO00043408", "MO00043409", "MO00043410", "MO00043411", ...
+  verified  : correct=2 incorrect=0 missing=0 ambiguous=0
+  unverified: correct=8 incorrect=0 missing=0 ambiguous=2
+  issues for supplier review: 3
+    - carrier.customer_collection: Delivery method 'COLLECTION - COLLECTION' indicates customer collection; no carrier named.
+    - shippedQuantity.multiple_items: 12 lines cover 5 different items; a single shipped quantity would mix products. See items[] and quantitySummary[] (co...
+    - unitOfMeasure.unit_not_stated: No unit of measure is printed for the shipped quantity; PO comparison needs a unit.
+
+=== pdf-5.pdf  pages=3  conversion=21.9s  extraction=0.03s  total=43.7s
+  CORRECT   V sublotCount                          expected=6  extracted=6
+  CORRECT   V sublotTotal                          expected=[42, "PR"]  extracted=[42.0, "PR"]
+  CORRECT   V shippedQuantity                      expected=42  extracted=42.0
+  CORRECT   V unitOfMeasure                        expected=PR  extracted=PR
+  CORRECT   V itemLineCount                        expected=1  extracted=1
+  CORRECT   u shipDate                             expected=2024-01-16  extracted=2024-01-16
+  CORRECT   u carrier                              expected=UPS  extracted=UPS
+  CORRECT   u trackingNumbers                      expected=[]  extracted=[]
+  CORRECT   u lotNumbers                           expected=["2401"]  extracted=["2401"]
+  CORRECT   u sublotNumbers                        expected=["US310197", "US310198", "US310200", "US330268"...  extracted=["US310197", "US310198", "US310200", "US330268", "US33027...
+  CORRECT   u sublotQuantities                     expected=[[6.5, "PR"], [5.5, "PR"], [3, "PR"], [6, "PR"]...  extracted=[[3.0, "PR"], [3.0, "PR"], [5.5, "PR"], [6.0, "PR"], [6.5...
+  CORRECT   u references.purchaseOrders            expected=["PR3412522"]  extracted=["PR3412522"]
+  CORRECT   u references.internalShippingNumbers   expected=["0041709"]  extracted=["0041709"]
+  verified  : correct=5 incorrect=0 missing=0 ambiguous=0
+  unverified: correct=8 incorrect=0 missing=0 ambiguous=0
+  issues for supplier review: 0
+
+=== Summary (counts only; 'unverified' labels are proposals awaiting human confirmation)
+  verified  : correct=19 incorrect=0 missing=0 ambiguous=1
+  unverified: correct=36 incorrect=0 missing=0 ambiguous=5
+  converted 5/5 PDFs | conversion errors: none
+  Docling conversion 109.2s | total runtime 215.5s (each PDF loads the models in its own process)
+  saved: outputs\final-validation\extractions, outputs\final-validation\docling, outputs\final-validation\evaluation_report.json

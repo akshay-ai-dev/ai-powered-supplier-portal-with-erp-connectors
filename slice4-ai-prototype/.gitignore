@@ -1,0 +1,26 @@
+# Secrets (keep the placeholder template)
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Local output (AI tool log)
+out/
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
