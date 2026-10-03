@@ -27,6 +27,8 @@ async function toMono16k(data: ArrayBuffer): Promise<Float32Array> {
 export function useVoiceInput(onText: (text: string) => void) {
   const [state, setState] = useState<VoiceState>("idle");
   const [error, setError] = useState<string | null>(null);
+  // Live mic level for the waveform while recording; only reads the stream, never touches the transcription path.
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const worker = useRef<Worker | null>(null);
   const ready = useRef<Promise<void> | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -76,12 +78,19 @@ export function useVoiceInput(onText: (text: string) => void) {
       setState("loading");
       await ensureModel();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const meter = new AudioContext();
+      const node = meter.createAnalyser();
+      node.fftSize = 512;
+      meter.createMediaStreamSource(stream).connect(node);
+      setAnalyser(node);
       const chunks: Blob[] = [];
       const rec = new MediaRecorder(stream);
       recorder.current = rec;
       rec.ondataavailable = (e) => chunks.push(e.data);
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        setAnalyser(null);
+        meter.close();
         recorder.current = null;
         setState("transcribing");
         try {
@@ -103,5 +112,5 @@ export function useVoiceInput(onText: (text: string) => void) {
     }
   }, [ensureModel, transcribe]);
 
-  return { state, error, toggle };
+  return { state, error, toggle, analyser };
 }

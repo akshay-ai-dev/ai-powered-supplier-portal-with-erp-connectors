@@ -24,6 +24,7 @@ import {
   type RequestRow,
 } from "@/components/assistant/answer-templates";
 import { DraftAwardCard, type DraftAward } from "@/components/assistant/draft-award-card";
+import { VoiceWaveform } from "@/components/assistant/voice-waveform";
 
 const EXAMPLES = ["Which requests are waiting for an award?", "Compare the responses for REQ2001", "Award REQ2001 to the top-ranked supplier"];
 
@@ -117,6 +118,7 @@ export default function AssistantPage() {
   }
 
   const voiceLabel = { idle: "Speak", loading: "Loading voice model…", recording: "Stop and transcribe", transcribing: "Transcribing…" }[voice.state];
+  const voiceStatus = voice.state === "recording" ? "Listening… click ■ to stop" : voiceLabel;
 
   return (
     <>
@@ -170,13 +172,17 @@ export default function AssistantPage() {
               ask(draft);
             }}
           >
-            <Input
-              aria-label="Question"
-              value={draft}
-              onChange={(ev) => setDraft(ev.target.value)}
-              placeholder={routerState === "ready" ? "Ask about requests, quotes or awards…" : "Loading assistant…"}
-              maxLength={500}
-            />
+            {voice.state === "recording" && voice.analyser ? (
+              <VoiceWaveform analyser={voice.analyser} />
+            ) : (
+              <Input
+                aria-label="Question"
+                value={draft}
+                onChange={(ev) => setDraft(ev.target.value)}
+                placeholder={routerState === "ready" ? "Ask about requests, quotes or awards…" : "Loading assistant…"}
+                maxLength={500}
+              />
+            )}
             <Button
               type="button"
               variant="outline"
@@ -195,7 +201,7 @@ export default function AssistantPage() {
           </form>
           {(voice.state !== "idle" || voice.error || routerState === "error") && (
             <p className={`text-xs ${voice.error || routerState === "error" ? "text-destructive" : "text-muted-foreground"}`}>
-              {routerState === "error" ? `The assistant model failed to load: ${routerError}` : voice.error ?? `${voiceLabel}${voice.state === "loading" ? " (first time only, ~385 MB)" : ""}`}
+              {routerState === "error" ? `The assistant model failed to load: ${routerError}` : voice.error ?? `${voiceStatus}${voice.state === "loading" ? " (first time only, ~385 MB)" : ""}`}
             </p>
           )}
         </CardContent>
