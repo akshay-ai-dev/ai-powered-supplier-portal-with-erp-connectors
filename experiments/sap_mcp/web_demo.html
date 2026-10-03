@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAP MCP Connector Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --shell:#1d2d3e; --shell-ink:#eaf1f8; --shell-muted:#9fb3c8;
+    --bg:#f5f6f7; --surface:#ffffff; --ink:#1d2d3e; --muted:#556b82; --faint:#8396a8; --line:#e5e9ee;
+    --brand:#0a6ed1; --brand-soft:#ebf5fe; --brand-ink:#0854a0;
+    --ok:#188918; --ok-soft:#f1fdf6; --warn:#c35500; --warn-soft:#fef7f1; --bad:#bb0000; --bad-soft:#ffebeb;
+    --code:#0f1b2a; --code-ink:#d6e2ee; --radius:12px;
+    --shadow:0 1px 2px rgba(29,45,62,.06),0 2px 8px rgba(29,45,62,.05);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  /* Shell bar */
+  .shell{background:var(--shell);color:var(--shell-ink);display:flex;align-items:center;gap:14px;padding:0 24px;height:56px}
+  .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#0a6ed1,#3fa1ff);display:grid;place-items:center;font-weight:700;font-size:12px;letter-spacing:.02em}
+  .shell h1{font-size:15px;font-weight:600;margin:0}
+  .shell .sub{color:var(--shell-muted);font-size:12px}
+  .shell .spacer{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap}
+  .shell .pill{background:rgba(255,255,255,.08);color:var(--shell-ink);border:1px solid rgba(255,255,255,.12)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+  .dot.ok{background:#36d27a;box-shadow:0 0 0 3px rgba(54,210,122,.18)}
+  .dot.warn{background:#ffb74a}
+  .dot.bad{background:#ff6b6b}
+
+  /* Pipeline */
+  .pipeline{background:var(--surface);border-bottom:1px solid var(--line);padding:14px 24px;display:flex;align-items:center;gap:8px;overflow-x:auto}
+  .step{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);min-width:max-content;transition:all .25s}
+  .step .ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--bg);color:var(--muted)}
+  .step b{display:block;font-size:13px;font-weight:600}
+  .step small{display:block;color:var(--faint);font-size:11px}
+  .step.active{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .step.active .ic{background:var(--brand);color:#fff}
+  .step.done .ic{background:var(--ok);color:#fff}
+  .arrow{color:var(--faint);font-size:12px;min-width:max-content}
+
+  /* Layout */
+  main{display:grid;grid-template-columns:360px minmax(0,1fr);gap:20px;padding:20px 24px 32px;max-width:1440px;margin:0 auto}
+  @media (max-width:960px){main{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card-h{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .card-h h2{font-size:13px;font-weight:600;margin:0;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .card-b{padding:16px}
+
+  /* Tool list */
+  .select{width:100%;height:40px;padding:0 10px;border:1px solid #c9d2dc;border-radius:8px;font:500 13px "JetBrains Mono",ui-monospace,monospace;color:var(--ink);background:#fff;outline:none}
+  .select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .tooldesc{font-size:12px;color:var(--muted);display:grid;gap:6px}
+  .tooldesc .api{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--faint)}
+  .tools{display:flex;flex-direction:column;gap:6px;padding:10px}
+  .tool{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:10px 12px;border-radius:10px;border:1px solid transparent}
+  .tool:hover{background:var(--bg)}
+  .tool[aria-selected=true]{background:var(--brand-soft);border-color:#b9dcfb}
+  .tool .tag{font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 6px;border-radius:6px;background:var(--ok-soft);color:var(--ok);border:1px solid #bde9c8;margin-top:2px}
+  .tool b{display:block;font-size:13px;font-family:"JetBrains Mono",monospace;font-weight:500}
+  .tool span{display:block;font-size:12px;color:var(--muted)}
+  .tool .api{font-size:11px;color:var(--faint);margin-top:2px}
+
+  /* Form */
+  .field{margin-bottom:12px}
+  .field label{display:flex;justify-content:space-between;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px}
+  .field label i{font-style:normal;color:var(--faint);font-weight:400}
+  .field input{width:100%;height:38px;padding:0 12px;border:1px solid #c9d2dc;border-radius:8px;font:inherit;color:var(--ink);background:#fff;outline:none;transition:border .15s,box-shadow .15s}
+  .field input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 14px}
+  .chip{all:unset;cursor:pointer;font-size:12px;padding:3px 9px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+  .chip:hover{border-color:var(--brand);color:var(--brand-ink)}
+  .run{all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:40px;border-radius:8px;background:var(--brand);color:#fff;font-weight:600;transition:background .15s}
+  .run:hover{background:var(--brand-ink)}
+  .run[disabled]{opacity:.7;cursor:progress}
+  .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+  .run[disabled] .spinner{display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .note{font-size:12px;color:var(--faint);margin-top:12px;display:flex;gap:6px}
+
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+  @media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .kpi{padding:14px 16px}
+  .kpi small{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+  .kpi strong{display:block;font-size:22px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums}
+  .kpi span{font-size:12px;color:var(--muted)}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px}
+  .badge.ok{background:var(--ok-soft);color:var(--ok)} .badge.warn{background:var(--warn-soft);color:var(--warn)} .badge.bad{background:var(--bad-soft);color:var(--bad)} .badge.info{background:var(--brand-soft);color:var(--brand-ink)}
+
+  /* Tabs */
+  .tabs{display:flex;gap:4px;padding:0 12px;border-bottom:1px solid var(--line)}
+  .tab{all:unset;cursor:pointer;padding:12px 10px;font-size:13px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab[aria-selected=true]{color:var(--brand-ink);border-bottom-color:var(--brand)}
+  .tab .n{font-size:11px;background:var(--bg);border-radius:999px;padding:1px 6px;margin-left:6px;color:var(--muted)}
+  .panel{padding:16px;overflow-x:auto}
+  .bubble{overflow-x:auto}
+  .panel[hidden]{display:none}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);padding:8px 10px;border-bottom:1px solid var(--line);background:#fafbfc}
+  td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:hover td{background:#fafcff}
+  td.num{font-variant-numeric:tabular-nums}
+  .id{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--brand-ink)}
+  .sub-t{display:block;color:var(--faint);font-size:12px}
+
+  .codewrap{position:relative}
+  pre{margin:0;background:var(--code);color:var(--code-ink);padding:14px 16px;border-radius:10px;font-size:12px;line-height:1.6;overflow:auto;max-height:440px}
+  .copy{all:unset;cursor:pointer;position:absolute;top:8px;right:8px;font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.1);color:#cfe0f0}
+  .copy:hover{background:rgba(255,255,255,.2)}
+  .k{color:#8ec7ff}.s{color:#a5e3a1}.n{color:#ffc58b}.b{color:#ff9ac1}
+
+  .empty{padding:56px 24px;text-align:center;color:var(--muted)}
+  .empty .big{width:56px;height:56px;border-radius:14px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;margin:0 auto 14px}
+  .empty h3{margin:0 0 4px;font-size:16px;color:var(--ink)}
+  .alert{display:flex;gap:10px;padding:12px 14px;border-radius:10px;margin-bottom:14px;font-size:13px}
+  .alert.bad{background:var(--bad-soft);color:var(--bad)} .alert.warn{background:var(--warn-soft);color:var(--warn)}
+
+  footer{max-width:1440px;margin:0 auto;padding:0 24px 28px;color:var(--faint);font-size:12px;display:flex;flex-wrap:wrap;gap:16px}
+
+  /* View switch */
+  .viewbar{max-width:1440px;margin:0 auto;padding:16px 24px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .seg{display:inline-flex;background:#e9edf1;border-radius:10px;padding:3px}
+  .seg button{all:unset;cursor:pointer;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted)}
+  .seg button[aria-selected=true]{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+  .viewbar .hint{font-size:12px;color:var(--faint)}
+  [data-view][hidden]{display:none!important}
+
+  /* AI assistant */
+  .ai{max-width:1440px;margin:0 auto;padding:16px 24px 32px;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px}
+  @media (max-width:1000px){.ai{grid-template-columns:1fr}}
+  .chat{display:flex;flex-direction:column;min-height:560px}
+  .msgs{flex:1;padding:20px;display:flex;flex-direction:column;gap:18px;overflow:auto;max-height:64vh}
+  .msg{display:flex;gap:12px;align-items:flex-start}
+  .msg .av{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+  .msg.user{flex-direction:row-reverse}
+  .msg.user .av{background:#e9edf1;color:var(--muted)}
+  .msg.bot .av{background:linear-gradient(135deg,#0a6ed1,#3fa1ff);color:#fff}
+  .bubble{max-width:min(780px,88%);border-radius:12px;padding:12px 14px;font-size:14px}
+  .msg.user .bubble{background:var(--brand);color:#fff;border-top-right-radius:4px}
+  .msg.bot .bubble{background:#fff;border:1px solid var(--line);border-top-left-radius:4px}
+  .bubble p{margin:0 0 8px}.bubble p:last-child{margin:0}
+  .bubble ul{margin:4px 0 8px;padding-left:20px}
+  .bubble table{margin:8px 0;font-size:13px}
+  .trace{margin-top:12px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .trace-h{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:#fafbfc;border-bottom:1px solid var(--line);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
+  .trace details+details{border-top:1px solid var(--line)}
+  .trace summary{cursor:pointer;list-style:none;display:grid;grid-template-columns:22px minmax(0,1fr) auto 12px;gap:10px;align-items:center;padding:6px 12px;font-size:12px}
+  .trace summary:hover{background:#fafcff}
+  .trace summary::-webkit-details-marker{display:none}
+  .trace .num{width:22px;height:22px;border-radius:6px;background:var(--brand-soft);color:var(--brand-ink);font-weight:700;font-size:11px;display:grid;place-items:center}
+  .trace summary code{font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .trace summary code b{color:var(--brand-ink);font-weight:600}
+  .trace summary .badge{font-size:11px;padding:1px 7px;white-space:nowrap}
+  .trace .chev{color:var(--faint);transition:transform .15s;font-size:10px}
+  .trace details[open] .chev{transform:rotate(90deg)}
+  .trace .inner{padding:0 12px 10px 44px}
+  .trace pre{max-height:240px;margin-top:6px}
+  .meta{margin-top:8px;font-size:11px;color:var(--faint);display:flex;gap:10px;flex-wrap:wrap}
+  .typing{display:inline-flex;gap:4px}.typing i{width:6px;height:6px;border-radius:50%;background:var(--faint);animation:blink 1s infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+  .composer{border-top:1px solid var(--line);padding:12px;display:flex;gap:8px}
+  .composer input{flex:1;height:42px;padding:0 14px;border:1px solid #c9d2dc;border-radius:10px;font:inherit;outline:none}
+  .composer input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .composer .run{width:auto;padding:0 18px;height:42px}
+  .side .card-b p{margin:0 0 10px;font-size:13px;color:var(--muted)}
+  .prompt{all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;margin-bottom:8px;background:#fff}
+  .prompt:hover{border-color:var(--brand);background:var(--brand-soft)}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px}
+  .kv dt{color:var(--faint)} .kv dd{margin:0;font-weight:500}
+</style>
+</head>
+<body>
+
+<header class="shell">
+  <div class="logo">MCP</div>
+  <div>
+    <h1>SAP S/4HANA MCP Connector</h1>
+    <div class="sub">Custom read-only MCP server · Supplier Portal POC</div>
+  </div>
+  <div class="spacer"></div>
+  <span class="pill" id="env"><span class="dot" id="envDot"></span><span id="envText">__MODE__</span></span>
+  <span class="pill" id="conn"><span class="dot" id="connDot"></span><span id="connText">Connecting…</span></span>
+  <span class="pill">🔒 Read-only</span>
+</header>
+
+<nav class="pipeline" aria-label="Request flow">
+  <div class="step" id="st1"><div class="ic">◧</div><div><b id="st1t">AI model</b><small id="st1s">Gemini / Claude</small></div></div>
+  <span class="arrow">MCP · stdio →</span>
+  <div class="step" id="st2"><div class="ic">⚙</div><div><b>MCP server</b><small id="st2s">mcp_server.py</small></div></div>
+  <span class="arrow">HTTPS GET · OData v2 →</span>
+  <div class="step" id="st3"><div class="ic">▤</div><div><b>SAP S/4HANA</b><small id="st3sub">Business Accelerator Hub</small></div></div>
+  <span class="arrow">clean JSON →</span>
+  <div class="step" id="st4"><div class="ic">✓</div><div><b>Tool result</b><small>What the AI receives</small></div></div>
+</nav>
+
+<div class="viewbar">
+  <div class="seg" role="tablist">
+    <button role="tab" aria-selected="true" data-go="ai">AI assistant</button>
+    <button role="tab" aria-selected="false" data-go="tools">Tool explorer</button>
+  </div>
+  <span class="hint" id="viewHint">Ask in plain English. The AI picks the SAP tools; you see every call it makes.</span>
+</div>
+
+<section class="ai" data-view="ai">
+  <div class="card chat">
+    <div class="card-h"><h2>AI assistant</h2><span class="badge info" id="aiBadge">AI</span></div>
+    <div class="msgs" id="msgs">
+      <div class="msg bot"><div class="av">AI</div><div class="bubble">
+        <p>Hi! I can look up <b>suppliers</b> and <b>purchase orders</b> in SAP S/4HANA for you. I only read data and never change anything in SAP.</p>
+        <p>Try a question on the right, or type your own.</p></div></div>
+    </div>
+    <form class="composer" id="chatForm" autocomplete="off">
+      <input id="q" placeholder="e.g. Is supplier 1018 blocked for purchasing?" maxlength="2000">
+      <button class="run" id="send" type="submit"><span class="spinner"></span><span>Ask</span></button>
+    </form>
+  </div>
+  <aside class="side">
+    <section class="card" style="margin-bottom:16px"><div class="card-h"><h2>Try asking</h2></div><div class="card-b" id="prompts"></div></section>
+    <section class="card"><div class="card-h"><h2>Session</h2></div><div class="card-b">
+      <dl class="kv">
+        <dt>AI model</dt><dd id="sModel">—</dd>
+        <dt>Provider</dt><dd id="sProv">—</dd>
+        <dt>SAP</dt><dd id="sSap">—</dd>
+        <dt>Questions</dt><dd id="sQ">0</dd>
+        <dt>Tool calls</dt><dd id="sT">0</dd>
+        <dt>Tokens</dt><dd id="sTok">0</dd>
+      </dl>
+      <p class="note" style="margin-top:12px">ⓘ The AI never sees the SAP key or URLs. It can only call the read-only MCP tools the server offers.</p>
+    </div></section>
+  </aside>
+</section>
+
+<main data-view="tools" hidden>
+  <aside>
+    <section class="card" style="margin-bottom:16px">
+      <div class="card-h"><h2>Tool</h2><span class="badge info" id="toolCount">…</span></div>
+      <div class="card-b">
+        <div class="field"><label for="toolSelect">Select an MCP tool<i>from the server</i></label>
+          <select id="toolSelect" class="select"></select></div>
+        <div class="tooldesc" id="toolDesc"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>Parameters</h2><code id="toolName" style="font-size:12px;color:var(--muted)"></code></div>
+      <div class="card-b">
+        <form id="form" autocomplete="off"></form>
+        <button class="run" id="run" form="form" type="submit"><span class="spinner"></span><span>Run tool</span></button>
+        <div class="note">ⓘ <span id="toolNote"></span></div>
+      </div>
+    </section>
+  </aside>
+
+  <section>
+    <div class="kpis">
+      <div class="card kpi"><small>Status</small><strong id="kStatus">—</strong><span id="kStatusSub">No call yet</span></div>
+      <div class="card kpi"><small>Records</small><strong id="kRecords">—</strong><span id="kRecordsSub">returned to the AI</span></div>
+      <div class="card kpi"><small>SAP response time</small><strong id="kSap">—</strong><span id="kSapSub">per OData call</span></div>
+      <div class="card kpi"><small>Round trip</small><strong id="kTotal">—</strong><span>incl. MCP server start</span></div>
+    </div>
+
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-tab="data">Data<span class="n" id="nData">0</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="req">MCP request</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="sap">SAP calls<span class="n" id="nSap">0</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="res">MCP response</button>
+      </div>
+      <div class="panel" data-panel="data" id="pData">
+        <div class="empty"><div class="big">▤</div><h3>Run a tool to see live SAP data</h3>
+          <div>Pick a tool on the left, set parameters, and click <b>Run tool</b>.</div></div>
+      </div>
+      <div class="panel" data-panel="req" hidden><div class="codewrap"><button class="copy">Copy</button><pre id="pReq">—</pre></div>
+        <p class="note">The exact tool call an AI client sends over MCP.</p></div>
+      <div class="panel" data-panel="sap" hidden id="pSap"><p class="note">No SAP calls yet.</p></div>
+      <div class="panel" data-panel="res" hidden><div class="codewrap"><button class="copy">Copy</button><pre id="pRes">—</pre></div>
+        <p class="note">The cleaned result returned to the AI (≈8 useful fields instead of ~50 raw SAP fields).</p></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span id="footSrc"></span>
+  <span>Only HTTP GET is used · IDs validated · max 20 records per call</span>
+  <span>experiments/sap_mcp</span>
+</footer>
+
+<script>
+const HINTS = [
+  { name:"search_suppliers", title:"Search suppliers", api:"API_BUSINESS_PARTNER · A_Supplier",
+    note:"Name filter is case-sensitive in SAP.",
+    fields:[{id:"name_contains",label:"Name contains",hint:"optional",ph:"e.g. Bechtle"},{id:"top",label:"Max records",hint:"1–20",type:"number",value:5}],
+    examples:[["All suppliers",{name_contains:"",top:5}],["Bechtle",{name_contains:"Bechtle",top:5}],["Inc",{name_contains:"Inc",top:10}]] },
+  { name:"get_supplier", title:"Get supplier by ID", api:"API_BUSINESS_PARTNER · A_Supplier('{id}')",
+    note:"Unknown IDs return found=false. The tool never invents data.",
+    fields:[{id:"supplier_id",label:"Supplier ID",hint:"required",value:"1018"}],
+    examples:[["1018",{supplier_id:"1018"}],["9999999 (not found)",{supplier_id:"9999999"}],["Injection attempt",{supplier_id:"1018' or 1 eq 1"}]] },
+  { name:"list_purchase_orders", title:"List purchase orders", api:"API_PURCHASEORDER_PROCESS_SRV · A_PurchaseOrder",
+    note:"Newest first. Filter by supplier ID optionally.",
+    fields:[{id:"supplier_id",label:"Supplier ID",hint:"optional",ph:"e.g. USSU_V8000"},{id:"top",label:"Max records",hint:"1–20",type:"number",value:5}],
+    examples:[["Latest 5",{supplier_id:"",top:5}],["USSU_V8000",{supplier_id:"USSU_V8000",top:5}]] },
+  { name:"list_sap_apis", title:"List SAP APIs (allow-list)", api:"Which APIs query_sap may read",
+    note:"Shows every SAP API the generic tool can read.", fields:[], examples:[] },
+  { name:"query_sap", title:"Query any allowed SAP API", api:"Generic OData read · GET only · max 20 rows",
+    note:"Pick an API, then optionally filter / select fields / sort. Field names are SAP's own (see api.sap.com).",
+    fields:[{id:"api",label:"SAP API",hint:"required"},{id:"filter",label:"Filter (OData)",hint:"optional",ph:"e.g. Supplier eq '1018'"},
+            {id:"select",label:"Fields",hint:"optional",ph:"e.g. PurchaseOrder,Supplier,CompanyCode"},
+            {id:"orderby",label:"Sort",hint:"optional",ph:"e.g. PurchaseOrderDate desc"},{id:"top",label:"Max records",hint:"1–20",type:"number",value:5}],
+    examples:[["Requisitions",{api:"purchase_requisitions",top:5}],["Goods receipts",{api:"goods_receipts",top:5}],
+              ["PO items",{api:"purchase_order_items",select:"PurchaseOrder,PurchaseOrderItem,Material,OrderQuantity,NetPriceAmount",top:5}],
+              ["Products",{api:"products",top:5}],["Invoices",{api:"supplier_invoices",top:5}]] },
+];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let current = null;
+
+// Environment pill
+const MODE = $("envText").textContent.trim();
+$("envText").textContent = MODE === "sandbox" ? "SAP sandbox · live" : MODE === "real" ? "Customer SAP · live" : "Mock data";
+$("envDot").className = "dot " + (MODE === "mock" ? "warn" : "ok");
+$("footSrc").textContent = "Data source: " + (MODE === "mock" ? "sample files captured from the SAP sandbox" : MODE === "real" ? "customer S/4HANA system" : "SAP Business Accelerator Hub sandbox (demo data, read-only)");
+$("st3sub").textContent = MODE === "mock" ? "Sample files (mock)" : MODE === "real" ? "Customer system" : "Business Accelerator Hub sandbox";
+
+// Check that the MCP server starts and lists its tools
+fetch("/api/tools").then(r => r.json()).then(d => {
+  $("connDot").className = "dot ok"; $("connText").textContent = `MCP connected · ${d.tools.length} tools`;
+  $("st2s").textContent = `mcp_server.py · ${d.tools.length} tools`; buildTools(d.tools);
+}).catch(() => { $("connDot").className = "dot bad"; $("connText").textContent = "MCP not reachable"; });
+
+let TOOLS = [];
+const hintFor = name => HINTS.find(t => t.name === name) || {};
+const pretty = s => s.replace(/_/g, " ").replace(/^./, c => c.toUpperCase());
+function buildTools(serverTools){ // build the explorer from what the MCP server actually offers
+  TOOLS = serverTools.map(t => {
+    const h = hintFor(t.name), props = (t.inputSchema && t.inputSchema.properties) || {}, req = (t.inputSchema && t.inputSchema.required) || [];
+    const desc = (t.description || "").split("\n").map(x => x.trim()).filter(Boolean);
+    const fields = Object.entries(props).map(([id, p]) => {
+      const hf = (h.fields || []).find(f => f.id === id) || {};
+      const kinds = (p.anyOf || [p]).map(x => x.type);
+      const isNum = kinds.includes("integer") || kinds.includes("number");
+      return { id, enum: p.enum || (p.anyOf || []).map(x => x.enum).find(Boolean), label: hf.label || pretty(id), hint: hf.hint || (req.includes(id) ? "required" : "optional"),
+               type: isNum ? "number" : "text", ph: hf.ph || "", value: hf.value ?? (p.default ?? "") };
+    });
+    return { name: t.name, title: h.title || desc[0] || t.name, api: h.api || "", note: h.note || desc.slice(1).join(" ") || desc[0] || "",
+             fields, examples: h.examples || [] };
+  });
+  if (!TOOLS.find(t => t.name === current?.name)) current = TOOLS[0];
+  renderTools(); renderForm();
+}
+function renderTools(){
+  $("toolCount").textContent = TOOLS.length;
+  $("toolSelect").innerHTML = TOOLS.map(t => `<option value="${esc(t.name)}" ${t === current ? "selected" : ""}>${esc(t.name)}</option>`).join("");
+  $("toolDesc").innerHTML = current ? `<div><span class="tag" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;background:var(--ok-soft);color:var(--ok);border:1px solid #bde9c8">READ</span> <b>${esc(current.title)}</b></div>`
+    + (current.api ? `<div class="api">${esc(current.api)}</div>` : "") : "";
+}
+$("toolSelect").onchange = e => { current = TOOLS.find(t => t.name === e.target.value); renderTools(); renderForm(); };
+function renderForm(values){
+  $("toolName").textContent = current.name; $("toolNote").textContent = current.note;
+  $("form").innerHTML = current.fields.map(f => `
+    <div class="field"><label for="f_${f.id}">${f.label}<i>${f.hint}</i></label>
+      ${f.enum ? `<select id="f_${f.id}" name="${f.id}" class="select">${f.enum.map(o => `<option ${String(values?.[f.id] ?? f.value ?? "") === o ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`
+        : `<input id="f_${f.id}" name="${f.id}" type="${f.type || "text"}" placeholder="${esc(f.ph || "")}" value="${esc(values?.[f.id] ?? f.value ?? "")}" ${f.type === "number" ? 'min="1" max="20"' : ""}>`}</div>`).join("")
+    + (current.fields.length ? "" : '<p class="note" style="margin:0 0 12px">This tool has no parameters.</p>')
+    + `<div class="chips">${current.examples.map((e, i) => `<button type="button" class="chip" data-i="${i}">${esc(e[0])}</button>`).join("")}</div>`;
+  document.querySelectorAll(".chip").forEach(c => c.onclick = () => renderForm(current.examples[+c.dataset.i][1]));
+}
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => showTab(t.dataset.tab));
+function showTab(name){
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.tab === name));
+  document.querySelectorAll(".panel").forEach(p => p.hidden = p.dataset.panel !== name);
+}
+document.querySelectorAll(".copy").forEach(b => b.onclick = () => {
+  navigator.clipboard?.writeText(b.nextElementSibling.textContent); b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1200);
+});
+
+function highlight(obj){
+  return esc(JSON.stringify(obj, null, 2))
+    .replace(/(&quot;[^&]*?&quot;)(\s*:)/g, '<span class="k">$1</span>$2')
+    .replace(/:\s(&quot;.*?&quot;)/g, ': <span class="s">$1</span>')
+    .replace(/:\s(-?\d+\.?\d*)/g, ': <span class="n">$1</span>')
+    .replace(/:\s(true|false|null)/g, ': <span class="b">$1</span>');
+}
+function setSteps(state, sapCalled = true){ // state: running | done | idle
+  ["st1","st2","st3","st4"].forEach((id, i) => {
+    const el = $(id); el.classList.remove("active","done");
+    if (state === "running" && i < 3) el.classList.add("active");
+    if (state === "done" && (i !== 2 || sapCalled)) el.classList.add("done");
+  });
+}
+const yesNo = v => v ? '<span class="badge bad">Blocked</span>' : '<span class="badge ok">No</span>';
+
+function dataTable(r){
+  if (r.suppliers || r.supplier){
+    const rows = r.suppliers || [r.supplier];
+    return `<table><thead><tr><th>Supplier</th><th>Created</th><th>Purchasing</th><th>Payment</th><th>Posting</th></tr></thead><tbody>${
+      rows.map(s => `<tr><td><span class="id">${esc(s.supplierId)}</span><b style="display:block;font-weight:500">${esc(s.name)}</b><span class="sub-t">${esc(s.fullName)}</span></td>
+        <td class="num">${esc(s.createdOn)}</td><td>${yesNo(s.purchasingBlocked)}</td><td>${yesNo(s.paymentBlocked)}</td><td>${yesNo(s.postingBlocked)}</td></tr>`).join("")}</tbody></table>`;
+  }
+  if (r.purchaseOrders){
+    const st = s => `<span class="badge ${s === "Released" ? "ok" : s === "Rejected" ? "bad" : "info"}">${esc(s)}</span>`;
+    return `<table><thead><tr><th>Purchase order</th><th>Supplier</th><th>Company</th><th>Purch. org</th><th>Order date</th><th>Currency</th><th>Status</th></tr></thead><tbody>${
+      r.purchaseOrders.map(p => `<tr><td class="id">${esc(p.purchaseOrder)}</td><td class="id">${esc(p.supplierId)}</td><td>${esc(p.companyCode)}</td><td>${esc(p.purchasingOrg)}</td>
+        <td class="num">${esc(p.orderDate)}</td><td>${esc(p.currency)}</td><td>${st(p.status)}</td></tr>`).join("")}</tbody></table>`;
+  }
+  const list = Object.values(r).find(v => Array.isArray(v) && v.length && typeof v[0] === "object");
+  if (list){ // any new tool: show its rows generically
+    const cols = Object.keys(list[0]).slice(0, 8);
+    return `<table><thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${list.map(row => `<tr>${cols.map(c => `<td>${esc(typeof row[c] === "object" ? JSON.stringify(row[c]) : row[c])}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  }
+  return "";
+}
+function sapTable(calls){
+  if (!calls.length) return '<div class="alert warn">No SAP call was made: the MCP server rejected the input before contacting SAP.</div>';
+  const st = s => s === "mock" ? '<span class="badge warn">MOCK</span>' : `<span class="badge ${s >= 200 && s < 300 ? "ok" : s === 404 ? "warn" : "bad"}">HTTP ${esc(s)}</span>`;
+  return `<table><thead><tr><th>Method</th><th>Endpoint</th><th>Status</th><th>Time</th></tr></thead><tbody>${
+    calls.map(c => `<tr><td><span class="badge info">${c.method}</span></td><td class="mono" style="font-size:12px;word-break:break-all">${esc(c.endpoint)}</td><td>${st(c.status)}</td><td class="num">${c.ms != null ? c.ms + " ms" : "—"}</td></tr>`).join("")}</tbody></table>`;
+}
+
+$("form").onsubmit = async e => {
+  e.preventDefault();
+  const args = Object.fromEntries(new FormData($("form")));
+  $("run").disabled = true; setSteps("running");
+  try {
+    const res = await fetch("/api/call", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({tool:current.name, args})});
+    const d = await res.json(); if (d.error) throw new Error(d.error);
+    const r = d.result || {};
+    const calls = d.sapCalls || [];
+    const sapMs = calls.filter(c => c.ms != null && c.status !== "mock").map(c => c.ms);
+    const ok = r.found === true, notFound = r.found === false && !r.error;
+
+    $("kStatus").innerHTML = ok ? '<span class="badge ok" style="font-size:16px">● Success</span>' : notFound ? '<span class="badge warn" style="font-size:16px">● Not found</span>' : '<span class="badge bad" style="font-size:16px">● Rejected</span>';
+    $("kStatusSub").textContent = ok ? `source: ${r.source}` : (r.message || r.error || "");
+    const n = r.count ?? (r.supplier ? 1 : 0);
+    $("kRecords").textContent = n; $("nData").textContent = n;
+    $("kSap").textContent = sapMs.length ? Math.round(sapMs.reduce((a, b) => a + b, 0) / sapMs.length) + " ms" : (calls.some(c => c.status === "mock") ? "mock" : "—");
+    $("kSapSub").textContent = calls.length ? `${calls.length} OData call(s)` : "no SAP call";
+    $("kTotal").textContent = d.elapsedMs + " ms";
+
+    $("pData").innerHTML = (r.error ? `<div class="alert bad">⛔ ${esc(r.error)}</div>` : notFound ? `<div class="alert warn">⚠ ${esc(r.message)}</div>` : "") + dataTable(r)
+      || '<div class="empty"><h3>No records</h3></div>';
+    $("pReq").innerHTML = highlight({jsonrpc:"2.0", method:"tools/call", params:{name:d.tool, arguments:d.args}});
+    $("pRes").innerHTML = highlight(r);
+    $("pSap").innerHTML = sapTable(calls); $("nSap").textContent = calls.length;
+    setSteps("done", calls.length > 0); showTab("data");
+  } catch (err) {
+    setSteps("idle");
+    $("kStatus").innerHTML = '<span class="badge bad" style="font-size:16px">● Error</span>'; $("kStatusSub").textContent = "";
+    $("pData").innerHTML = `<div class="alert bad">⛔ ${esc(err.message)}</div>`; showTab("data");
+  } finally { $("run").disabled = false; }
+};
+
+buildTools(HINTS.map(t => ({name:t.name, description:t.title, inputSchema:{properties:Object.fromEntries(t.fields.map(f => [f.id, {type: f.type === "number" ? "integer" : "string"}]))}}))); // until the server answers
+
+// ---------- View switch ----------
+function go(view){
+  document.querySelectorAll("[data-go]").forEach(b => b.setAttribute("aria-selected", b.dataset.go === view));
+  document.querySelectorAll("[data-view]").forEach(v => v.hidden = v.dataset.view !== view);
+  const ai = view === "ai";
+  $("viewHint").textContent = ai ? "Ask in plain English. The AI picks the SAP tools; you see every call it makes."
+                                 : "Call one MCP tool directly, exactly as an AI would.";
+  $("st1t").textContent = ai ? "AI model" : "Client";
+  $("st1s").textContent = ai ? (AI.model || "Gemini / Claude") : "This console (acts as the AI)";
+  setSteps("idle");
+}
+document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go));
+
+// ---------- AI assistant ----------
+const AI = {model:"", provider:"", ready:false};
+const chatHistory = []; let stats = {q:0, t:0, tok:0};
+const PROMPTS = ["Show me 5 suppliers from SAP.", "Is supplier 1018 blocked for purchasing or payment?",
+  "Show the latest 10 purchase orders and tell me which supplier has the most.",
+  "Find suppliers with 'Inc' in the name.", "Which SAP APIs can you read?",
+  "Show 5 purchase requisitions from SAP.", "Show the latest goods receipts.", "Get supplier 9999999."];
+$("prompts").innerHTML = PROMPTS.map(p => `<button class="prompt">${esc(p)}</button>`).join("");
+document.querySelectorAll(".prompt").forEach(b => b.onclick = () => { $("q").value = b.textContent; $("chatForm").requestSubmit(); });
+
+fetch("/api/config").then(r => r.json()).then(c => {
+  Object.assign(AI, {model:c.ai.model, provider:c.ai.provider, ready:c.ai.keyConfigured});
+  const name = c.ai.provider === "claude" ? "Claude" : "Gemini";
+  $("sModel").textContent = c.ai.model; $("sProv").textContent = name + (c.ai.keyConfigured ? "" : " (no API key)");
+  $("sSap").textContent = c.sapMode === "sandbox" ? "Sandbox · live" : c.sapMode === "real" ? "Customer system" : "Mock data";
+  $("aiBadge").textContent = name + " · " + c.ai.model;
+  $("aiBadge").className = "badge " + (c.ai.keyConfigured ? "info" : "warn");
+  if (!c.ai.keyConfigured) addBot(`<div class="alert warn">⚠ No ${name} API key yet. Add <code>${c.ai.provider === "claude" ? "ANTHROPIC_API_KEY" : "GEMINI_API_KEY"}=...</code> to <code>.env</code> and restart the console. The Tool explorer works without it.</div>`);
+  if (!document.querySelector('[data-view="ai"]').hidden) $("st1s").textContent = c.ai.model;
+});
+
+function md(text){ // small markdown renderer: tables, bold, code, lists, paragraphs
+  const lines = esc(text).split("\n"); let out = "", i = 0;
+  const inline = s => s.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  while (i < lines.length){
+    const l = lines[i];
+    if (/^\s*\|/.test(l) && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i+1])){
+      const row = r => r.trim().replace(/^\||\|$/g, "").split("|").map(c => inline(c.trim()));
+      const head = row(l); i += 2; const body = [];
+      while (i < lines.length && /^\s*\|/.test(lines[i])) body.push(row(lines[i++]));
+      out += `<table><thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${body.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    } else if (/^\s*#{1,4}\s+/.test(l)){
+      out += `<p style="font-weight:600;margin-top:10px">${inline(l.replace(/^\s*#{1,4}\s+/, ""))}</p>`; i++;
+    } else if (/^\s*[-*] /.test(l)){
+      const items = []; while (i < lines.length && /^\s*[-*] /.test(lines[i])) items.push(inline(lines[i++].replace(/^\s*[-*] /, "")));
+      out += `<ul>${items.map(x => `<li>${x}</li>`).join("")}</ul>`;
+    } else if (l.trim()){ out += `<p>${inline(l)}</p>`; i++; } else i++;
+  }
+  return out;
+}
+function addMsg(cls, html){
+  const el = document.createElement("div"); el.className = "msg " + cls;
+  el.innerHTML = `<div class="av">${cls === "user" ? "You" : "AI"}</div><div class="bubble">${html}</div>`;
+  $("msgs").appendChild(el); $("msgs").scrollTop = $("msgs").scrollHeight; return el;
+}
+const addBot = html => addMsg("bot", html);
+function traceHtml(steps){
+  if (!steps.length) return '<div class="meta">No SAP tool was needed for this answer.</div>';
+  const total = steps.reduce((a, s) => a + (s.sapCalls[0]?.ms || 0), 0);
+  return `<div class="trace"><div class="trace-h"><span>Tool calls · ${steps.length}</span><span>SAP time ${total} ms</span></div>${steps.map((s, n) => {
+    const c = s.sapCalls[0];
+    const st = c ? (c.status === "mock" ? '<span class="badge warn">MOCK</span>'
+      : `<span class="badge ${c.status >= 200 && c.status < 300 ? "ok" : c.status === 404 ? "warn" : "bad"}">SAP ${esc(c.status)}${c.ms != null ? " · " + c.ms + " ms" : ""}</span>`)
+      : '<span class="badge bad">blocked before SAP</span>';
+    const args = Object.entries(s.args).map(([k, v]) => k + "=" + JSON.stringify(v)).join(", ");
+    return `<details><summary><span class="num">${n + 1}</span><code title="${esc(s.tool + "(" + args + ")")}"><b>${esc(s.tool)}</b>(${esc(args)})</code>${st}<span class="chev">▶</span></summary>
+      <div class="inner"><div class="note">SAP endpoint: <span class="mono">${esc(c ? c.endpoint : "none")}</span></div><pre>${highlight(s.result)}</pre></div></details>`;
+  }).join("")}</div>`;
+}
+$("chatForm").onsubmit = async e => {
+  e.preventDefault();
+  const q = $("q").value.trim(); if (!q) return;
+  $("q").value = ""; addMsg("user", esc(q)); $("send").disabled = true;
+  const wait = addBot('<span class="typing"><i></i><i></i><i></i></span>');
+  setSteps("running");
+  try {
+    const res = await fetch("/api/chat", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({question:q, history:chatHistory})});
+    const d = await res.json(); if (d.error) throw new Error(d.error);
+    chatHistory.push({role:"user", text:q}, {role:"assistant", text:d.answer});
+    stats.q++; stats.t += d.steps.length; stats.tok += (d.usage?.input || 0) + (d.usage?.output || 0);
+    $("sQ").textContent = stats.q; $("sT").textContent = stats.t; $("sTok").textContent = stats.tok.toLocaleString();
+    wait.querySelector(".bubble").innerHTML = md(d.answer) + traceHtml(d.steps) +
+      `<div class="meta"><span>${esc(d.provider === "claude" ? "Claude" : "Gemini")} · ${esc(d.model)}</span><span>${d.steps.length} tool call(s)</span><span>${(d.usage?.input || 0) + (d.usage?.output || 0)} tokens</span><span>${d.elapsedMs} ms</span></div>`;
+    setSteps("done", d.steps.some(s => s.sapCalls.length));
+  } catch (err) {
+    wait.querySelector(".bubble").innerHTML = `<div class="alert bad">⛔ ${esc(err.message)}</div>`; setSteps("idle");
+  } finally { $("send").disabled = false; $("q").focus(); $("msgs").scrollTop = $("msgs").scrollHeight; }
+};
+
+go("ai");
+</script>
+</body>
+</html>

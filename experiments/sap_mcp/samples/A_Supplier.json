@@ -1,0 +1,225 @@
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "id": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1018')",
+          "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1018')",
+          "type": "API_BUSINESS_PARTNER.A_SupplierType"
+        },
+        "Supplier": "1018",
+        "AlternativePayeeAccountNumber": "",
+        "AuthorizationGroup": "",
+        "BusinessPartnerPanNumber": "",
+        "CreatedByUser": "CB9980000295",
+        "CreationDate": "/Date(1540771200000)/",
+        "Customer": "",
+        "PaymentIsBlockedForSupplier": false,
+        "PostingIsBlocked": false,
+        "PurchasingIsBlocked": false,
+        "SupplierAccountGroup": "SUPL",
+        "SupplierFullName": "Company Bechtle AGKriek street/74172 Neckarsulm",
+        "SupplierName": "Bechtle AG Kriek street",
+        "VATRegistration": "",
+        "BirthDate": null,
+        "ConcatenatedInternationalLocNo": "0000000 &00000 &0",
+        "DeletionIndicator": false,
+        "FiscalAddress": "",
+        "Industry": "",
+        "InternationalLocationNumber1": "0",
+        "InternationalLocationNumber2": "0",
+        "InternationalLocationNumber3": "0",
+        "IsNaturalPerson": "",
+        "PaymentReason": "",
+        "ResponsibleType": "",
+        "SuplrQltyInProcmtCertfnValidTo": null,
+        "SuplrQualityManagementSystem": "",
+        "SupplierCorporateGroup": "",
+        "SupplierProcurementBlock": "",
+        "TaxNumber1": "",
+        "TaxNumber2": "",
+        "TaxNumber3": "",
+        "TaxNumber4": "",
+        "TaxNumber5": "",
+        "TaxNumberResponsible": "",
+        "TaxNumberType": "",
+        "SuplrProofOfDelivRlvtCode": "",
+        "BR_TaxIsSplit": false,
+        "DataExchangeInstructionKey": "",
+        "BR_TermsOfLiabilityAreAccepted": false,
+        "BR_BPIsMicroCompany": false,
+        "BR_BPCompanySizeType": "",
+        "BR_PISAndCOFINSDeclnRegimen": "",
+        "BR_EconomicActivityNatlClfn": "",
+        "BR_BPLegalNatureType": "0",
+        "BR_TaxRegimenCode": "",
+        "BR_ICMSTaxPayerType": "",
+        "BR_IndustryMainType": "",
+        "BR_TaxDeclarationType": "",
+        "JP_SuplrAmtInCapitalAmount": "0.00",
+        "JP_SupplierCapitalAmountCrcy": "",
+        "to_SupplierCompany": {
+          "__deferred": {
+            "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1018')/to_SupplierCompany"
+          }
+        },
+        "to_SupplierPurchasingOrg": {
+          "__deferred": {
+            "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1018')/to_SupplierPurchasingOrg"
+          }
+        },
+        "to_SupplierText": {
+          "__deferred": {
+            "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1018')/to_SupplierText"
+          }
+        }
+      },
+      {
+        "__metadata": {
+          "id": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1000030')",
+          "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1000030')",
+          "type": "API_BUSINESS_PARTNER.A_SupplierType"
+        },
+        "Supplier": "1000030",
+        "AlternativePayeeAccountNumber": "",
+        "AuthorizationGroup": "",
+        "BusinessPartnerPanNumber": "",
+        "CreatedByUser": "S4TESTER",
+        "CreationDate": "/Date(1477526400000)/",
+        "Customer": "",
+        "PaymentIsBlockedForSupplier": false,
+        "PostingIsBlocked": false,
+        "PurchasingIsBlocked": false,
+        "SupplierAccountGroup": "SUPL",
+        "SupplierFullName": "Company vender for WHT 1/5436 gb city",
+        "SupplierName": "vender for WHT 1",
+        "VATRegistration": "",
+        "BirthDate": null,
+        "ConcatenatedInternationalLocNo": "0000000 &00000 &0",
+        "DeletionIndicator": false,
+        "FiscalAddress": "",
+        "Industry": "",
+        "InternationalLocationNumber1": "0",
+        "InternationalLocationNumber2": "0",
+        "InternationalLocationNumber3": "0",
+        "IsNaturalPerson": "",
+        "PaymentReason": "",
+        "ResponsibleType": "",
+        "SuplrQltyInProcmtCertfnValidTo": null,
+        "SuplrQualityManagementSystem": "",
+        "SupplierCorporateGroup": "",
+        "SupplierProcurementBlock": "",
+        "TaxNumber1": "",
+        "TaxNumber2": "",
+        "TaxNumber3": "",
+        "TaxNumber4": "",
+        "TaxNumber5": "",
+        "TaxNumberResponsible": "",
+        "TaxNumberType": "",
+        "SuplrProofOfDelivRlvtCode": "",
+        "BR_TaxIsSplit": false,
+        "DataExchangeInstructionKey": "",
+        "BR_TermsOfLiabilityAreAccepted": false,
+        "BR_BPIsMicroCompany": false,
+        "BR_BPCompanySizeType": "",
+        "BR_PISAndCOFINSDeclnRegimen": "",
+        "BR_EconomicActivityNatlClfn": "",
+        "BR_BPLegalNatureType": "0",
+        "BR_TaxRegimenCode": "",
+        "BR_ICMSTaxPayerType": "",
+        "BR_IndustryMainType": "",
+        "BR_TaxDeclarationType": "",
+        "JP_SuplrAmtInCapitalAmount": "0.00",
+        "JP_SupplierCapitalAmountCrcy": "",
+        "to_SupplierCompany": {
+          "__deferred": {
+            "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1000030')/to_SupplierCompany"
+          }
+        },
+        "to_SupplierPurchasingOrg": {
+          "__deferred": {
+            "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1000030')/to_SupplierPurchasingOrg"
+          }
+        },
+        "to_SupplierText": {
+          "__deferred": {
+            "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1000030')/to_SupplierText"
+          }
+        }
+      },
+      {
+        "__metadata": {
+          "id": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1000031')",
+          "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1000031')",
+          "type": "API_BUSINESS_PARTNER.A_SupplierType"
+        },
+        "Supplier": "1000031",
+        "AlternativePayeeAccountNumber": "",
+        "AuthorizationGroup": "",
+        "BusinessPartnerPanNumber": "",
+        "CreatedByUser": "S4TESTER",
+        "CreationDate": "/Date(1477526400000)/",
+        "Customer": "",
+        "PaymentIsBlockedForSupplier": false,
+        "PostingIsBlocked": false,
+        "PurchasingIsBlocked": false,
+        "SupplierAccountGroup": "SUPL",
+        "SupplierFullName": "Company Nelsons Trmt & Pest Cntrl Co/54367 karnakataka",
+        "SupplierName": "Nelsons Trmt & Pest Cntrl Co",
+        "VATRegistration": "",
+        "BirthDate": null,
+        "ConcatenatedInternationalLocNo": "0000000 &00000 &0",
+        "DeletionIndicator": false,
+        "FiscalAddress": "",
+        "Industry": "",
+        "InternationalLocationNumber1": "0",
+        "InternationalLocationNumber2": "0",
+        "InternationalLocationNumber3": "0",
+        "IsNaturalPerson": "",
+        "PaymentReason": "",
+        "ResponsibleType": "",
+        "SuplrQltyInProcmtCertfnValidTo": null,
+        "SuplrQualityManagementSystem": "",
+        "SupplierCorporateGroup": "",
+        "SupplierProcurementBlock": "",
+        "TaxNumber1": "",
+        "TaxNumber2": "",
+        "TaxNumber3": "",
+        "TaxNumber4": "",
+        "TaxNumber5": "",
+        "TaxNumberResponsible": "",
+        "TaxNumberType": "",
+        "SuplrProofOfDelivRlvtCode": "",
+        "BR_TaxIsSplit": false,
+        "DataExchangeInstructionKey": "",
+        "BR_TermsOfLiabilityAreAccepted": false,
+        "BR_BPIsMicroCompany": false,
+        "BR_BPCompanySizeType": "",
+        "BR_PISAndCOFINSDeclnRegimen": "",
+        "BR_EconomicActivityNatlClfn": "",
+        "BR_BPLegalNatureType": "0",
+        "BR_TaxRegimenCode": "",
+        "BR_ICMSTaxPayerType": "",
+        "BR_IndustryMainType": "",
+        "BR_TaxDeclarationType": "",
+        "JP_SuplrAmtInCapitalAmount": "0.00",
+        "JP_SupplierCapitalAmountCrcy": "",
+        "to_SupplierCompany": {
+          "__deferred": {
+            "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1000031')/to_SupplierCompany"
+          }
+        },
+        "to_SupplierPurchasingOrg": {
+          "__deferred": {
+            "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1000031')/to_SupplierPurchasingOrg"
+          }
+        },
+        "to_SupplierText": {
+          "__deferred": {
+            "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_Supplier('1000031')/to_SupplierText"
+          }
+        }
+      }
+    ]
+  }
+}
