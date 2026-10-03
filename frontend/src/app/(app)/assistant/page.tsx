@@ -70,6 +70,7 @@ export default function AssistantPage() {
   const { user } = useAuth();
   const router = useRef<SemanticRouter | null>(null);
   const [routerState, setRouterState] = useState<"loading" | "ready" | "error">("loading");
+  const [routerError, setRouterError] = useState("");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -81,7 +82,10 @@ export default function AssistantPage() {
     router.current = r;
     r.ready.then(
       () => setRouterState("ready"),
-      () => setRouterState("error"),
+      (e: Error) => {
+        setRouterError(e.message);
+        setRouterState("error");
+      },
     );
     return () => r.dispose();
   }, []);
@@ -191,7 +195,7 @@ export default function AssistantPage() {
           </form>
           {(voice.state !== "idle" || voice.error || routerState === "error") && (
             <p className={`text-xs ${voice.error || routerState === "error" ? "text-destructive" : "text-muted-foreground"}`}>
-              {routerState === "error" ? "The assistant model failed to load. Run `npm run fetch:models` in frontend/." : voice.error ?? `${voiceLabel}${voice.state === "loading" ? " (first time only, ~385 MB)" : ""}`}
+              {routerState === "error" ? `The assistant model failed to load: ${routerError}` : voice.error ?? `${voiceLabel}${voice.state === "loading" ? " (first time only, ~385 MB)" : ""}`}
             </p>
           )}
         </CardContent>

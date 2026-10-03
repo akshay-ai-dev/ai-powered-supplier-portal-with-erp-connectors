@@ -21,13 +21,17 @@ function routesHash(r) {
   return h.toString(16);
 }
 
+// Same as stripRequestNumbers in router.worker.ts.
+const strip = (t) =>
+  t.replace(/\bREQ[\s-]?#?\d+\b/gi, " ").replace(/\b(request)\s+#?\d{3,}\b/gi, "$1").replace(/\s+/g, " ").trim();
+
 env.allowRemoteModels = false;
 env.localModelPath = join(root, "public", "models") + "/";
 const extractor = await pipeline("feature-extraction", MODEL, { dtype: "q8" });
 
 const centroids = {};
 for (const [route, utterances] of Object.entries(routes)) {
-  const vecs = (await extractor(utterances, { pooling: "mean", normalize: true })).tolist();
+  const vecs = (await extractor(utterances.map(strip), { pooling: "mean", normalize: true })).tolist();
   const mean = vecs[0].map((_, i) => vecs.reduce((s, v) => s + v[i], 0) / vecs.length);
   const norm = Math.hypot(...mean) || 1;
   centroids[route] = mean.map((x) => +(x / norm).toFixed(6));

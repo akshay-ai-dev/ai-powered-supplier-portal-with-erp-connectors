@@ -27,13 +27,23 @@ function routesHash(r: Routes): string {
   return h.toString(16);
 }
 
+/** Drops request numbers before embedding: the router judges intent only (classify.ts extracts the number),
+ * and "REQ2001" appearing in most utterances would pull the detail, compare and award routes together. */
+export function stripRequestNumbers(text: string): string {
+  return text
+    .replace(/\bREQ[\s-]?#?\d+\b/gi, " ")
+    .replace(/\b(request)\s+#?\d{3,}\b/gi, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function normalize(v: number[]): number[] {
   const norm = Math.hypot(...v) || 1;
   return v.map((x) => x / norm);
 }
 
 async function embed(texts: string[]): Promise<number[][]> {
-  const out = await extractor!(texts, { pooling: "mean", normalize: true });
+  const out = await extractor!(texts.map(stripRequestNumbers), { pooling: "mean", normalize: true });
   return out.tolist() as number[][];
 }
 
@@ -50,9 +60,12 @@ async function computeCentroids(): Promise<Record<string, number[]>> {
 async function init(modelsUrl: string) {
   const t0 = performance.now();
   const base = modelsUrl.replace(/\/$/, "");
-  env.allowRemoteModels = false;
-  env.allowLocalModels = true;
-  env.localModelPath = `${base}/`;
+  // The models URL is our "remote host" (portal or file storage, never Hugging Face). Transformers.js 4.x skips
+  // its tokenizer-file check when localModelPath is an absolute URL, so local-model mode would load no tokenizer.
+  env.allowLocalModels = false;
+  env.allowRemoteModels = true;
+  env.remoteHost = `${base}/`;
+  env.remotePathTemplate = "{model}/";
   env.backends.onnx.wasm!.wasmPaths = {
     mjs: `${base}/ort/transformers/ort-wasm-simd-threaded.asyncify.mjs`,
     wasm: `${base}/ort/transformers/ort-wasm-simd-threaded.asyncify.wasm`,
