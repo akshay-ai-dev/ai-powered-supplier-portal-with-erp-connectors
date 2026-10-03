@@ -70,7 +70,8 @@ def test_rbac(client):
     assert client.get("/api/suppliers").status_code == 401
     sup = login(client, "supplier@demo.com")
     assert client.get("/api/suppliers", headers=sup).status_code == 403
-    assert client.get("/api/inventory", headers=sup).status_code == 403
+    assert client.get("/api/inventory", headers=sup).status_code == 200  # supplier Dashboard shows stock levels
+    assert client.post("/api/inventory", headers=sup, json={"item_code": "X1", "description": "x"}).status_code == 403
 
 
 def test_po_lifecycle(client):
@@ -116,7 +117,8 @@ def test_mock_erp(client):
 
 def test_openapi_tools(client):
     buyer = login(client, "buyer@demo.com")
-    assert {t["name"] for t in client.get("/api/mcp/tools").json()} == {"get_inventory", "search_supplier", "create_purchase_order", "get_purchase_order", "list_requirements", "get_requirement", "list_purchase_orders"}
+    assert {t["name"] for t in client.get("/api/mcp/tools").json()} == {"get_inventory", "search_supplier", "create_purchase_order", "get_purchase_order", "list_requirements", "get_requirement", "list_purchase_orders",
+                                                                     "list_requests", "get_request_detail", "compare_responses", "draft_award"}
     assert client.post("/api/mcp/get_inventory", headers=buyer, json={"item_code": "ITEM001"}).json()["stock"] == 1200
     assert "/api/mcp/get_inventory" in client.get("/openapi.json").json()["paths"]
 

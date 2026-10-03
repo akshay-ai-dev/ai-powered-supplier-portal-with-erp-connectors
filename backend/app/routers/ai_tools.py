@@ -45,6 +45,14 @@ class ListPOsIn(BaseModel):
     status: str | None = Field(default=None, examples=["Approved"])
 
 
+class ListRequestsIn(BaseModel):
+    status: str | None = Field(default=None, examples=["Quoted"])
+
+
+class ReqNumberIn(BaseModel):
+    req_number: str = Field(examples=["REQ2001"])
+
+
 @router.get("/tools", summary="Tool discovery")
 async def discover_tools():
     tools = await mcp.list_tools()
@@ -85,3 +93,23 @@ def get_requirement(body: GetRequirementIn, conn: sqlite3.Connection = Depends(d
 @router.post("/list_purchase_orders", operation_id="list_purchase_orders")
 def list_purchase_orders(body: ListPOsIn, conn: sqlite3.Connection = Depends(db_dep), user: dict = Depends(agent_user)):
     return agent_tools.list_purchase_orders(conn, user, body.status)
+
+
+@router.post("/list_requests", operation_id="list_requests")
+def list_requests(body: ListRequestsIn, conn: sqlite3.Connection = Depends(db_dep), user: dict = Depends(agent_user)):
+    return agent_tools.list_requests(conn, user, body.status)
+
+
+@router.post("/get_request_detail", operation_id="get_request_detail")
+def get_request_detail(body: ReqNumberIn, conn: sqlite3.Connection = Depends(db_dep), user: dict = Depends(agent_user)):
+    return agent_tools.get_request_detail(conn, user, body.req_number)
+
+
+@router.post("/compare_responses", operation_id="compare_responses")
+def compare_responses(body: ReqNumberIn, conn: sqlite3.Connection = Depends(db_dep), user: dict = Depends(agent_user)):
+    return agent_tools.compare_responses(conn, user, body.req_number)
+
+
+@router.post("/draft_award", operation_id="draft_award", summary="Propose an award (saves nothing)")
+def draft_award(body: ReqNumberIn, conn: sqlite3.Connection = Depends(db_dep), user: dict = Depends(agent_user)):
+    return agent_tools.draft_award(conn, user, body.req_number)

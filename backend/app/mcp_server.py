@@ -25,7 +25,8 @@ mcp = FastMCP(
     "ERP Copilot",
     instructions=(
         "Tools for procurement: inventory lookup, supplier search, requirements with supplier quotes, and purchase orders. "
-        "Write tools only create Drafts; approving, awarding and closing stay with a human buyer."
+        "Write tools only create Drafts; approving, awarding and closing stay with a human buyer. "
+        "draft_award only proposes an award and saves nothing; the buyer confirms it in the app."
     ),
 )
 
@@ -92,6 +93,30 @@ def get_requirement(req_number: str) -> dict:
 def list_purchase_orders(status: str | None = None) -> list[dict]:
     """List the buyer's purchase orders. Optional status: Draft, Pending, Approved, Closed."""
     return _run(lambda c: agent_tools.list_purchase_orders(c, _acting_user(c), status))
+
+
+@mcp.tool
+def list_requests(status: str | None = None) -> list[dict]:
+    """List the buyer's requests across both ERPs. Optional status (stage): Open, Quoted, Quotes closed, Awarded, In Transit, Delivered, Rejected, Closed, Cancelled."""
+    return _run(lambda c: agent_tools.list_requests(c, _acting_user(c), status))
+
+
+@mcp.tool
+def get_request_detail(req_number: str) -> dict:
+    """Get one request's full record (e.g. REQ2001): invitations, responses, message threads, history, shipments and inspection."""
+    return _run(lambda c: agent_tools.get_request_detail(c, _acting_user(c), req_number))
+
+
+@mcp.tool
+def compare_responses(req_number: str) -> dict:
+    """Rank a request's supplier responses (computed in code: lowest total price among suppliers meeting the need-by date, then earliest delivery)."""
+    return _run(lambda c: agent_tools.compare_responses(c, _acting_user(c), req_number))
+
+
+@mcp.tool
+def draft_award(req_number: str) -> dict:
+    """Propose awarding a request to its top-ranked supplier: returns the comparison table and the exact ERP call. Saves nothing."""
+    return _run(lambda c: agent_tools.draft_award(c, _acting_user(c), req_number))
 
 
 
