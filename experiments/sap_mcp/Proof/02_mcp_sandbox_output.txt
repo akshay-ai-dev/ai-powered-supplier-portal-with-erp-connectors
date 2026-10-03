@@ -1,0 +1,101 @@
+SAP_MODE = sandbox
+
+MCP tools available (3): search_suppliers, get_supplier, list_purchase_orders
+
+--- search_suppliers({"top": 3}) ---
+{
+  "found": true,
+  "count": 3,
+  "suppliers": [
+    {
+      "supplierId": "1018",
+      "name": "Bechtle AG Kriek street",
+      "fullName": "Company Bechtle AGKriek street/74172 Neckarsulm",
+      "createdOn": "2018-10-29",
+      "purchasingBlocked": false,
+      "paymentBlocked": false,
+      "postingBlocked": false,
+      "markedForDeletion": false
+    },
+    {
+      "supplierId": "1000030",
+      "name": "vender for WHT 1",
+      "fullName": "Company vender for WHT 1/5436 gb city",
+      "createdOn": "2016-10-27",
+      "purchasingBlocked": false,
+      "paymentBlocked": false,
+      "postingBlocked": false,
+      "markedForDeletion": false
+    },
+    {
+      "supplierId": "1000031",
+      "name": "Nelsons Trmt & Pest Cntrl Co",
+      "fullName": "Company Nelsons Trmt & Pest Cntrl Co/54367 karnakataka",
+      "createdOn": "2016-10-27",
+      "purchasingBlocked": false,
+      "paymentBlocked": false,
+      "postingBlocked": false,
+      "markedForDeletion": false
+    }
+  ],
+  "source": "sandbox"
+}
+
+--- get_supplier({"supplier_id": "1018"}) ---
+{
+  "found": true,
+  "supplier": {
+    "supplierId": "1018",
+    "name": "Bechtle AG Kriek street",
+    "fullName": "Company Bechtle AGKriek street/74172 Neckarsulm",
+    "createdOn": "2018-10-29",
+    "purchasingBlocked": false,
+    "paymentBlocked": false,
+    "postingBlocked": false,
+    "markedForDeletion": false
+  },
+  "source": "sandbox"
+}
+
+--- list_purchase_orders({"top": 3}) ---
+{
+  "found": true,
+  "count": 3,
+  "purchaseOrders": [
+    {
+      "purchaseOrder": "4500206429",
+      "supplierId": "USSU_V8000",
+      "companyCode": "1710",
+      "purchasingOrg": "1710",
+      "orderDate": "2026-10-01",
+      "currency": "USD",
+      "status": "Released"
+    },
+    {
+      "purchaseOrder": "4500206430",
+      "supplierId": "USSU_V8000",
+      "companyCode": "1710",
+      "purchasingOrg": "1710",
+      "orderDate": "2026-10-01",
+      "currency": "USD",
+      "status": "Released"
+    },
+    {
+      "purchaseOrder": "4500206431",
+      "supplierId": "USSU_V8000",
+      "companyCode": "1710",
+      "purchasingOrg": "1710",
+      "orderDate": "2026-10-01",
+      "currency": "USD",
+      "status": "Released"
+    }
+  ],
+  "source": "sandbox"
+}
+
+--- Safety checks ---
+PASS  Unknown supplier -> found=false (not invented)
+PASS  Injection attempt rejected
+PASS  top is capped at 20
+
+3/3 checks passed
