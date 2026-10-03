@@ -25,5 +25,8 @@ frontend/dist/
 .idea/
 .vscode/
 
+# Local ONNX model files for experiments (hundreds of MB)
+experiments/*/models/
+
 # AI Assistant browser models (served from public/, set up by `npm run fetch:models`)
 frontend/public/models/

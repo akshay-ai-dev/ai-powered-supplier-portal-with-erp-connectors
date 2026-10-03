@@ -1,0 +1,274 @@
+<!doctype html>
+<!--
+  Parakeet TDT 0.6B v3 (multilingual, int8 ONNX) speech-to-text, fully in the browser.
+  parakeet.js 1.4.4 + onnxruntime-web 1.24.1, WASM (CPU) execution provider only.
+
+  Proof: on load it loads the model, transcribes the JFK sample clip and
+  compares the output against the known transcript (PASS / FAIL badge).
+
+  Memory: the encoder is used in ONNX *external-data* format (graph .onnx +
+  weights .onnx.data). ORT Web then copies the weights into WASM memory once,
+  instead of holding the whole model file AND the weights there (WASM memory
+  never shrinks). Tab footprint ~0.85 GB instead of ~1.46 GB. Right after load
+  it reads ~1.4 GB until Chrome garbage-collects the 600 MB download buffer
+  (~30 s).
+
+  SETUP (once, from this folder, ~670 MB): download the stock int8 files and
+  re-save the encoder with external data. models/ is gitignored.
+
+    mkdir -p models/parakeet-tdt-0.6b-v3 && cd models/parakeet-tdt-0.6b-v3 && Y=https://huggingface.co/ysdede/parakeet-tdt-0.6b-v3-onnx/resolve/main && curl -L -O $Y/encoder-model.int8.onnx -O $Y/decoder_joint-model.int8.onnx -O $Y/vocab.txt && uv run --with onnx python -c "import onnx; n='encoder-model.int8.onnx'; onnx.save_model(onnx.load(n), n, save_as_external_data=True, all_tensors_to_one_file=True, location=n+'.data', size_threshold=1024)" && cd ../..
+
+  RUN (from this folder). Static server with COOP/COEP headers, so the page is
+  crossOriginIsolated -> SharedArrayBuffer -> multi-threaded WASM:
+
+    node -e "const h=require('http'),f=require('fs'),p=require('path'),r=process.cwd();h.createServer((q,s)=>{let u=decodeURIComponent(q.url.split('?')[0]);if(u==='/')u='/parakeet_wasm_stt.html';const fp=p.join(r,p.normalize(u));if(!fp.startsWith(r)||!f.existsSync(fp)||f.statSync(fp).isDirectory()){s.writeHead(404);return s.end()}s.writeHead(200,{'Content-Type':fp.endsWith('.html')?'text/html':fp.endsWith('.json')?'application/json':'application/octet-stream','Content-Length':f.statSync(fp).size,'Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'require-corp'});f.createReadStream(fp).pipe(s)}).listen(8080,()=>console.log('http://localhost:8080'))"
+
+  Without COOP/COEP it still works, single-threaded (~4x slower).
+  Opening via file:// does NOT work (ES modules + fetch).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parakeet WASM STT</title>
+<script type="importmap">
+{
+  "imports": {
+    "parakeet.js": "https://cdn.jsdelivr.net/npm/parakeet.js@1.4.4/src/index.js",
+    "onnxruntime-web": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.1/dist/ort.wasm.min.mjs"
+  }
+}
+</script>
+<style>
+  :root { --bg:#fafafa; --fg:#1a1a1a; --muted:#666; --card:#fff; --border:#ddd; --ok:#1a7f37; --bad:#c62828; --accent:#2f5bd3; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#121212; --fg:#eee; --muted:#9a9a9a; --card:#1d1d1d; --border:#333; --ok:#4cc26a; --bad:#ef5350; --accent:#7aa2ff; } }
+  body { margin:0; padding:24px 16px; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, sans-serif; }
+  main { max-width:820px; margin:0 auto; display:grid; gap:16px; }
+  section { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; }
+  h1 { font-size:20px; margin:0; } h2 { font-size:15px; margin:0 0 8px; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  button, select { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--fg); cursor:pointer; max-width:100%; }
+  button:disabled { opacity:.5; cursor:default; }
+  .muted { color:var(--muted); font-size:13px; }
+  .badge { font-weight:600; padding:2px 8px; border-radius:4px; color:#fff; }
+  .pass { background:var(--ok); } .fail { background:var(--bad); }
+  #transcript { white-space:pre-wrap; font-size:16px; min-height:1.5em; }
+  dl { display:grid; grid-template-columns:max-content 1fr; gap:2px 16px; margin:0; font:13px ui-monospace, monospace; }
+  dt { color:var(--muted); }
+  pre#log { max-height:180px; overflow:auto; font-size:12px; margin:0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Parakeet TDT 0.6B v3 (multilingual) · int8 ONNX · ONNX Runtime Web WASM</h1>
+
+  <section>
+    <h2>1. Model</h2>
+    <div class="row">
+      <button id="loadBtn">Load model</button>
+    </div>
+    <p class="muted" id="env"></p>
+    <p class="muted" id="status">Idle.</p>
+  </section>
+
+  <section>
+    <h2>2. Transcribe</h2>
+    <div class="row">
+      <button id="sampleBtn" disabled>Run JFK sample (proof)</button>
+      <label><input type="file" id="fileInput" accept="audio/*,video/*" disabled> </label>
+      <button id="micBtn" disabled>● Record mic</button>
+      <span id="badge"></span>
+    </div>
+    <p id="transcript"></p>
+    <dl id="metrics"></dl>
+  </section>
+
+  <section>
+    <h2>Log</h2>
+    <pre id="log"></pre>
+  </section>
+</main>
+
+<script type="module">
+import * as ort from 'onnxruntime-web';
+
+const ORT_VERSION = '1.24.1';
+const SAMPLE_RATE = 16000;
+const SAMPLE_URL = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/resolve/main/jfk.wav';
+const SAMPLE_EXPECTED = 'And so, my fellow Americans, ask not what your country can do for you, ask what you can do for your country.';
+
+const $ = (id) => document.getElementById(id);
+const log = (msg) => { $('log').textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`; $('log').scrollTop = 1e9; };
+const setStatus = (msg) => { $('status').textContent = msg; log(msg); };
+
+// WASM binaries must come from the same ORT build as the JS bundle.
+ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
+const threads = self.crossOriginIsolated ? Math.min(navigator.hardwareConcurrency || 4, 8) : 1;
+$('env').textContent = `crossOriginIsolated=${self.crossOriginIsolated} → WASM threads: ${threads}` +
+  (self.crossOriginIsolated ? '' : ' (serve with COOP/COEP headers for multi-threading)');
+
+// --- Parakeet TDT 0.6B v3 (parakeet.js) ------------------------------------
+const engine = {
+  label: 'Parakeet TDT 0.6B v3 (multilingual, int8)',
+  dir: 'models/parakeet-tdt-0.6b-v3/',
+  encoderFile: 'encoder-model.int8.onnx',
+  longAudioS: 60, // above this, use transcribeLongAudio (sentence-aware chunking)
+  model: null,
+
+  async load() {
+    const { fromUrls } = await import('parakeet.js');
+    this.model = await fromUrls({
+      encoderUrl: this.dir + this.encoderFile,                // graph only (~42 MB)
+      encoderDataUrl: this.dir + this.encoderFile + '.data',  // weights (~609 MB)
+      filenames: { encoder: this.encoderFile, decoder: 'decoder_joint-model.int8.onnx' }, // must match the .data location stored in the graph
+      decoderUrl: this.dir + 'decoder_joint-model.int8.onnx',
+      tokenizerUrl: this.dir + 'vocab.txt',
+      backend: 'wasm',           // encoder AND decoder on the WASM CPU EP
+      preprocessorBackend: 'js', // pure-JS mel spectrogram, no nemo128.onnx needed
+      cpuThreads: threads,
+    });
+  },
+
+  async transcribe(pcm) {
+    if (pcm.length / SAMPLE_RATE > this.longAudioS) {
+      const res = await this.model.transcribeLongAudio(pcm, SAMPLE_RATE, { returnTimestamps: true });
+      return { text: res.text, metrics: null };
+    }
+    const res = await this.model.transcribe(pcm, SAMPLE_RATE, {});
+    const m = res.metrics;
+    return { text: res.utterance_text, metrics: m && { preprocess: `${m.preprocess_ms} ms`, encode: `${m.encode_ms} ms`, decode: `${m.decode_ms} ms` } };
+  },
+};
+
+let loaded = false;
+let loading = null;
+
+async function loadModel() {
+  if (loaded) return;
+  if (loading) return loading;
+  setControls(false);
+  const t0 = performance.now();
+  setStatus(`Loading ${engine.label} (external-data weights, backend=wasm)…`);
+  loading = engine.load().then(() => {
+    loaded = true;
+    window.__loadMs = performance.now() - t0;
+    setStatus(`Model ready in ${(window.__loadMs / 1000).toFixed(1)} s (fetch + session create).`);
+  }).catch((err) => {
+    setStatus(`Load failed: ${err.message || err}`);
+    throw err;
+  }).finally(() => {
+    loading = null;
+    setControls(true);
+  });
+  return loading;
+}
+
+// Decode any browser-supported audio to mono Float32 PCM @ 16 kHz.
+async function toMono16k(arrayBuffer) {
+  const ctx = new AudioContext({ sampleRate: SAMPLE_RATE }); // resamples during decode
+  try {
+    const buf = await ctx.decodeAudioData(arrayBuffer);
+    if (buf.numberOfChannels === 1) return buf.getChannelData(0);
+    const mono = new Float32Array(buf.length);
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      const ch = buf.getChannelData(c);
+      for (let i = 0; i < ch.length; i++) mono[i] += ch[i] / buf.numberOfChannels;
+    }
+    return mono;
+  } finally {
+    ctx.close();
+  }
+}
+
+async function transcribe(arrayBuffer, label, expected = null) {
+  await loadModel();
+  setControls(false);
+  $('badge').innerHTML = '';
+  $('transcript').textContent = '…';
+  try {
+    const pcm = await toMono16k(arrayBuffer);
+    const audioS = pcm.length / SAMPLE_RATE;
+    setStatus(`Transcribing ${label} (${audioS.toFixed(1)} s audio)…`);
+    const t0 = performance.now();
+    const { text, metrics } = await engine.transcribe(pcm);
+    const wallMs = performance.now() - t0;
+    $('transcript').textContent = text;
+    showMetrics({ audioS, wallMs, metrics });
+    setStatus(`Done: ${label} in ${(wallMs / 1000).toFixed(2)} s.`);
+
+    if (expected !== null) {
+      const norm = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').replace(/\s+/g, ' ').trim();
+      const pass = norm(text) === norm(expected);
+      $('badge').innerHTML = `<span class="badge ${pass ? 'pass' : 'fail'}">${pass ? 'PASS' : 'FAIL'}</span>`;
+      if (!pass) log(`Expected: ${expected}`);
+      window.__proof = { pass, text, expected, audioS, wallMs, metrics, threads, loadMs: window.__loadMs, model: 'parakeet-tdt-0.6b-v3' };
+      log(`PROOF ${pass ? 'PASS' : 'FAIL'}: ${JSON.stringify(window.__proof)}`);
+    }
+    return text;
+  } catch (err) {
+    $('transcript').textContent = '';
+    setStatus(`Transcription failed: ${err.message || err}`);
+    throw err;
+  } finally {
+    setControls(true);
+  }
+}
+
+function showMetrics({ audioS, wallMs, metrics }) {
+  const rows = {
+    model: `${engine.label}, wasm, ${threads} thread${threads > 1 ? 's' : ''}`,
+    audio: `${audioS.toFixed(2)} s`,
+    wall: `${wallMs.toFixed(0)} ms (${(audioS / (wallMs / 1000)).toFixed(1)}× real-time)`,
+  };
+  Object.assign(rows, metrics);
+  $('metrics').innerHTML = Object.entries(rows).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+}
+
+function setControls(enabled) {
+  const ready = enabled && loaded;
+  $('loadBtn').disabled = !enabled || loaded;
+  $('sampleBtn').disabled = !ready;
+  $('fileInput').disabled = !ready;
+  if (!recorder) $('micBtn').disabled = !ready;
+}
+
+async function runSample() {
+  const resp = await fetch(SAMPLE_URL);
+  if (!resp.ok) throw new Error(`Sample download failed: ${resp.status}`);
+  return transcribe(await resp.arrayBuffer(), 'jfk.wav', SAMPLE_EXPECTED);
+}
+
+// --- mic recording ---------------------------------------------------------
+let recorder = null;
+async function toggleMic() {
+  if (recorder) { recorder.stop(); return; }
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const chunks = [];
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = (e) => chunks.push(e.data);
+  recorder.onstop = async () => {
+    stream.getTracks().forEach((t) => t.stop());
+    recorder = null;
+    $('micBtn').textContent = '● Record mic';
+    const blob = new Blob(chunks, { type: chunks[0]?.type });
+    await transcribe(await blob.arrayBuffer(), 'mic recording').catch(() => {});
+  };
+  recorder.start();
+  $('micBtn').textContent = '■ Stop & transcribe';
+  log('Recording… click again to stop.');
+}
+
+// --- wiring ----------------------------------------------------------------
+$('loadBtn').onclick = () => loadModel().catch(() => {});
+$('sampleBtn').onclick = () => runSample().catch(() => {});
+$('micBtn').onclick = () => toggleMic().catch((e) => setStatus(`Mic error: ${e.message}`));
+$('fileInput').onchange = async (e) => {
+  const file = e.target.files[0];
+  if (file) await transcribe(await file.arrayBuffer(), file.name).catch(() => {});
+};
+
+// Auto-run the proof: load the model, transcribe the sample, show PASS/FAIL.
+loadModel().then(runSample).catch((e) => console.error(e));
+</script>
+</body>
+</html>

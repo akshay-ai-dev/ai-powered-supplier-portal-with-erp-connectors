@@ -1,0 +1,380 @@
+<!doctype html>
+<!--
+  Moonshine v2 Medium Streaming (245M, English only, int8 ONNX) speech-to-text,
+  fully in the browser. ONNX Runtime Web 1.24.1, WASM (CPU) execution provider only.
+
+  Model: community ONNX export Immortalizer/moonshine-streaming-medium-onnx (merged
+  decoder) of moonshine-ai/moonshine-streaming-medium. No JS library supports the
+  moonshine_streaming architecture yet, so the encoder + greedy KV-cache decoder
+  loop is hand-written below.
+
+  Proof: on load it transcribes the JFK sample clip and compares the output against
+  the known transcript (PASS / FAIL badge).
+
+  Memory: both graphs are used in ONNX *external-data* format (graph .onnx + weights
+  .onnx.data). ORT Web then copies the weights into WASM memory once instead of
+  holding the whole model file AND the weights there (WASM memory never shrinks).
+  Tab footprint ~0.6 GB; right after load it is higher until Chrome
+  garbage-collects the download buffers (~30 s).
+
+  SETUP (once, from this folder, ~385 MB). Downloads from Hugging Face and re-saves
+  the graphs with external data. models/ is gitignored.
+
+    mkdir -p models/moonshine-streaming-medium && cd models/moonshine-streaming-medium && I=https://huggingface.co/Immortalizer/moonshine-streaming-medium-onnx/resolve/main && curl -L -O $I/encoder_model_quantized.onnx -O $I/decoder_model_merged_quantized.onnx -O $I/tokenizer.json && uv run --with onnx python -c "import onnx; [onnx.save_model(onnx.load(n), n, save_as_external_data=True, all_tensors_to_one_file=True, location=n+'.data', size_threshold=1024) for n in ('encoder_model_quantized.onnx', 'decoder_model_merged_quantized.onnx')]" && cd ../..
+
+  RUN (from this folder). Static server with COOP/COEP headers, so the page is
+  crossOriginIsolated -> SharedArrayBuffer -> multi-threaded WASM:
+
+    node -e "const h=require('http'),f=require('fs'),p=require('path'),r=process.cwd();h.createServer((q,s)=>{let u=decodeURIComponent(q.url.split('?')[0]);if(u==='/')u='/moonshine_wasm_stt.html';const fp=p.join(r,p.normalize(u));if(!fp.startsWith(r)||!f.existsSync(fp)||f.statSync(fp).isDirectory()){s.writeHead(404);return s.end()}s.writeHead(200,{'Content-Type':fp.endsWith('.html')?'text/html':fp.endsWith('.json')?'application/json':'application/octet-stream','Content-Length':f.statSync(fp).size,'Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'require-corp'});f.createReadStream(fp).pipe(s)}).listen(8080,()=>console.log('http://localhost:8080'))"
+
+  Without COOP/COEP it still works, single-threaded (~4x slower).
+  Opening via file:// does NOT work (ES modules + fetch).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moonshine WASM STT</title>
+<script type="importmap">
+{
+  "imports": {
+    "onnxruntime-web": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.1/dist/ort.wasm.min.mjs"
+  }
+}
+</script>
+<style>
+  :root { --bg:#fafafa; --fg:#1a1a1a; --muted:#666; --card:#fff; --border:#ddd; --ok:#1a7f37; --bad:#c62828; --accent:#2f5bd3; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#121212; --fg:#eee; --muted:#9a9a9a; --card:#1d1d1d; --border:#333; --ok:#4cc26a; --bad:#ef5350; --accent:#7aa2ff; } }
+  body { margin:0; padding:24px 16px; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, sans-serif; }
+  main { max-width:820px; margin:0 auto; display:grid; gap:16px; }
+  section { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; }
+  h1 { font-size:20px; margin:0; } h2 { font-size:15px; margin:0 0 8px; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  button, select { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--fg); cursor:pointer; max-width:100%; }
+  button:disabled { opacity:.5; cursor:default; }
+  .muted { color:var(--muted); font-size:13px; }
+  .badge { font-weight:600; padding:2px 8px; border-radius:4px; color:#fff; }
+  .pass { background:var(--ok); } .fail { background:var(--bad); }
+  #transcript { white-space:pre-wrap; font-size:16px; min-height:1.5em; }
+  dl { display:grid; grid-template-columns:max-content 1fr; gap:2px 16px; margin:0; font:13px ui-monospace, monospace; }
+  dt { color:var(--muted); }
+  pre#log { max-height:180px; overflow:auto; font-size:12px; margin:0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Moonshine v2 Medium Streaming · English · int8 · ONNX Runtime Web WASM</h1>
+
+  <section>
+    <h2>1. Model</h2>
+    <div class="row">
+      <button id="loadBtn">Load model</button>
+    </div>
+    <p class="muted" id="env"></p>
+    <p class="muted" id="status">Idle.</p>
+  </section>
+
+  <section>
+    <h2>2. Transcribe</h2>
+    <div class="row">
+      <button id="sampleBtn" disabled>Run JFK sample (proof)</button>
+      <label><input type="file" id="fileInput" accept="audio/*,video/*" disabled> </label>
+      <button id="micBtn" disabled>● Record mic</button>
+      <span id="badge"></span>
+    </div>
+    <p id="transcript"></p>
+    <dl id="metrics"></dl>
+  </section>
+
+  <section>
+    <h2>Log</h2>
+    <pre id="log"></pre>
+  </section>
+</main>
+
+<script type="module">
+import * as ort from 'onnxruntime-web';
+
+const ORT_VERSION = '1.24.1';
+const SAMPLE_RATE = 16000;
+const SAMPLE_URL = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/resolve/main/jfk.wav';
+const SAMPLE_EXPECTED = 'And so, my fellow Americans, ask not what your country can do for you, ask what you can do for your country.';
+
+const $ = (id) => document.getElementById(id);
+const log = (msg) => { $('log').textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`; $('log').scrollTop = 1e9; };
+const setStatus = (msg) => { $('status').textContent = msg; log(msg); };
+
+// WASM binaries must come from the same ORT build as the JS bundle.
+ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
+const threads = self.crossOriginIsolated ? Math.min(navigator.hardwareConcurrency || 4, 8) : 1;
+$('env').textContent = `crossOriginIsolated=${self.crossOriginIsolated} → WASM threads: ${threads}` +
+  (self.crossOriginIsolated ? '' : ' (serve with COOP/COEP headers for multi-threading)');
+
+// --- Moonshine v2 Medium Streaming (raw onnxruntime-web) --------------------
+// Encoder: raw 16 kHz audio (padded to a multiple of 80 samples) -> [1, T, 768] at 50 Hz.
+// Decoder: one graph gated by `use_cache_branch`; 14 layers x {decoder, encoder} x {key, value}
+// cache tensors. Step 0 runs without cache and returns the cross-attention (encoder) cache,
+// which is reused for every later step; the self-attention (decoder) cache grows by one per step.
+const engine = {
+  label: 'Moonshine v2 Medium Streaming (English, int8)',
+  dir: 'models/moonshine-streaming-medium/',
+  encoderFile: 'encoder_model_quantized.onnx',
+  decoderFile: 'decoder_model_merged_quantized.onnx',
+  layers: 14, heads: 10, headDim: 64,
+  bos: 1, eos: 2, firstAddedTokenId: 32000, // ids 0-2 and >= 32000 are special tokens
+  tokensPerSecond: 6.5,  // max decode length per second of audio (model card), stops hallucination loops
+  maxSegmentS: 30,       // longer audio is split at the quietest point near this length
+  encoder: null, decoder: null, vocab: null,
+
+  async load() {
+    ort.env.wasm.numThreads = threads;
+    const session = (file) => ort.InferenceSession.create(this.dir + file, {
+      executionProviders: ['wasm'],
+      graphOptimizationLevel: 'all',
+      externalData: [{ path: file + '.data', data: this.dir + file + '.data' }],
+    });
+    // Sequential, so only one weights download buffer is alive at a time.
+    this.encoder = await session(this.encoderFile);
+    this.decoder = await session(this.decoderFile);
+    const tok = await (await fetch(this.dir + 'tokenizer.json')).json();
+    this.vocab = [];
+    for (const [piece, id] of Object.entries(tok.model.vocab)) this.vocab[id] = piece;
+  },
+
+  async transcribe(pcm) {
+    const totals = { encode: 0, decode: 0, steps: 0, segments: 0 };
+    const texts = [];
+    for (const segment of splitAtSilence(pcm, this.maxSegmentS)) {
+      const { text, encodeMs, decodeMs, steps } = await this.transcribeSegment(segment);
+      if (text) texts.push(text);
+      totals.encode += encodeMs; totals.decode += decodeMs; totals.steps += steps; totals.segments++;
+    }
+    return {
+      text: texts.join(' '),
+      metrics: { encode: `${totals.encode.toFixed(1)} ms`, decode: `${totals.decode.toFixed(1)} ms (${totals.steps} steps, ${totals.segments} segment${totals.segments > 1 ? 's' : ''})` },
+    };
+  },
+
+  async transcribeSegment(pcm) {
+    const n = pcm.length;
+    const padded = Math.ceil(n / 80) * 80;
+    const audio = new Float32Array(padded);
+    audio.set(pcm);
+    const mask = new BigInt64Array(padded);
+    mask.fill(1n, 0, n);
+
+    const t0 = performance.now();
+    const { encoder_hidden_states: hidden } = await this.encoder.run({
+      input_values: new ort.Tensor('float32', audio, [1, padded]),
+      attention_mask: new ort.Tensor('int64', mask, [1, padded]),
+    });
+    const t1 = performance.now();
+
+    const empty = new ort.Tensor('float32', new Float32Array(0), [1, this.heads, 0, this.headDim]);
+    const past = {};
+    for (let i = 0; i < this.layers; i++) {
+      for (const kind of ['decoder', 'encoder']) {
+        for (const kv of ['key', 'value']) past[`past_key_values.${i}.${kind}.${kv}`] = empty;
+      }
+    }
+
+    const ids = [];
+    let token = this.bos;
+    const maxSteps = Math.max(1, Math.ceil((n / SAMPLE_RATE) * this.tokensPerSecond));
+    let step = 0;
+    for (; step < maxSteps; step++) {
+      const out = await this.decoder.run({
+        input_ids: new ort.Tensor('int64', BigInt64Array.of(BigInt(token)), [1, 1]),
+        encoder_hidden_states: hidden,
+        use_cache_branch: new ort.Tensor('bool', Uint8Array.of(step > 0 ? 1 : 0), [1]),
+        ...past,
+      });
+      token = argmax(out.logits.data);
+      for (let i = 0; i < this.layers; i++) {
+        for (const kv of ['key', 'value']) {
+          past[`past_key_values.${i}.decoder.${kv}`] = out[`present.${i}.decoder.${kv}`];
+          if (step === 0) past[`past_key_values.${i}.encoder.${kv}`] = out[`present.${i}.encoder.${kv}`];
+        }
+      }
+      if (token === this.eos) { step++; break; }
+      ids.push(token);
+    }
+    return { text: this.detokenize(ids), encodeMs: t1 - t0, decodeMs: performance.now() - t1, steps: step };
+  },
+
+  // SentencePiece-style BPE: "▁" = space, <0xNN> = byte fallback, strip one leading space.
+  detokenize(ids) {
+    const utf8 = new TextDecoder();
+    let out = '';
+    let bytes = [];
+    const flush = () => { if (bytes.length) { out += utf8.decode(new Uint8Array(bytes)); bytes = []; } };
+    for (const id of ids) {
+      if (id <= this.eos || id >= this.firstAddedTokenId) continue;
+      const piece = this.vocab[id];
+      const byte = /^<0x([0-9A-Fa-f]{2})>$/.exec(piece);
+      if (byte) { bytes.push(parseInt(byte[1], 16)); continue; }
+      flush();
+      out += piece.replaceAll('▁', ' ');
+    }
+    flush();
+    return (out.startsWith(' ') ? out.slice(1) : out).trim();
+  },
+};
+
+function argmax(arr) {
+  let best = 0;
+  for (let i = 1; i < arr.length; i++) if (arr[i] > arr[best]) best = i;
+  return best;
+}
+
+// Split audio longer than maxS seconds at the quietest 50 ms window in the last 5 s of each piece.
+function splitAtSilence(pcm, maxS) {
+  const max = maxS * SAMPLE_RATE, search = 5 * SAMPLE_RATE, win = 0.05 * SAMPLE_RATE;
+  const segments = [];
+  let start = 0;
+  while (pcm.length - start > max) {
+    let cut = start + max, bestEnergy = Infinity;
+    for (let s = start + max - search; s + win <= start + max; s += win) {
+      let e = 0;
+      for (let i = s; i < s + win; i++) e += pcm[i] * pcm[i];
+      if (e < bestEnergy) { bestEnergy = e; cut = s + win / 2; }
+    }
+    segments.push(pcm.subarray(start, cut));
+    start = cut;
+  }
+  segments.push(pcm.subarray(start));
+  return segments;
+}
+
+let loaded = false;
+let loading = null;
+
+async function loadModel() {
+  if (loaded) return;
+  if (loading) return loading;
+  setControls(false);
+  const t0 = performance.now();
+  setStatus(`Loading ${engine.label} (external-data weights, backend=wasm)…`);
+  loading = engine.load().then(() => {
+    loaded = true;
+    window.__loadMs = performance.now() - t0;
+    setStatus(`Model ready in ${(window.__loadMs / 1000).toFixed(1)} s (fetch + session create).`);
+  }).catch((err) => {
+    setStatus(`Load failed: ${err.message || err}`);
+    throw err;
+  }).finally(() => {
+    loading = null;
+    setControls(true);
+  });
+  return loading;
+}
+
+// Decode any browser-supported audio to mono Float32 PCM @ 16 kHz.
+async function toMono16k(arrayBuffer) {
+  const ctx = new AudioContext({ sampleRate: SAMPLE_RATE }); // resamples during decode
+  try {
+    const buf = await ctx.decodeAudioData(arrayBuffer);
+    if (buf.numberOfChannels === 1) return buf.getChannelData(0);
+    const mono = new Float32Array(buf.length);
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      const ch = buf.getChannelData(c);
+      for (let i = 0; i < ch.length; i++) mono[i] += ch[i] / buf.numberOfChannels;
+    }
+    return mono;
+  } finally {
+    ctx.close();
+  }
+}
+
+async function transcribe(arrayBuffer, label, expected = null) {
+  await loadModel();
+  setControls(false);
+  $('badge').innerHTML = '';
+  $('transcript').textContent = '…';
+  try {
+    const pcm = await toMono16k(arrayBuffer);
+    const audioS = pcm.length / SAMPLE_RATE;
+    setStatus(`Transcribing ${label} (${audioS.toFixed(1)} s audio)…`);
+    const t0 = performance.now();
+    const { text, metrics } = await engine.transcribe(pcm);
+    const wallMs = performance.now() - t0;
+    $('transcript').textContent = text;
+    showMetrics({ audioS, wallMs, metrics });
+    setStatus(`Done: ${label} in ${(wallMs / 1000).toFixed(2)} s.`);
+
+    if (expected !== null) {
+      const norm = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').replace(/\s+/g, ' ').trim();
+      const pass = norm(text) === norm(expected);
+      $('badge').innerHTML = `<span class="badge ${pass ? 'pass' : 'fail'}">${pass ? 'PASS' : 'FAIL'}</span>`;
+      if (!pass) log(`Expected: ${expected}`);
+      window.__proof = { pass, text, expected, audioS, wallMs, metrics, threads, loadMs: window.__loadMs, model: 'moonshine-streaming-medium' };
+      log(`PROOF ${pass ? 'PASS' : 'FAIL'}: ${JSON.stringify(window.__proof)}`);
+    }
+    return text;
+  } catch (err) {
+    $('transcript').textContent = '';
+    setStatus(`Transcription failed: ${err.message || err}`);
+    throw err;
+  } finally {
+    setControls(true);
+  }
+}
+
+function showMetrics({ audioS, wallMs, metrics }) {
+  const rows = {
+    model: `${engine.label}, wasm, ${threads} thread${threads > 1 ? 's' : ''}`,
+    audio: `${audioS.toFixed(2)} s`,
+    wall: `${wallMs.toFixed(0)} ms (${(audioS / (wallMs / 1000)).toFixed(1)}× real-time)`,
+  };
+  Object.assign(rows, metrics);
+  $('metrics').innerHTML = Object.entries(rows).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+}
+
+function setControls(enabled) {
+  const ready = enabled && loaded;
+  $('loadBtn').disabled = !enabled || loaded;
+  $('sampleBtn').disabled = !ready;
+  $('fileInput').disabled = !ready;
+  if (!recorder) $('micBtn').disabled = !ready;
+}
+
+async function runSample() {
+  const resp = await fetch(SAMPLE_URL);
+  if (!resp.ok) throw new Error(`Sample download failed: ${resp.status}`);
+  return transcribe(await resp.arrayBuffer(), 'jfk.wav', SAMPLE_EXPECTED);
+}
+
+// --- mic recording ---------------------------------------------------------
+let recorder = null;
+async function toggleMic() {
+  if (recorder) { recorder.stop(); return; }
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const chunks = [];
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = (e) => chunks.push(e.data);
+  recorder.onstop = async () => {
+    stream.getTracks().forEach((t) => t.stop());
+    recorder = null;
+    $('micBtn').textContent = '● Record mic';
+    const blob = new Blob(chunks, { type: chunks[0]?.type });
+    await transcribe(await blob.arrayBuffer(), 'mic recording').catch(() => {});
+  };
+  recorder.start();
+  $('micBtn').textContent = '■ Stop & transcribe';
+  log('Recording… click again to stop.');
+}
+
+// --- wiring ----------------------------------------------------------------
+$('loadBtn').onclick = () => loadModel().catch(() => {});
+$('sampleBtn').onclick = () => runSample().catch(() => {});
+$('micBtn').onclick = () => toggleMic().catch((e) => setStatus(`Mic error: ${e.message}`));
+$('fileInput').onchange = async (e) => {
+  const file = e.target.files[0];
+  if (file) await transcribe(await file.arrayBuffer(), file.name).catch(() => {});
+};
+
+// Auto-run the proof: load the model, transcribe the sample, show PASS/FAIL.
+loadModel().then(runSample).catch((e) => console.error(e));
+</script>
+</body>
+</html>
