@@ -2,11 +2,30 @@
 
 Next.js 15 frontend, FastAPI backend, SQLite, Mailpit, FastMCP, and mock SAP / Infor LN connectors. See `prd.md`.
 
-## Run
+## First-time setup
 
-```
-docker compose up --build
-```
+**Prerequisites:** Git, Docker Desktop (running; on Windows use the WSL 2 backend), Node.js 22+, and `uv`
+(only needed if the voice model has to be downloaded rather than copied). About 2 GB free disk.
+
+1. **Clone**
+   ```bash
+   git clone https://github.com/akshay-ai-dev/ai-powered-supplier-portal-with-erp-connectors.git
+   cd ai-powered-supplier-portal-with-erp-connectors
+   ```
+2. **Download the browser models** (once, ~440 MB, into the gitignored `frontend/public/models/`)
+   ```bash
+   cd frontend && npm run fetch:models && cd ..
+   ```
+3. **Free ports** 3000, 8000, 8025 and 8080 (stop any other Docker project using them).
+4. **Build and start** (first build takes about 5 minutes)
+   ```bash
+   docker compose up --build -d
+   docker compose ps    # all 5 services should be Up
+   ```
+5. **Open** http://localhost:3000 and log in (logins below). The database starts with no requirements:
+   create one as the buyer to try quotes and the AI Assistant.
+
+**Later:** `git pull origin main && docker compose up --build -d` to update, `docker compose down` to stop.
 
 | Service    | URL                                              |
 |------------|--------------------------------------------------|
