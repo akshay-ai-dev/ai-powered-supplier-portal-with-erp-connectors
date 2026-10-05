@@ -1,0 +1,37 @@
+{
+  "_note": "MOCK data in the shape of API_PURCHASEORDER_PROCESS_SRV/A_PurchaseOrder (OData v2). Used only when SAP_MODE=mock. Supplier IDs match samples/A_Supplier.json (captured from the SAP sandbox).",
+  "d": {
+    "results": [
+      {
+        "PurchaseOrder": "4500000101",
+        "PurchaseOrderType": "NB",
+        "Supplier": "1018",
+        "CompanyCode": "1010",
+        "PurchasingOrganization": "1010",
+        "PurchaseOrderDate": "/Date(1727740800000)/",
+        "DocumentCurrency": "EUR",
+        "PurchasingProcessingStatus": "05"
+      },
+      {
+        "PurchaseOrder": "4500000102",
+        "PurchaseOrderType": "NB",
+        "Supplier": "1018",
+        "CompanyCode": "1010",
+        "PurchasingOrganization": "1010",
+        "PurchaseOrderDate": "/Date(1728000000000)/",
+        "DocumentCurrency": "EUR",
+        "PurchasingProcessingStatus": "02"
+      },
+      {
+        "PurchaseOrder": "4500000103",
+        "PurchaseOrderType": "NB",
+        "Supplier": "1000031",
+        "CompanyCode": "1710",
+        "PurchasingOrganization": "1710",
+        "PurchaseOrderDate": "/Date(1728345600000)/",
+        "DocumentCurrency": "USD",
+        "PurchasingProcessingStatus": "05"
+      }
+    ]
+  }
+}
