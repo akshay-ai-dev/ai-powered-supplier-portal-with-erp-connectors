@@ -1,0 +1,19 @@
+{
+  "sourceFile": "pdf-1.pdf",
+  "_note": "verified=true: fact stated in the project brief (2026-10-02). verified=false: proposed by reading the PDF; a person must confirm against the document and then set verified=true and verifiedBy.",
+  "checks": [
+    {"field": "sublotCount", "expected": 2, "verified": true, "basis": "brief: two sublots"},
+    {"field": "sublotQuantities", "expected": [[750, "SF"], [750, "SF"]], "verified": true, "basis": "brief: two 750-square-foot sublots"},
+    {"field": "shippedQuantity", "expected": 1500, "verified": true, "basis": "derived from brief: 2 x 750 SF, same item and unit"},
+    {"field": "unitOfMeasure", "expected": "SF", "verified": true, "basis": "brief: square feet"},
+    {"field": "shipDate", "expected": "2020-10-01", "verified": false, "basis": "proposed: 'Shipped Date: 01-Oct-20', page 1"},
+    {"field": "carrier", "expected": "FedEx", "verified": false, "basis": "proposed: 'Carrier/F.Forward: FEDEX STANDARD OVERNIGHT (AIR)'"},
+    {"field": "trackingNumbers", "expected": [], "verified": false, "basis": "proposed: no tracking number printed; Bill of Lading is blank"},
+    {"field": "trackingNumbers", "expectReview": true, "rawContains": "149752137", "verified": false, "basis": "proposed: 'SHIP VIA FED EX# 149752137' is 9 digits (FedEx account-number shape, not a FedEx tracking format); must be flagged, not asserted"},
+    {"field": "lotNumbers", "expected": ["6446"], "verified": false, "basis": "proposed: 'Lot: 6446' page 2, 'Lot No.: 6446' certificate"},
+    {"field": "sublotNumbers", "expected": ["6446-0001", "6446-0002"], "verified": false, "basis": "proposed: Lot/Sublot No column, page 1"},
+    {"field": "serialNumbers", "expected": [], "verified": false, "basis": "proposed: none printed"},
+    {"field": "references.salesOrders", "expected": ["703071376"], "verified": false, "basis": "proposed: 'Order No: 703071376'"},
+    {"field": "references.purchaseOrders", "expected": ["CS-20028"], "verified": false, "basis": "proposed: 'Cust.P.O.: CS-20028'"}
+  ]
+}

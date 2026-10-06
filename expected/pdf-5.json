@@ -1,0 +1,19 @@
+{
+  "sourceFile": "pdf-5.pdf",
+  "_note": "verified=true: fact stated in the project brief (2026-10-02). verified=false: proposed by reading the PDF; a person must confirm against the document and then set verified=true and verifiedBy.",
+  "checks": [
+    {"field": "sublotCount", "expected": 6, "verified": true, "basis": "brief: six sublots"},
+    {"field": "sublotTotal", "expected": [42, "PR"], "verified": true, "basis": "brief: sublot quantities sum to 42 pairs"},
+    {"field": "shippedQuantity", "expected": 42, "verified": true, "basis": "brief: one shipment of 42 pairs repeated across pages (no double counting)"},
+    {"field": "unitOfMeasure", "expected": "PR", "verified": true, "basis": "brief: pairs"},
+    {"field": "itemLineCount", "expected": 1, "verified": true, "basis": "brief: one shipment repeated across pages, counted once"},
+    {"field": "shipDate", "expected": "2024-01-16", "verified": false, "basis": "proposed: 'Ship Date: 1/16/2024' (unambiguous)"},
+    {"field": "carrier", "expected": "UPS", "verified": false, "basis": "proposed: 'Ship VIA UPSGND'"},
+    {"field": "trackingNumbers", "expected": [], "verified": false, "basis": "proposed: 'Shipping Number 0041709' is internal, not tracking"},
+    {"field": "lotNumbers", "expected": ["2401"], "verified": false, "basis": "proposed: 'LOT:2401'"},
+    {"field": "sublotNumbers", "expected": ["US310197", "US310198", "US310200", "US330268", "US330271", "USD10087"], "verified": false, "basis": "proposed: certificate list and 'Lot Number: US310197LOT2401' rows"},
+    {"field": "sublotQuantities", "expected": [[6.5, "PR"], [5.5, "PR"], [3, "PR"], [6, "PR"], [3, "PR"], [18, "PR"]], "verified": false, "basis": "proposed: per-sublot QTY values"},
+    {"field": "references.purchaseOrders", "expected": ["PR3412522"], "verified": false, "basis": "proposed: 'Customer P. O. PR3412522'"},
+    {"field": "references.internalShippingNumbers", "expected": ["0041709"], "verified": false, "basis": "proposed: 'Shipping Number: 0041709'"}
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "sourceFile": "pdf-3.pdf",
+  "_note": "verified=true: fact stated in the project brief (2026-10-02). verified=false: proposed by reading the PDF; a person must confirm against the document and then set verified=true and verifiedBy.",
+  "checks": [
+    {"field": "carrier", "expected": "DPL/LOGIFISH", "verified": true, "basis": "brief: Ship Via DPL/LOGIFISH"},
+    {"field": "shippingDetails.freightTerms", "contains": "FREIGHT COLLECT", "verified": true, "basis": "brief: Freight Collect (a freight term, not a carrier or tracking number)"},
+    {"field": "trackingNumbers", "expected": [], "verified": true, "basis": "brief: Freight Collect and order number 111569 are not tracking numbers"},
+    {"field": "references.salesOrders", "expected": ["111569"], "verified": true, "basis": "brief: order number 111569"},
+    {"field": "lotNumbers", "expected": ["9399"], "verified": true, "basis": "brief: lot 9399"},
+    {"field": "shipDate", "expected": "2025-04-11", "verified": false, "basis": "proposed: only a document 'DATE 04/11/2025' (Miami supplier, month/day)"},
+    {"field": "shipDate", "expectReview": true, "verified": false, "basis": "proposed: no ship-date label and 04/11 is numerically ambiguous"},
+    {"field": "shippedQuantity", "expected": 150, "verified": false, "basis": "proposed: 'Qty 150' (150 boxes x 10 lb = 1,500 lb)"},
+    {"field": "unitOfMeasure", "expected": null, "verified": false, "basis": "proposed: Qty column has no unit; 'Lb' belongs to the weight column"},
+    {"field": "references.purchaseOrders", "expected": ["JACOB0411"], "verified": false, "basis": "proposed: 'PO # JACOB0411'"},
+    {"field": "serialNumbers", "expected": [], "verified": false, "basis": "proposed: box numbers 692003... are package numbers, not serials"}
+  ]
+}

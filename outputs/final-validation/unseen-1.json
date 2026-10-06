@@ -1,0 +1,280 @@
+{
+  "sourceFile": "unseen-1.pdf",
+  "extractorVersion": "0.2.0",
+  "shipDate": "2023-12-28",
+  "carrier": "FedEx",
+  "trackingNumbers": [
+    "774630872620"
+  ],
+  "shippedQuantity": null,
+  "unitOfMeasure": "MG",
+  "lotNumbers": [],
+  "serialNumbers": [],
+  "sublots": [],
+  "items": [
+    {
+      "lineNumber": "1",
+      "itemNumber": null,
+      "customerItemNumber": null,
+      "description": "Silicon-28 (Si-28) / Form: Metal Powder, Enrichment: 99.989% Non-Radioactive Material, Research Grade HTS: 2845.90.0100 (USA) Certificate of Analysis No.: 7562",
+      "salesOrder": null,
+      "customerReference": null,
+      "quantityOrdered": null,
+      "quantityRequired": null,
+      "quantityShipped": 1000.0,
+      "quantityOutstanding": null,
+      "quantityBackordered": null,
+      "unitOfMeasure": "MG",
+      "unitRaw": "1,000 mg",
+      "quantitySource": "quantity column",
+      "lots": [],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        4
+      ],
+      "evidence": [
+        {
+          "page": 4,
+          "text": "1 1,000 mg",
+          "rule": "quantity table row"
+        }
+      ]
+    },
+    {
+      "lineNumber": "2",
+      "itemNumber": null,
+      "customerItemNumber": null,
+      "description": "Silicon-29 (Si-29) / Form: Metal Pieces, Enrichment: 99.26% Non-Radioactive Material, Research Grade HTS: 2845.90.0100 (USA) Certificate of Analysis No.: 89777",
+      "salesOrder": null,
+      "customerReference": null,
+      "quantityOrdered": null,
+      "quantityRequired": null,
+      "quantityShipped": 1000.0,
+      "quantityOutstanding": null,
+      "quantityBackordered": null,
+      "unitOfMeasure": "MG",
+      "unitRaw": "1,000 mg",
+      "quantitySource": "quantity column",
+      "lots": [],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        4
+      ],
+      "evidence": [
+        {
+          "page": 4,
+          "text": "2 1,000 mg",
+          "rule": "quantity table row"
+        }
+      ]
+    }
+  ],
+  "quantitySummary": [
+    {
+      "itemNumber": null,
+      "description": "Silicon-28 (Si-28) / Form: Metal Powder, Enrichment: 99.989% Non-Radioactive Material, Research Grade HTS: 2845.90.0100 (USA) Certificate of Analysis No.: 7562",
+      "unit": "MG",
+      "quantityShipped": 1000.0,
+      "lineCount": 1,
+      "salesOrders": []
+    },
+    {
+      "itemNumber": null,
+      "description": "Silicon-29 (Si-29) / Form: Metal Pieces, Enrichment: 99.26% Non-Radioactive Material, Research Grade HTS: 2845.90.0100 (USA) Certificate of Analysis No.: 89777",
+      "unit": "MG",
+      "quantityShipped": 1000.0,
+      "lineCount": 1,
+      "salesOrders": []
+    }
+  ],
+  "references": {
+    "salesOrders": [
+      {
+        "value": "231226-01",
+        "label": "Order No",
+        "page": 5
+      }
+    ],
+    "invoices": [
+      {
+        "value": "231226-0101",
+        "label": "INVOICE",
+        "page": 1
+      },
+      {
+        "value": "231226-01",
+        "label": "Invoice No.",
+        "page": 5
+      }
+    ]
+  },
+  "shippingDetails": {
+    "serviceLevel": "EXPRESS",
+    "shipMethodRaw": "FedEx Express",
+    "freightTerms": [
+      "CIP (INCOTERMS 2020)"
+    ],
+    "packageCount": null,
+    "packages": []
+  },
+  "rawValues": {
+    "shipDate": "December 28, 2023",
+    "carrier": "FedEx Express"
+  },
+  "fieldIssues": [
+    {
+      "field": "items",
+      "severity": "info",
+      "code": "item_column_holds_line_numbers",
+      "message": "Column 'ITEM #' on page 1 contains 1..2 (line numbers), not part numbers.",
+      "page": 1
+    },
+    {
+      "field": "items",
+      "severity": "info",
+      "code": "item_column_holds_line_numbers",
+      "message": "Column 'ITEM #' on page 4 contains 1..2 (line numbers), not part numbers.",
+      "page": 4
+    },
+    {
+      "field": "items",
+      "severity": "info",
+      "code": "non_packing_pages_ignored",
+      "message": "2 quantity row(s) on certificate/other pages were not counted (pages [1])."
+    },
+    {
+      "field": "shippedQuantity",
+      "severity": "review",
+      "code": "multiple_items",
+      "message": "2 lines cover 2 different items; a single shipped quantity would mix products. See items[] and quantitySummary[] (compare per item)."
+    },
+    {
+      "field": "lotNumbers",
+      "severity": "warning",
+      "code": "not_found",
+      "message": "No lotNumbers found in the document."
+    },
+    {
+      "field": "serialNumbers",
+      "severity": "info",
+      "code": "not_found",
+      "message": "No serialNumbers found in the document."
+    }
+  ],
+  "evidence": {
+    "shipDate": [
+      {
+        "page": 4,
+        "text": "SHIPMENT DATE: | December 28, 2023",
+        "rule": "ship-date label (right)"
+      },
+      {
+        "page": 1,
+        "text": "SHIPMENT DATE: December 28, 2023",
+        "rule": "ship-date label (inline)"
+      },
+      {
+        "page": 5,
+        "text": "Ship Date: / 28 Dec, 2023",
+        "rule": "ship-date label (below)"
+      }
+    ],
+    "carrier": [
+      {
+        "page": 4,
+        "text": "SHIPPED VIA: FedEx Express",
+        "rule": "carrier label (inline)"
+      }
+    ],
+    "freightTerms": [
+      {
+        "page": 1,
+        "text": "SHIPPING TERMS: CIP (INCOTERMS 2020)",
+        "rule": "label 'SHIPPING TERMS'"
+      },
+      {
+        "page": 4,
+        "text": "SHIPPING TERMS: CIP (INCOTERMS 2020)",
+        "rule": "label 'SHIPPING TERMS'"
+      }
+    ],
+    "trackingNumbers": [
+      {
+        "page": 1,
+        "text": "TRACKING NO.: 774630872620",
+        "rule": "label 'TRACKING NO.' (inline)"
+      },
+      {
+        "page": 4,
+        "text": "TRACKING NO.: 774630872620",
+        "rule": "label 'TRACKING NO.' (inline)"
+      }
+    ],
+    "items": [
+      {
+        "page": 4,
+        "text": "1 1,000 mg",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 4,
+        "text": "2 1,000 mg",
+        "rule": "quantity table row"
+      }
+    ],
+    "shippedQuantity": [
+      {
+        "page": 4,
+        "text": "1 1,000 mg",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 4,
+        "text": "2 1,000 mg",
+        "rule": "quantity table row"
+      }
+    ]
+  },
+  "document": {
+    "pageCount": 6,
+    "pageTypes": {
+      "1": "invoice",
+      "2": "certificate",
+      "3": "certificate",
+      "4": "packing",
+      "5": "invoice",
+      "6": "invoice"
+    },
+    "textLayer": true,
+    "ocrUsed": false,
+    "doclingTableCount": 17,
+    "datePreference": "MDY"
+  },
+  "timings": {
+    "converterInitSeconds": 16.625,
+    "conversionSeconds": 48.447,
+    "layoutSeconds": 0.274,
+    "extractionSeconds": 0.035,
+    "totalSeconds": 65.571,
+    "isolation": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ok",
+          "reason": null,
+          "exitCode": 0,
+          "seconds": 67.685,
+          "log": null
+        }
+      ],
+      "attemptCount": 1,
+      "timeoutSeconds": 600.0
+    }
+  }
+}
