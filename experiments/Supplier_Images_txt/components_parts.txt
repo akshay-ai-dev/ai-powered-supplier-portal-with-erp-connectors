@@ -1,8 +1,8 @@
 {
-"ship date" : 4/11/2020,
-"Carrier Number": null,
-"tracking number": null,
-"quantity": 27,
-"lot number": null,
-"serial numbers": null 
-]
+  "shipDate": "2020-04-11",
+  "carrier": null,
+  "trackingNumbers": [],
+  "shippedQuantity": 27,
+  "lotNumbers": [],
+  "serialNumbers": []
+}

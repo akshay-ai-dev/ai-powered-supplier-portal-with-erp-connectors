@@ -1,8 +1,8 @@
 {
-"ship date": 6/20/2016, 
-"Carrier": PIONEER INT'L LOGISTICS JSC, 
-"tracking number": null,
-"quantity": 150, 
-"lot number": null, 
-"serial numbers":  null 
-]
+  "shipDate": "2016-06-20",
+  "carrier": "PIONEER INT'L LOGISTICS JSC",
+  "trackingNumbers": [],
+  "shippedQuantity": 150,
+  "lotNumbers": [],
+  "serialNumbers": []
+}

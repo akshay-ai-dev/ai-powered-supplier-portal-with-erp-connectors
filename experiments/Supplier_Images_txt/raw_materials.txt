@@ -1,8 +1,8 @@
 {
-"ship date": 6/12/2022,
-"Carrier": CHINATRANS INTERNATIONAL LIMITED, 
-"tracking number":  null, 
-"quantity": 5, 
-"lot number" null,
-"serial numbers":  null
-]
+  "shipDate": "2022-06-12",
+  "carrier": "CHINATRANS INTERNATIONAL LIMITED",
+  "trackingNumbers": [],
+  "shippedQuantity": 5,
+  "lotNumbers": [],
+  "serialNumbers": []
+}
