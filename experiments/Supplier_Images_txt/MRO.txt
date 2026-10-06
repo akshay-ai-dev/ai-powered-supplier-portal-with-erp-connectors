@@ -1,8 +1,11 @@
 {
-"ship date":04/15/2019,
-"Carrier": UPS,
-"tracking number": 1Z260AT50346207055, 1Z260AT50346221468,
-"quantity": 17,
-"lot number": null,
-"serial numbers" null
-]
+  "shipDate": "2019-04-15",
+  "carrier": "UPS",
+  "trackingNumbers": [
+    "1Z260AT50346207055",
+    "1Z260AT50346221468"
+  ],
+  "shippedQuantity": 17,
+  "lotNumbers": [],
+  "serialNumbers": []
+}
