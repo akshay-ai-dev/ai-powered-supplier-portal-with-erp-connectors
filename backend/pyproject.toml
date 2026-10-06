@@ -6,8 +6,10 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.141",
     "uvicorn[standard]>=0.54",
-    "pydantic>=2.13",
+    "pydantic[email]>=2.13",      # EmailStr needs email-validator
     "pydantic-settings>=2.15",
+    "pyjwt>=2.8",                 # login tokens (app/security.py)
+    "fastmcp>=2.0",               # the MCP server (app/mcp_server.py)
     "sqlmodel>=0.0.47",
     "alembic>=1.20",
     "python-multipart>=0.0.32",   # file uploads (drawings, photos, packing lists)
