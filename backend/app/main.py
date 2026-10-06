@@ -9,7 +9,19 @@ from fastapi.responses import JSONResponse
 from .config import settings
 from .db import get_conn, init_db
 from .mcp_server import build_mcp_app
-from .routers import admin, ai_tools, api, assistant, emails, erp_monitor, mock_erp, shipments, team, tokens, units
+from .routers import (
+    admin,
+    ai_tools,
+    api,
+    assistant,
+    emails,
+    erp_monitor,
+    mock_erp,
+    shipments,
+    team,
+    tokens,
+    units,
+)
 from .seed import seed
 from .services import requirements as req_svc
 from .services.errors import DomainError
@@ -40,7 +52,11 @@ async def lifespan(app: FastAPI):
     init_db()
     with get_conn() as conn:
         seed(conn)
-    task = asyncio.create_task(_deadline_loop(settings.deadline_check_seconds)) if settings.deadline_check_seconds > 0 else None
+    task = (
+        asyncio.create_task(_deadline_loop(settings.deadline_check_seconds))
+        if settings.deadline_check_seconds > 0
+        else None
+    )
     try:
         async with mcp_inner.lifespan(mcp_inner):
             yield
@@ -59,7 +75,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_origin_regex=settings.cors_origin_regex or None, allow_methods=["*"], allow_headers=["*"], allow_credentials=True
+    allow_origin_regex=settings.cors_origin_regex or None,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
 )
 
 
@@ -75,7 +94,27 @@ def health():
     return {"status": "ok"}
 
 
-for r in (api.auth, api.suppliers, api.requirements, api.files, api.purchase_orders, api.inventory, api.misc, admin.router, admin.erp, emails.router, erp_monitor.router, shipments.router, units.router, team.router, tokens.router, assistant.router, ai_tools.router, mock_erp.sap, mock_erp.infor):
+for r in (
+    api.auth,
+    api.suppliers,
+    api.requirements,
+    api.files,
+    api.purchase_orders,
+    api.inventory,
+    api.misc,
+    admin.router,
+    admin.erp,
+    emails.router,
+    erp_monitor.router,
+    shipments.router,
+    units.router,
+    team.router,
+    tokens.router,
+    assistant.router,
+    ai_tools.router,
+    mock_erp.sap,
+    mock_erp.infor,
+):
     app.include_router(r)
 
 app.mount("/mcp", mcp_asgi)

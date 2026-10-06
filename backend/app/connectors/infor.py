@@ -6,16 +6,47 @@ from .base import ERPConnector
 
 # Native Infor LN-style payloads.
 ITEMS = [
-    {"item": "ITEM001", "description": "Hex Bolt M8 x 40 (Zinc)", "onhand": 1200, "warehouse": "WH-EAST"},
-    {"item": "ITEM002", "description": "Steel Sheet 2mm 1x2m", "onhand": 85, "warehouse": "WH-EAST"},
-    {"item": "ITEM003", "description": "Hydraulic Pump HP-200", "onhand": 14, "warehouse": "WH-WEST"},
+    {
+        "item": "ITEM001",
+        "description": "Hex Bolt M8 x 40 (Zinc)",
+        "onhand": 1200,
+        "warehouse": "WH-EAST",
+    },
+    {
+        "item": "ITEM002",
+        "description": "Steel Sheet 2mm 1x2m",
+        "onhand": 85,
+        "warehouse": "WH-EAST",
+    },
+    {
+        "item": "ITEM003",
+        "description": "Hydraulic Pump HP-200",
+        "onhand": 14,
+        "warehouse": "WH-WEST",
+    },
 ]
 SUPPLIERS = [
-    {"bpid": "BP-001", "name": "ABC Industrial Supplies", "email": "sales@abc-industrial.example", "phone": "+1 555 0101", "address": "12 Foundry Rd, Detroit, MI"},
-    {"bpid": "BP-002", "name": "Globex Components", "email": "orders@globex.example", "phone": "+1 555 0102", "address": "400 Market St, Austin, TX"},
+    {
+        "bpid": "BP-001",
+        "name": "ABC Industrial Supplies",
+        "email": "sales@abc-industrial.example",
+        "phone": "+1 555 0101",
+        "address": "12 Foundry Rd, Detroit, MI",
+    },
+    {
+        "bpid": "BP-002",
+        "name": "Globex Components",
+        "email": "orders@globex.example",
+        "phone": "+1 555 0102",
+        "address": "400 Market St, Austin, TX",
+    },
 ]
 ORDERS = [
-    {"orno": "LN-700001", "bpid": "BP-001", "lines": [{"item": "ITEM001", "qty": 500, "price": 0.12}]},
+    {
+        "orno": "LN-700001",
+        "bpid": "BP-001",
+        "lines": [{"item": "ITEM001", "qty": 500, "price": 0.12}],
+    },
 ]
 RECEIPTS: list[dict] = []  # warehouse receipts (inbound advice + receipt status)
 STOCK_MOVEMENTS: list[dict] = []  # inventory transactions; blocked = quarantine location
@@ -72,13 +103,23 @@ class MockInforConnector(ERPConnector):
 
     def list_items(self):
         return [
-            {"item_code": i["item"], "description": i["description"], "stock_quantity": i["onhand"], "warehouse": i["warehouse"]}
+            {
+                "item_code": i["item"],
+                "description": i["description"],
+                "stock_quantity": i["onhand"],
+                "warehouse": i["warehouse"],
+            }
             for i in ITEMS
         ]
 
     def list_suppliers(self):
         return [
-            {"supplier_name": s["name"], "email": s["email"], "phone": s["phone"], "address": s["address"]}
+            {
+                "supplier_name": s["name"],
+                "email": s["email"],
+                "phone": s["phone"],
+                "address": s["address"],
+            }
             for s in SUPPLIERS
         ]
 
@@ -88,7 +129,10 @@ class MockInforConnector(ERPConnector):
             {
                 "po_number": o["orno"],
                 "supplier": names.get(o["bpid"], o["bpid"]),
-                "items": [{"item_code": l["item"], "quantity": l["qty"], "unit_price": l["price"]} for l in o["lines"]],
+                "items": [
+                    {"item_code": ln["item"], "quantity": ln["qty"], "unit_price": ln["price"]}
+                    for ln in o["lines"]
+                ],
             }
             for o in ORDERS
         ]
@@ -97,7 +141,10 @@ class MockInforConnector(ERPConnector):
         rec = self.raw_create_order(
             {
                 "bpid": "BP-001",
-                "lines": [{"item": i["item_code"], "qty": i["quantity"], "price": i["unit_price"]} for i in po["items"]],
+                "lines": [
+                    {"item": i["item_code"], "qty": i["quantity"], "price": i["unit_price"]}
+                    for i in po["items"]
+                ],
                 "ref": po["po_number"],
             }
         )
@@ -112,7 +159,10 @@ class MockInforConnector(ERPConnector):
                 "ref": po["po_number"],
                 "asn": shipment["shipment_no"],
                 "tracking": shipment.get("tracking_no", ""),
-                "lines": [{"item": i["item_code"], "expected": i["quantity_shipped"]} for i in shipment["items"]],
+                "lines": [
+                    {"item": i["item_code"], "expected": i["quantity_shipped"]}
+                    for i in shipment["items"]
+                ],
                 "status": "Expected",
                 "created": now(),
             }
@@ -140,10 +190,18 @@ class MockInforConnector(ERPConnector):
     def release_stock(self, po, shipment, lines):
         for ln in lines:
             _onhand(ln["item_code"], ln["quantity"])
-        return {"movement_ref": self._movement("available", po, shipment, lines, "Receipt to available stock")}
+        return {
+            "movement_ref": self._movement(
+                "available", po, shipment, lines, "Receipt to available stock"
+            )
+        }
 
     def quarantine_stock(self, po, shipment, lines, reason):
-        return {"movement_ref": self._movement("quarantine", po, shipment, lines, f"Rejected at inspection: {reason}")}
+        return {
+            "movement_ref": self._movement(
+                "quarantine", po, shipment, lines, f"Rejected at inspection: {reason}"
+            )
+        }
 
     def set_invoice_hold(self, po, hold, reason=""):
         ref = po.get("erp_reference")
@@ -151,5 +209,13 @@ class MockInforConnector(ERPConnector):
             if h["orno"] == ref and h["active"]:
                 h["active"], h["released"] = False, now()
         if hold:
-            INVOICE_HOLDS.append({"hold": f"HLD-{next(_hld):04d}", "orno": ref, "reason": reason, "active": True, "created": now()})
+            INVOICE_HOLDS.append(
+                {
+                    "hold": f"HLD-{next(_hld):04d}",
+                    "orno": ref,
+                    "reason": reason,
+                    "active": True,
+                    "created": now(),
+                }
+            )
         return {"hold_ref": ref}

@@ -6,6 +6,7 @@
 Steps: connect -> list tools -> call read-only tools. Pass --write to also create a Draft PO (flagged as an AI action).
 Exit code is non-zero if anything fails, so it can be used in CI.
 """
+
 import argparse
 import asyncio
 import json
@@ -69,7 +70,12 @@ async def main() -> int:
             try:
                 r = await c.call_tool(name, params)
                 data = r.data
-                ok(name, f"-> {len(data)} item(s)" if isinstance(data, list) else f"-> {json.dumps(data)[:80]}")
+                ok(
+                    name,
+                    f"-> {len(data)} item(s)"
+                    if isinstance(data, list)
+                    else f"-> {json.dumps(data)[:80]}",
+                )
             except Exception as exc:  # noqa: BLE001
                 bad(name, exc)
 
@@ -82,8 +88,14 @@ async def main() -> int:
         if args.write:
             try:
                 sup = (await c.call_tool("search_supplier", {"supplier_name": ""})).data[0]["id"]
-                r = await c.call_tool("create_purchase_order", {"supplier_id": sup, "item_code": "ITEM001", "quantity": 1})
-                ok("create_purchase_order", f"-> {r.data['po_number']} (created_via={r.data['created_via']})")
+                r = await c.call_tool(
+                    "create_purchase_order",
+                    {"supplier_id": sup, "item_code": "ITEM001", "quantity": 1},
+                )
+                ok(
+                    "create_purchase_order",
+                    f"-> {r.data['po_number']} (created_via={r.data['created_via']})",
+                )
             except Exception as exc:  # noqa: BLE001
                 bad("create_purchase_order", exc)
 

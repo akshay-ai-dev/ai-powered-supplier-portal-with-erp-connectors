@@ -5,13 +5,19 @@ from email.message import EmailMessage
 
 from ..config import settings
 from ..db import now
-from .context import current_channel
-from .context import token_label
+from .context import current_channel, token_label
 
 log = logging.getLogger("erp.notifications")
 
 
-def audit(conn: sqlite3.Connection, user_id: int | None, action: str, entity: str, entity_id, detail: str = "") -> None:
+def audit(
+    conn: sqlite3.Connection,
+    user_id: int | None,
+    action: str,
+    entity: str,
+    entity_id,
+    detail: str = "",
+) -> None:
     label = token_label.get()
     if label:
         detail = f"{detail} [token: {label}]".strip()
@@ -65,6 +71,7 @@ def list_for_user(conn: sqlite3.Connection, user: dict, limit: int = 50) -> list
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT * FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT ?", (user["id"], limit)
+            "SELECT * FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT ?",
+            (user["id"], limit),
         ).fetchall()
     return [dict(r) for r in rows]

@@ -7,7 +7,7 @@ class ERPConnector(ABC):
 
     name: str
 
-    def reset(self) -> None:
+    def reset(self) -> None:  # noqa: B027 - deliberately not abstract: real connectors have nothing to reset
         """Restore the connector's mock state (no-op for real connectors)."""
 
     @abstractmethod

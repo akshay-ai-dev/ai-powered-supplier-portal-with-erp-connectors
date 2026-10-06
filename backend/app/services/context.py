@@ -7,13 +7,16 @@ channel  web        - the browser UI / normal REST calls
 scope    read | write - what an agent token may do (write = read + create Drafts); web sessions are always "write"
 token_label  name of the API token an agent used, so the audit log can say which one acted
 """
+
 import contextvars
 
 from .errors import Forbidden
 
 channel: contextvars.ContextVar[str] = contextvars.ContextVar("channel", default="web")
 scope: contextvars.ContextVar[str] = contextvars.ContextVar("scope", default="write")
-token_label: contextvars.ContextVar[str | None] = contextvars.ContextVar("token_label", default=None)
+token_label: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "token_label", default=None
+)
 
 AGENT_CHANNELS = {"mcp", "agent-api", "assistant"}
 
@@ -24,4 +27,6 @@ def current_channel() -> str:
 
 def require_write() -> None:
     if scope.get() != "write":
-        raise Forbidden("This API token is read-only. Create a token with the 'write' scope to let an agent create drafts.")
+        raise Forbidden(
+            "This API token is read-only. Create a token with the 'write' scope to let an agent create drafts."
+        )

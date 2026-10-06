@@ -12,7 +12,10 @@ def buyer_dashboard(conn: sqlite3.Connection, user: dict) -> dict:
     uid = user["id"]
     by_status = {
         r["status"]: r["n"]
-        for r in conn.execute("SELECT status, COUNT(*) n FROM purchase_orders WHERE created_by = ? GROUP BY status", (uid,))
+        for r in conn.execute(
+            "SELECT status, COUNT(*) n FROM purchase_orders WHERE created_by = ? GROUP BY status",
+            (uid,),
+        )
     }
     spend = conn.execute(
         "SELECT s.supplier_name AS name, ROUND(SUM(po.total_amount),2) AS total FROM purchase_orders po "
@@ -29,7 +32,9 @@ def buyer_dashboard(conn: sqlite3.Connection, user: dict) -> dict:
     ).fetchall()
     return {
         "open_orders": _count(
-            conn, "SELECT COUNT(*) FROM purchase_orders WHERE created_by = ? AND status IN ('Draft','Pending','Approved')", uid
+            conn,
+            "SELECT COUNT(*) FROM purchase_orders WHERE created_by = ? AND status IN ('Draft','Pending','Approved')",
+            uid,
         ),
         "inventory_count": _count(conn, "SELECT COUNT(*) FROM inventory"),
         "low_stock_count": _count(conn, "SELECT COUNT(*) FROM inventory WHERE stock_quantity < 20"),
@@ -44,7 +49,9 @@ def supplier_dashboard(conn: sqlite3.Connection, user: dict) -> dict:
     sid = user.get("supplier_id") or -1
     return {
         "active_orders": _count(
-            conn, "SELECT COUNT(*) FROM purchase_orders WHERE supplier_id = ? AND status IN ('Pending','Approved')", sid
+            conn,
+            "SELECT COUNT(*) FROM purchase_orders WHERE supplier_id = ? AND status IN ('Pending','Approved')",
+            sid,
         ),
         "pending_deliveries": _count(
             conn,
@@ -57,11 +64,15 @@ def supplier_dashboard(conn: sqlite3.Connection, user: dict) -> dict:
 
 def inspector_dashboard(conn: sqlite3.Connection, user: dict) -> dict:
     """Goods receiving at a glance. A buyer's own inspector counts that buyer's shipments only."""
-    scope_sql, scope_args = ("AND po.created_by = ?", [user["owner_id"]]) if user.get("owner_id") else ("", [])
+    scope_sql, scope_args = (
+        ("AND po.created_by = ?", [user["owner_id"]]) if user.get("owner_id") else ("", [])
+    )
     by_status = {
         r["status"]: r["n"]
         for r in conn.execute(
-            "SELECT s.status, COUNT(*) n FROM shipments s JOIN purchase_orders po ON po.id = s.po_id WHERE 1=1 " + scope_sql + " GROUP BY s.status",
+            "SELECT s.status, COUNT(*) n FROM shipments s JOIN purchase_orders po ON po.id = s.po_id WHERE 1=1 "
+            + scope_sql
+            + " GROUP BY s.status",
             scope_args,
         )
     }
