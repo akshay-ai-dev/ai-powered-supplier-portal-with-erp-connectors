@@ -1,0 +1,16 @@
+# Secrets
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Input images and extraction results (may contain private document data)
+data/
+Data/
+outputs/
+
+# macOS
+.DS_Store

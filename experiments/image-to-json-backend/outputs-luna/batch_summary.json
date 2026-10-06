@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "started_at": "2026-10-05T21:17:00+00:00",
+  "finished_at": "2026-10-05T21:17:01+00:00",
+  "model": "gpt-5.6-Sol",
+  "input_dir": "data",
+  "output_dir": "outputs-luna",
+  "overwrite": false,
+  "stopped_early": true,
+  "counts": {
+    "success": 0,
+    "failed": 1,
+    "skipped": 0,
+    "not_attempted": 4
+  },
+  "files": [
+    {
+      "source_file": "1_raw_material.jpg",
+      "output_file": "1_raw_material.jpg.json",
+      "status": "failed",
+      "error": "The model 'gpt-5.6-Sol' is not available to your account (HTTP 404, model_not_found)."
+    },
+    {
+      "source_file": "2_component_parts.jpg",
+      "output_file": "2_component_parts.jpg.json",
+      "status": "not_attempted",
+      "error": "batch stopped after a fatal API error"
+    },
+    {
+      "source_file": "3_machinery_equipment.jpg",
+      "output_file": "3_machinery_equipment.jpg.json",
+      "status": "not_attempted",
+      "error": "batch stopped after a fatal API error"
+    },
+    {
+      "source_file": "4_packaging.jpg",
+      "output_file": "4_packaging.jpg.json",
+      "status": "not_attempted",
+      "error": "batch stopped after a fatal API error"
+    },
+    {
+      "source_file": "5_MRO.jpg",
+      "output_file": "5_MRO.jpg.json",
+      "status": "not_attempted",
+      "error": "batch stopped after a fatal API error"
+    }
+  ]
+}

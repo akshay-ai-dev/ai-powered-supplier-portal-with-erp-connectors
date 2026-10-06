@@ -1,0 +1,66 @@
+{
+  "schema_version": "2.0",
+  "result_fields": [
+    "shipDate",
+    "carrier",
+    "trackingNumbers",
+    "shippedQuantity",
+    "lotNumbers",
+    "serialNumbers"
+  ],
+  "started_at": "2026-10-05T23:30:41+00:00",
+  "finished_at": "2026-10-05T23:31:03+00:00",
+  "model": "gpt-6-luna",
+  "input_dir": "data",
+  "output_dir": "outputs_shipments",
+  "overwrite": false,
+  "stopped_early": false,
+  "counts": {
+    "success": 5,
+    "failed": 0,
+    "skipped": 0,
+    "not_attempted": 0
+  },
+  "files": [
+    {
+      "source_file": "1_raw_material.jpg",
+      "output_file": "1_raw_material.jpg.json",
+      "status": "success",
+      "error": null,
+      "model": "gpt-6-luna",
+      "processed_at": "2026-10-05T23:30:46+00:00"
+    },
+    {
+      "source_file": "2_component_parts.jpg",
+      "output_file": "2_component_parts.jpg.json",
+      "status": "success",
+      "error": null,
+      "model": "gpt-6-luna",
+      "processed_at": "2026-10-05T23:30:51+00:00"
+    },
+    {
+      "source_file": "3_machinery_equipment.jpg",
+      "output_file": "3_machinery_equipment.jpg.json",
+      "status": "success",
+      "error": null,
+      "model": "gpt-6-luna",
+      "processed_at": "2026-10-05T23:30:56+00:00"
+    },
+    {
+      "source_file": "4_packaging.jpg",
+      "output_file": "4_packaging.jpg.json",
+      "status": "success",
+      "error": null,
+      "model": "gpt-6-luna",
+      "processed_at": "2026-10-05T23:30:59+00:00"
+    },
+    {
+      "source_file": "5_MRO.jpg",
+      "output_file": "5_MRO.jpg.json",
+      "status": "success",
+      "error": null,
+      "model": "gpt-6-luna",
+      "processed_at": "2026-10-05T23:31:03+00:00"
+    }
+  ]
+}
