@@ -16,17 +16,47 @@ MATERIALS = [
     {"MATNR": "ITEM008", "MAKTX": "Safety Gloves (Box of 50)", "LABST": 0, "WERKS": "PLANT-1000"},
 ]
 VENDORS = [
-    {"LIFNR": "100001", "NAME1": "ABC Industrial Supplies", "SMTP_ADDR": "sales@abc-industrial.example", "TELF1": "+1 555 0101", "STRAS": "12 Foundry Rd, Detroit, MI"},
-    {"LIFNR": "100002", "NAME1": "Globex Components", "SMTP_ADDR": "orders@globex.example", "TELF1": "+1 555 0102", "STRAS": "400 Market St, Austin, TX"},
-    {"LIFNR": "100003", "NAME1": "Northwind Metals", "SMTP_ADDR": "hello@northwind.example", "TELF1": "+1 555 0103", "STRAS": "88 Harbor Ave, Seattle, WA"},
-    {"LIFNR": "100004", "NAME1": "Initech Electrical", "SMTP_ADDR": "supply@initech.example", "TELF1": "+1 555 0104", "STRAS": "1 Circuit Way, San Jose, CA"},
+    {
+        "LIFNR": "100001",
+        "NAME1": "ABC Industrial Supplies",
+        "SMTP_ADDR": "sales@abc-industrial.example",
+        "TELF1": "+1 555 0101",
+        "STRAS": "12 Foundry Rd, Detroit, MI",
+    },
+    {
+        "LIFNR": "100002",
+        "NAME1": "Globex Components",
+        "SMTP_ADDR": "orders@globex.example",
+        "TELF1": "+1 555 0102",
+        "STRAS": "400 Market St, Austin, TX",
+    },
+    {
+        "LIFNR": "100003",
+        "NAME1": "Northwind Metals",
+        "SMTP_ADDR": "hello@northwind.example",
+        "TELF1": "+1 555 0103",
+        "STRAS": "88 Harbor Ave, Seattle, WA",
+    },
+    {
+        "LIFNR": "100004",
+        "NAME1": "Initech Electrical",
+        "SMTP_ADDR": "supply@initech.example",
+        "TELF1": "+1 555 0104",
+        "STRAS": "1 Circuit Way, San Jose, CA",
+    },
 ]
 PURCHASE_ORDERS = [
-    {"EBELN": "4500000001", "LIFNR": "100001", "ITEMS": [{"MATNR": "ITEM001", "MENGE": 500, "NETPR": 0.12}]},
+    {
+        "EBELN": "4500000001",
+        "LIFNR": "100001",
+        "ITEMS": [{"MATNR": "ITEM001", "MENGE": 500, "NETPR": 0.12}],
+    },
 ]
 # Fulfilment documents created by the warehouse flow
 INBOUND_DELIVERIES: list[dict] = []  # LIKP/LIPS: inbound delivery header + items
-STOCK_MOVEMENTS: list[dict] = []  # MSEG: 101 = goods receipt to unrestricted, 103/350 = to blocked (quarantine)
+STOCK_MOVEMENTS: list[
+    dict
+] = []  # MSEG: 101 = goods receipt to unrestricted, 103/350 = to blocked (quarantine)
 INVOICE_BLOCKS: list[dict] = []  # RBKP payment block (ZLSPR)
 
 _INITIAL = deepcopy(PURCHASE_ORDERS)
@@ -82,13 +112,23 @@ class MockSapConnector(ERPConnector):
     # --- normalized contract ---
     def list_items(self):
         return [
-            {"item_code": m["MATNR"], "description": m["MAKTX"], "stock_quantity": m["LABST"], "warehouse": m["WERKS"]}
+            {
+                "item_code": m["MATNR"],
+                "description": m["MAKTX"],
+                "stock_quantity": m["LABST"],
+                "warehouse": m["WERKS"],
+            }
             for m in MATERIALS
         ]
 
     def list_suppliers(self):
         return [
-            {"supplier_name": v["NAME1"], "email": v["SMTP_ADDR"], "phone": v["TELF1"], "address": v["STRAS"]}
+            {
+                "supplier_name": v["NAME1"],
+                "email": v["SMTP_ADDR"],
+                "phone": v["TELF1"],
+                "address": v["STRAS"],
+            }
             for v in VENDORS
         ]
 
@@ -99,7 +139,8 @@ class MockSapConnector(ERPConnector):
                 "po_number": p["EBELN"],
                 "supplier": vendors.get(p["LIFNR"], p["LIFNR"]),
                 "items": [
-                    {"item_code": i["MATNR"], "quantity": i["MENGE"], "unit_price": i["NETPR"]} for i in p["ITEMS"]
+                    {"item_code": i["MATNR"], "quantity": i["MENGE"], "unit_price": i["NETPR"]}
+                    for i in p["ITEMS"]
                 ],
             }
             for p in PURCHASE_ORDERS
@@ -110,7 +151,8 @@ class MockSapConnector(ERPConnector):
             {
                 "LIFNR": "100001",
                 "ITEMS": [
-                    {"MATNR": i["item_code"], "MENGE": i["quantity"], "NETPR": i["unit_price"]} for i in po["items"]
+                    {"MATNR": i["item_code"], "MENGE": i["quantity"], "NETPR": i["unit_price"]}
+                    for i in po["items"]
                 ],
                 "REF": po["po_number"],
             }
@@ -126,7 +168,10 @@ class MockSapConnector(ERPConnector):
                 "REF_PO": po["po_number"],
                 "LIFEX": shipment["shipment_no"],  # vendor's delivery note number
                 "TRAID": shipment.get("tracking_no", ""),
-                "ITEMS": [{"MATNR": i["item_code"], "LFIMG": i["quantity_shipped"]} for i in shipment["items"]],
+                "ITEMS": [
+                    {"MATNR": i["item_code"], "LFIMG": i["quantity_shipped"]}
+                    for i in shipment["items"]
+                ],
                 "STATUS": "OPEN",
                 "ERDAT": now(),
             }
@@ -154,11 +199,19 @@ class MockSapConnector(ERPConnector):
     def release_stock(self, po, shipment, lines):
         for ln in lines:
             _stock(ln["item_code"], ln["quantity"])
-        return {"movement_ref": self._movement("101", po, shipment, lines, "Goods receipt to unrestricted-use stock")}
+        return {
+            "movement_ref": self._movement(
+                "101", po, shipment, lines, "Goods receipt to unrestricted-use stock"
+            )
+        }
 
     def quarantine_stock(self, po, shipment, lines, reason):
         # Blocked stock is not added to LABST (unrestricted); it is only booked as a movement.
-        return {"movement_ref": self._movement("350", po, shipment, lines, f"Blocked stock (quarantine): {reason}")}
+        return {
+            "movement_ref": self._movement(
+                "350", po, shipment, lines, f"Blocked stock (quarantine): {reason}"
+            )
+        }
 
     def set_invoice_hold(self, po, hold, reason=""):
         ref = po.get("erp_reference")
@@ -166,5 +219,14 @@ class MockSapConnector(ERPConnector):
             if b["EBELN"] == ref and b["ACTIVE"]:
                 b["ACTIVE"], b["RELEASED"] = False, now()
         if hold:
-            INVOICE_BLOCKS.append({"BLOCK_ID": f"B{next(_blk):04d}", "EBELN": ref, "ZLSPR": "R", "REASON": reason, "ACTIVE": True, "CREATED": now()})
+            INVOICE_BLOCKS.append(
+                {
+                    "BLOCK_ID": f"B{next(_blk):04d}",
+                    "EBELN": ref,
+                    "ZLSPR": "R",
+                    "REASON": reason,
+                    "ACTIVE": True,
+                    "CREATED": now(),
+                }
+            )
         return {"hold_ref": ref}

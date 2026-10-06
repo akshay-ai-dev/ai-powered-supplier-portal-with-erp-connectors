@@ -5,8 +5,9 @@ was raised) | Cancelled. After award, the stage follows the PO: Awarded -> In Tr
 
 Each requirement targets one ERP (sap | infor); the PO raised on award is pushed to that ERP when approved.
 """
+
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from ..db import now
 from . import attachments as attachments_svc
@@ -27,10 +28,12 @@ def parse_deadline(value: str | None) -> str | None:
     try:
         dt = datetime.fromisoformat(str(value).strip().replace("Z", "+00:00"))
     except ValueError:
-        raise DomainError("quote_deadline must be an ISO date-time such as 2026-10-15T17:00:00Z")
+        raise DomainError(
+            "quote_deadline must be an ISO date-time such as 2026-10-15T17:00:00Z"
+        ) from None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC).isoformat(timespec="seconds")
 
 
 def _deadline(req) -> datetime | None:
@@ -41,7 +44,7 @@ def _deadline(req) -> datetime | None:
 def quotes_closed(req) -> bool:
     """An Open requirement whose quote deadline has passed: no new, changed, withdrawn or declined quotes."""
     d = _deadline(req)
-    return req["status"] == "Open" and d is not None and d <= datetime.now(timezone.utc)
+    return req["status"] == "Open" and d is not None and d <= datetime.now(UTC)
 
 
 def ensure_quoting_open(req) -> None:
@@ -89,13 +92,22 @@ def _is_invited(conn: sqlite3.Connection, req_id: int, supplier_id: int | None) 
 def _has_quote(conn: sqlite3.Connection, req_id: int, supplier_id: int | None) -> bool:
     return bool(
         supplier_id
-        and conn.execute("SELECT 1 FROM quotes WHERE requirement_id = ? AND supplier_id = ?", (req_id, supplier_id)).fetchone()
+        and conn.execute(
+            "SELECT 1 FROM quotes WHERE requirement_id = ? AND supplier_id = ?",
+            (req_id, supplier_id),
+        ).fetchone()
     )
 
 
-def _hydrate(conn: sqlite3.Connection, row: sqlite3.Row, user: dict, with_quotes: bool = False) -> dict:
+def _hydrate(
+    conn: sqlite3.Connection, row: sqlite3.Row, user: dict, with_quotes: bool = False
+) -> dict:
     req = dict(row)
-    po = conn.execute("SELECT * FROM purchase_orders WHERE id = ?", (req["po_id"],)).fetchone() if req["po_id"] else None
+    po = (
+        conn.execute("SELECT * FROM purchase_orders WHERE id = ?", (req["po_id"],)).fetchone()
+        if req["po_id"]
+        else None
+    )
     quotes = [
         dict(q)
         for q in conn.execute(
@@ -115,13 +127,16 @@ def _hydrate(conn: sqlite3.Connection, row: sqlite3.Row, user: dict, with_quotes
         req["unread_messages"] = 0  # the buyer-supplier conversation is private
     else:
         req["unread_messages"] = conn.execute(
-            "SELECT COUNT(*) FROM messages WHERE requirement_id = ? AND sender_role = 'supplier' AND read_at IS NULL", (req["id"],)
+            "SELECT COUNT(*) FROM messages WHERE requirement_id = ? AND sender_role = 'supplier' AND read_at IS NULL",
+            (req["id"],),
         ).fetchone()[0]
     req["stage"] = _stage(req, po, len(quotes))
     req["po_number"] = po["po_number"] if po else None
     req["delivery_status"] = po["delivery_status"] if po else None
     if user["role"] == "supplier":
-        req["my_quote"] = next((q for q in quotes if q["supplier_id"] == user.get("supplier_id")), None)
+        req["my_quote"] = next(
+            (q for q in quotes if q["supplier_id"] == user.get("supplier_id")), None
+        )
         req["awarded_to_me"] = bool(req["my_quote"] and req["my_quote"]["status"] == "Accepted")
         dec = conn.execute(
             "SELECT declined, decline_reason FROM requirement_invites WHERE requirement_id = ? AND supplier_id = ?",
@@ -191,14 +206,18 @@ def _get_visible(conn: sqlite3.Connection, user: dict, req_id: int) -> sqlite3.R
     """Read access for anyone: owner buyer/admin, or a supplier who was invited (while open) or has quoted."""
     if user["role"] == "inspector":  # read-only view of everything except the private chat
         row = _get_row(conn, req_id)
-        if user.get("owner_id") and row["created_by"] != user["owner_id"]:  # an inspector a buyer created sees only that buyer's
+        if (
+            user.get("owner_id") and row["created_by"] != user["owner_id"]
+        ):  # an inspector a buyer created sees only that buyer's
             raise NotFound("Requirement not found")
         return row
     if user["role"] != "supplier":
         return _get_owned(conn, user, req_id)
     row = _get_row(conn, req_id)
     sid = user.get("supplier_id")
-    if _has_quote(conn, req_id, sid) or (row["status"] == "Open" and _is_invited(conn, req_id, sid)):
+    if _has_quote(conn, req_id, sid) or (
+        row["status"] == "Open" and _is_invited(conn, req_id, sid)
+    ):
         return row
     raise NotFound("Requirement not found")
 
@@ -245,24 +264,55 @@ def create_requirement(conn: sqlite3.Connection, user: dict, data: dict) -> dict
     if erp not in ERPS:
         raise DomainError(f"erp must be one of {ERPS}")
     open_to_all = bool(data.get("open_to_all"))
-    invited = [] if open_to_all else _valid_supplier_ids(conn, data.get("supplier_ids") or [r["id"] for r in conn.execute("SELECT id FROM suppliers")])
+    invited = (
+        []
+        if open_to_all
+        else _valid_supplier_ids(
+            conn,
+            data.get("supplier_ids") or [r["id"] for r in conn.execute("SELECT id FROM suppliers")],
+        )
+    )
     if not open_to_all and not invited:
         raise DomainError("There are no suppliers to invite")
     deadline = parse_deadline(data.get("quote_deadline"))
-    if deadline and datetime.fromisoformat(deadline) <= datetime.now(timezone.utc):
+    if deadline and datetime.fromisoformat(deadline) <= datetime.now(UTC):
         raise DomainError("The quote deadline must be in the future")
     # a deadline less than a day away needs no "closing soon" reminder right after the invitation
-    soon = bool(deadline) and datetime.fromisoformat(deadline) - datetime.now(timezone.utc) <= REMINDER_WINDOW
+    soon = (
+        bool(deadline) and datetime.fromisoformat(deadline) - datetime.now(UTC) <= REMINDER_WINDOW
+    )
     cur = conn.execute(
         "INSERT INTO requirements (req_number, title, description, item_code, quantity, target_price, needed_by, erp, open_to_all, "
         "quote_deadline, deadline_reminded, created_by, created_via, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (f"TMP-{now()}-{user['id']}", data["title"], data.get("description", ""), data.get("item_code") or None,
-         data["quantity"], data.get("target_price"), data.get("needed_by"), erp, 1 if open_to_all else 0,
-         deadline, 1 if soon else 0, user["id"], current_channel(), now()),
+        (
+            f"TMP-{now()}-{user['id']}",
+            data["title"],
+            data.get("description", ""),
+            data.get("item_code") or None,
+            data["quantity"],
+            data.get("target_price"),
+            data.get("needed_by"),
+            erp,
+            1 if open_to_all else 0,
+            deadline,
+            1 if soon else 0,
+            user["id"],
+            current_channel(),
+            now(),
+        ),
     )
     rid = cur.lastrowid
     conn.execute("UPDATE requirements SET req_number = ? WHERE id = ?", (f"REQ{2000 + rid}", rid))
-    audit(conn, user["id"], "create", "requirement", f"REQ{2000 + rid}", f"erp={erp}, " + ("open to all" if open_to_all else f"invited={len(invited)}") + (f", deadline={deadline}" if deadline else ""))
+    audit(
+        conn,
+        user["id"],
+        "create",
+        "requirement",
+        f"REQ{2000 + rid}",
+        f"erp={erp}, "
+        + ("open to all" if open_to_all else f"invited={len(invited)}")
+        + (f", deadline={deadline}" if deadline else ""),
+    )
     req = dict(_get_row(conn, rid))
     if open_to_all:
         for s in suppliers_svc.list_suppliers(conn):
@@ -278,7 +328,12 @@ def open_to_everyone(conn: sqlite3.Connection, user: dict, req_id: int) -> dict:
     if req["status"] != "Open":
         raise DomainError("Only open requirements can be opened to all suppliers")
     if not req["open_to_all"]:
-        already = {r["supplier_id"] for r in conn.execute("SELECT supplier_id FROM requirement_invites WHERE requirement_id = ?", (req_id,))}
+        already = {
+            r["supplier_id"]
+            for r in conn.execute(
+                "SELECT supplier_id FROM requirement_invites WHERE requirement_id = ?", (req_id,)
+            )
+        }
         conn.execute("UPDATE requirements SET open_to_all = 1 WHERE id = ?", (req_id,))
         for s in suppliers_svc.list_suppliers(conn):
             if s["id"] not in already:
@@ -299,7 +354,9 @@ def invite_more(conn: sqlite3.Connection, user: dict, req_id: int, supplier_ids:
     return get_requirement(conn, user, req_id)
 
 
-def list_requirements(conn: sqlite3.Connection, user: dict, stage: str | None = None, mine_only: bool = False) -> list[dict]:
+def list_requirements(
+    conn: sqlite3.Connection, user: dict, stage: str | None = None, mine_only: bool = False
+) -> list[dict]:
     if user["role"] == "supplier":
         sid = user.get("supplier_id") or -1
         rows = conn.execute(
@@ -310,9 +367,13 @@ def list_requirements(conn: sqlite3.Connection, user: dict, stage: str | None = 
             (sid, sid, 1 if mine_only else 0),
         ).fetchall()
     elif user["role"] == "buyer":
-        rows = conn.execute("SELECT * FROM requirements WHERE created_by = ? ORDER BY id DESC", (user["id"],)).fetchall()
+        rows = conn.execute(
+            "SELECT * FROM requirements WHERE created_by = ? ORDER BY id DESC", (user["id"],)
+        ).fetchall()
     elif user["role"] == "inspector" and user.get("owner_id"):
-        rows = conn.execute("SELECT * FROM requirements WHERE created_by = ? ORDER BY id DESC", (user["owner_id"],)).fetchall()
+        rows = conn.execute(
+            "SELECT * FROM requirements WHERE created_by = ? ORDER BY id DESC", (user["owner_id"],)
+        ).fetchall()
     elif user["role"] in ("admin", "inspector"):
         rows = conn.execute("SELECT * FROM requirements ORDER BY id DESC").fetchall()
     else:
@@ -335,8 +396,13 @@ def submit_quote(conn: sqlite3.Connection, user: dict, req_id: int, data: dict) 
     if req["status"] != "Open":
         raise DomainError("This requirement is no longer open")
     ensure_quoting_open(req)
-    conn.execute("UPDATE requirement_invites SET declined = 0, decline_reason = '' WHERE requirement_id = ? AND supplier_id = ?", (req_id, sid))
-    existing = conn.execute("SELECT id FROM quotes WHERE requirement_id = ? AND supplier_id = ?", (req_id, sid)).fetchone()
+    conn.execute(
+        "UPDATE requirement_invites SET declined = 0, decline_reason = '' WHERE requirement_id = ? AND supplier_id = ?",
+        (req_id, sid),
+    )
+    existing = conn.execute(
+        "SELECT id FROM quotes WHERE requirement_id = ? AND supplier_id = ?", (req_id, sid)
+    ).fetchone()
     if existing:  # re-applying updates the quote (also reactivates a withdrawn one)
         conn.execute(
             "UPDATE quotes SET unit_price=?, lead_time_days=?, message=?, status='Submitted' WHERE id=?",
@@ -345,10 +411,19 @@ def submit_quote(conn: sqlite3.Connection, user: dict, req_id: int, data: dict) 
     else:
         conn.execute(
             "INSERT INTO quotes (requirement_id, supplier_id, unit_price, lead_time_days, message, created_at) VALUES (?,?,?,?,?,?)",
-            (req_id, sid, data["unit_price"], data["lead_time_days"], data.get("message", ""), now()),
+            (
+                req_id,
+                sid,
+                data["unit_price"],
+                data["lead_time_days"],
+                data.get("message", ""),
+                now(),
+            ),
         )
     supplier = suppliers_svc.get_supplier(conn, sid)
-    buyer = conn.execute("SELECT id, email FROM users WHERE id = ?", (req["created_by"],)).fetchone()
+    buyer = conn.execute(
+        "SELECT id, email FROM users WHERE id = ?", (req["created_by"],)
+    ).fetchone()
     notify(
         conn,
         title=f"New quote on {req['req_number']}",
@@ -381,13 +456,29 @@ def _audience(conn: sqlite3.Connection, req) -> list[int]:
     if req["open_to_all"]:
         ids = [r["id"] for r in conn.execute("SELECT id FROM suppliers")]
     else:
-        ids = [r["supplier_id"] for r in conn.execute("SELECT supplier_id FROM requirement_invites WHERE requirement_id = ?", (req["id"],))]
-    declined = {r["supplier_id"] for r in conn.execute("SELECT supplier_id FROM requirement_invites WHERE requirement_id = ? AND declined = 1", (req["id"],))}
+        ids = [
+            r["supplier_id"]
+            for r in conn.execute(
+                "SELECT supplier_id FROM requirement_invites WHERE requirement_id = ?", (req["id"],)
+            )
+        ]
+    declined = {
+        r["supplier_id"]
+        for r in conn.execute(
+            "SELECT supplier_id FROM requirement_invites WHERE requirement_id = ? AND declined = 1",
+            (req["id"],),
+        )
+    }
     return [i for i in ids if i not in declined]
 
 
 def _has_active_quote(conn: sqlite3.Connection, req_id: int, supplier_id: int) -> bool:
-    return bool(conn.execute("SELECT 1 FROM quotes WHERE requirement_id = ? AND supplier_id = ? AND status = 'Submitted'", (req_id, supplier_id)).fetchone())
+    return bool(
+        conn.execute(
+            "SELECT 1 FROM quotes WHERE requirement_id = ? AND supplier_id = ? AND status = 'Submitted'",
+            (req_id, supplier_id),
+        ).fetchone()
+    )
 
 
 def set_deadline(conn: sqlite3.Connection, user: dict, req_id: int, value: str | None) -> dict:
@@ -396,33 +487,48 @@ def set_deadline(conn: sqlite3.Connection, user: dict, req_id: int, value: str |
     if req["status"] != "Open":
         raise DomainError("The deadline can only be changed while the requirement is open")
     new = parse_deadline(value)
-    if new and datetime.fromisoformat(new) <= datetime.now(timezone.utc):
+    if new and datetime.fromisoformat(new) <= datetime.now(UTC):
         raise DomainError("The new deadline must be in the future")
-    soon = bool(new) and datetime.fromisoformat(new) - datetime.now(timezone.utc) <= REMINDER_WINDOW
+    soon = bool(new) and datetime.fromisoformat(new) - datetime.now(UTC) <= REMINDER_WINDOW
     conn.execute(
         "UPDATE requirements SET quote_deadline = ?, deadline_reminded = ?, deadline_closed_notified = 0 WHERE id = ?",
         (new, 1 if soon else 0, req_id),
     )
     audit(conn, user["id"], "deadline", "requirement", req["req_number"], new or "cleared")
     fresh = _get_row(conn, req_id)
-    when = f"The new deadline is {_deadline_text(fresh)}." if new else "There is no longer a deadline."
+    when = (
+        f"The new deadline is {_deadline_text(fresh)}." if new else "There is no longer a deadline."
+    )
     for sid in _audience(conn, fresh):
         s = suppliers_svc.get_supplier(conn, sid)
-        notify(conn, title=f"Quote deadline updated: {req['req_number']}", message=f"The deadline for '{req['title']}' changed. {when}", email_to=s["email"], supplier_id=sid)
+        notify(
+            conn,
+            title=f"Quote deadline updated: {req['req_number']}",
+            message=f"The deadline for '{req['title']}' changed. {when}",
+            email_to=s["email"],
+            supplier_id=sid,
+        )
     return get_requirement(conn, user, req_id)
 
 
 def process_deadlines(conn: sqlite3.Connection, now_dt: datetime | None = None) -> dict:
     """Background job: remind suppliers who have not quoted ~24 h before the deadline, and tell the buyer once it has passed.
     Idempotent: each notification is sent once per deadline (flags are reset when the deadline changes)."""
-    now_dt = now_dt or datetime.now(timezone.utc)
+    now_dt = now_dt or datetime.now(UTC)
     reminded = closed = 0
-    for r in conn.execute("SELECT * FROM requirements WHERE status = 'Open' AND quote_deadline IS NOT NULL").fetchall():
+    for r in conn.execute(
+        "SELECT * FROM requirements WHERE status = 'Open' AND quote_deadline IS NOT NULL"
+    ).fetchall():
         deadline = datetime.fromisoformat(r["quote_deadline"])
         if deadline <= now_dt:
             if not r["deadline_closed_notified"]:
-                n = conn.execute("SELECT COUNT(*) FROM quotes WHERE requirement_id = ? AND status = 'Submitted'", (r["id"],)).fetchone()[0]
-                buyer = conn.execute("SELECT id, email FROM users WHERE id = ?", (r["created_by"],)).fetchone()
+                n = conn.execute(
+                    "SELECT COUNT(*) FROM quotes WHERE requirement_id = ? AND status = 'Submitted'",
+                    (r["id"],),
+                ).fetchone()[0]
+                buyer = conn.execute(
+                    "SELECT id, email FROM users WHERE id = ?", (r["created_by"],)
+                ).fetchone()
                 notify(
                     conn,
                     title=f"Quotes closed for {r['req_number']}",
@@ -430,7 +536,9 @@ def process_deadlines(conn: sqlite3.Connection, now_dt: datetime | None = None) 
                     email_to=buyer["email"] if buyer else None,
                     user_id=buyer["id"] if buyer else None,
                 )
-                conn.execute("UPDATE requirements SET deadline_closed_notified = 1 WHERE id = ?", (r["id"],))
+                conn.execute(
+                    "UPDATE requirements SET deadline_closed_notified = 1 WHERE id = ?", (r["id"],)
+                )
                 closed += 1
         elif deadline - now_dt <= REMINDER_WINDOW and not r["deadline_reminded"]:
             for sid in _audience(conn, r):
@@ -454,19 +562,29 @@ def award(conn: sqlite3.Connection, user: dict, req_id: int, quote_id: int) -> d
     if req["status"] != "Open":
         raise DomainError("Requirement is not open")
     quote = conn.execute(
-        "SELECT * FROM quotes WHERE id = ? AND requirement_id = ? AND status = 'Submitted'", (quote_id, req_id)
+        "SELECT * FROM quotes WHERE id = ? AND requirement_id = ? AND status = 'Submitted'",
+        (quote_id, req_id),
     ).fetchone()
     if quote is None:
         raise NotFound("Quote not found or no longer active")
     po = po_svc.create_po(
-        conn, user, quote["supplier_id"],
-        [{"item_code": req["item_code"] or f"REQ{req_id}", "quantity": req["quantity"], "unit_price": quote["unit_price"]}],
+        conn,
+        user,
+        quote["supplier_id"],
+        [
+            {
+                "item_code": req["item_code"] or f"REQ{req_id}",
+                "quantity": req["quantity"],
+                "unit_price": quote["unit_price"],
+            }
+        ],
         submit=True,
         erp=req["erp"],
     )
     conn.execute("UPDATE quotes SET status='Accepted' WHERE id = ?", (quote_id,))
     losers = conn.execute(
-        "SELECT q.id, q.supplier_id FROM quotes q WHERE requirement_id = ? AND status = 'Submitted' AND id != ?", (req_id, quote_id)
+        "SELECT q.id, q.supplier_id FROM quotes q WHERE requirement_id = ? AND status = 'Submitted' AND id != ?",
+        (req_id, quote_id),
     ).fetchall()
     for q in losers:
         conn.execute("UPDATE quotes SET status='Rejected' WHERE id = ?", (q["id"],))
@@ -478,7 +596,9 @@ def award(conn: sqlite3.Connection, user: dict, req_id: int, quote_id: int) -> d
             email_to=s["email"],
             supplier_id=s["id"],
         )
-    conn.execute("UPDATE requirements SET status='Awarded', po_id = ? WHERE id = ?", (po["id"], req_id))
+    conn.execute(
+        "UPDATE requirements SET status='Awarded', po_id = ? WHERE id = ?", (po["id"], req_id)
+    )
     audit(conn, user["id"], "award", "requirement", req["req_number"], f"po={po['po_number']}")
     return get_requirement(conn, user, req_id)
 
@@ -488,13 +608,23 @@ def cancel(conn: sqlite3.Connection, user: dict, req_id: int) -> dict:
     if req["status"] != "Open":
         raise DomainError("Only open requirements can be cancelled")
     conn.execute("UPDATE requirements SET status='Cancelled' WHERE id = ?", (req_id,))
-    conn.execute("UPDATE quotes SET status='Rejected' WHERE requirement_id = ? AND status = 'Submitted'", (req_id,))
+    conn.execute(
+        "UPDATE quotes SET status='Rejected' WHERE requirement_id = ? AND status = 'Submitted'",
+        (req_id,),
+    )
     audit(conn, user["id"], "cancel", "requirement", req["req_number"])
     return get_requirement(conn, user, req_id)
 
 
 # ---- attachments (access-checked wrappers around attachments_svc) ----
-def add_attachment(conn: sqlite3.Connection, user: dict, req_id: int, filename: str, data: bytes, content_type: str | None) -> dict:
+def add_attachment(
+    conn: sqlite3.Connection,
+    user: dict,
+    req_id: int,
+    filename: str,
+    data: bytes,
+    content_type: str | None,
+) -> dict:
     req = _get_owned(conn, user, req_id)
     if req["status"] != "Open":
         raise DomainError("Files can only be added while the requirement is open")
@@ -503,7 +633,9 @@ def add_attachment(conn: sqlite3.Connection, user: dict, req_id: int, filename: 
     return att
 
 
-def open_attachment(conn: sqlite3.Connection, user: dict, att_id: int) -> tuple[sqlite3.Row, "object"]:
+def open_attachment(
+    conn: sqlite3.Connection, user: dict, att_id: int
+) -> tuple[sqlite3.Row, "object"]:
     """Returns (row, path) if the user may see the requirement the file belongs to."""
     row = conn.execute("SELECT * FROM attachments WHERE id = ?", (att_id,)).fetchone()
     if row is None:

@@ -3,6 +3,7 @@
 Mailpit has no notion of users, so every read goes through here: we only return messages whose
 To/Cc/Bcc list contains one of the caller's own addresses, and we re-check that on every fetch.
 """
+
 import json
 import sqlite3
 import urllib.error
@@ -17,7 +18,9 @@ def my_addresses(conn: sqlite3.Connection, user: dict) -> set[str]:
     """The user's login email, plus their supplier company email (suppliers receive PO mail there)."""
     addrs = {user["email"].lower()}
     if user.get("supplier_id"):
-        row = conn.execute("SELECT email FROM suppliers WHERE id = ?", (user["supplier_id"],)).fetchone()
+        row = conn.execute(
+            "SELECT email FROM suppliers WHERE id = ?", (user["supplier_id"],)
+        ).fetchone()
         if row:
             addrs.add(row["email"].lower())
     return addrs
@@ -78,7 +81,9 @@ def list_inbox(conn: sqlite3.Connection, user: dict, limit: int = 50) -> list[di
 def get_email(conn: sqlite3.Connection, user: dict, message_id: str) -> dict:
     msg = _mailpit(f"/api/v1/message/{urllib.parse.quote(message_id, safe='')}")
     if not (_recipients(msg) & my_addresses(conn, user)):
-        raise NotFound("Email not found")  # same answer as a missing message: don't reveal it exists
+        raise NotFound(
+            "Email not found"
+        )  # same answer as a missing message: don't reveal it exists
     return {
         "id": msg["ID"],
         "subject": msg.get("Subject", ""),

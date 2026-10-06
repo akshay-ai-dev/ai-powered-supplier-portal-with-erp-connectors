@@ -4,6 +4,7 @@ Rule: suppliers whose promised date meets the need-by date come first, ordered b
 then earliest promised date. Suppliers who miss the date follow, ordered the same way.
 Tools and the AI Assistant only show this ranking; they never compute their own.
 """
+
 from datetime import date, timedelta
 
 RULE = "Lowest total price among suppliers meeting the need-by date, then earliest delivery."
@@ -41,7 +42,14 @@ def rank_quotes(requirement: dict, quotes: list[dict]) -> list[dict]:
                 "status": q.get("status"),
             }
         )
-    rows.sort(key=lambda r: (not r["meets_need_by"], r["total_price"], r["promised_date"] or "9999", r["supplier_name"] or ""))
+    rows.sort(
+        key=lambda r: (
+            not r["meets_need_by"],
+            r["total_price"],
+            r["promised_date"] or "9999",
+            r["supplier_name"] or "",
+        )
+    )
     for i, r in enumerate(rows, start=1):
         r["rank"] = i
     return rows

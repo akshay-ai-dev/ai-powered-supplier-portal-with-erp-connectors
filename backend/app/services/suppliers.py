@@ -5,7 +5,9 @@ from . import scope
 from .errors import Forbidden, NotFound
 
 
-def list_suppliers(conn: sqlite3.Connection, q: str | None = None, user: dict | None = None) -> list[dict]:
+def list_suppliers(
+    conn: sqlite3.Connection, q: str | None = None, user: dict | None = None
+) -> list[dict]:
     sql, args = "SELECT * FROM suppliers WHERE 1=1", []
     if q:
         sql += " AND (supplier_name LIKE ? OR email LIKE ? OR address LIKE ?)"
@@ -28,7 +30,9 @@ def get_supplier(conn: sqlite3.Connection, supplier_id: int, user: dict | None =
     return dict(row)
 
 
-def create_supplier(conn: sqlite3.Connection, supplier_name: str, email: str, phone: str = "", address: str = "") -> dict:
+def create_supplier(
+    conn: sqlite3.Connection, supplier_name: str, email: str, phone: str = "", address: str = ""
+) -> dict:
     cur = conn.execute(
         "INSERT INTO suppliers (supplier_name, email, phone, address, created_at) VALUES (?,?,?,?,?)",
         (supplier_name, email, phone, address, now()),
@@ -41,7 +45,10 @@ def update_supplier(conn: sqlite3.Connection, user: dict, supplier_id: int, chan
     if user["role"] == "supplier" and user.get("supplier_id") != supplier_id:
         raise Forbidden("You can only edit your own supplier profile")
     current = get_supplier(conn, supplier_id)
-    merged = {k: (changes[k] if changes.get(k) is not None else current[k]) for k in ("supplier_name", "email", "phone", "address")}
+    merged = {
+        k: (changes[k] if changes.get(k) is not None else current[k])
+        for k in ("supplier_name", "email", "phone", "address")
+    }
     conn.execute(
         "UPDATE suppliers SET supplier_name=?, email=?, phone=?, address=? WHERE id=?",
         (merged["supplier_name"], merged["email"], merged["phone"], merged["address"], supplier_id),

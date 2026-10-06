@@ -1,7 +1,7 @@
 import os
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from ..config import settings
 
@@ -235,7 +235,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def connect() -> sqlite3.Connection:
@@ -289,7 +289,9 @@ def _migrate(conn: sqlite3.Connection) -> None:
 
 def _migrate_users_role(conn: sqlite3.Connection) -> None:
     """SQLite cannot alter a CHECK constraint, so databases created before the 'inspector' role get the table rebuilt."""
-    row = conn.execute("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'").fetchone()
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'"
+    ).fetchone()
     if not row or "'inspector'" in row["sql"]:
         return
     # owner_id (an inspector created by a buyer) is added by _migrate, which runs first; keep it through the rebuild

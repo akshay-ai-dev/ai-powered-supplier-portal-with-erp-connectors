@@ -8,7 +8,11 @@ def _public_url(raw: str) -> str:
     if not raw:
         return ""
     if "://" not in raw:
-        raw = ("http://" if re.match(r"^(localhost|\d{1,3}(\.\d{1,3}){3})(:\d+)?$", raw, re.I) else "https://") + raw
+        raw = (
+            "http://"
+            if re.match(r"^(localhost|\d{1,3}(\.\d{1,3}){3})(:\d+)?$", raw, re.I)
+            else "https://"
+        ) + raw
     return raw
 
 

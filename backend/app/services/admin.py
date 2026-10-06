@@ -28,7 +28,8 @@ def create_user(conn: sqlite3.Connection, admin: dict, data: dict) -> dict:
     supplier_id = None
     if data["role"] == "supplier":
         cur = conn.execute(
-            "INSERT INTO suppliers (supplier_name, email, created_at) VALUES (?,?,?)", (data["name"], email, now())
+            "INSERT INTO suppliers (supplier_name, email, created_at) VALUES (?,?,?)",
+            (data["name"], email, now()),
         )
         supplier_id = cur.lastrowid
     cur = conn.execute(
@@ -36,7 +37,9 @@ def create_user(conn: sqlite3.Connection, admin: dict, data: dict) -> dict:
         (data["name"], email, hash_password(data["password"]), data["role"], supplier_id, now()),
     )
     audit(conn, admin["id"], "create", "user", cur.lastrowid, data["role"])
-    return dict(conn.execute(f"SELECT {PUBLIC_COLS} FROM users WHERE id = ?", (cur.lastrowid,)).fetchone())
+    return dict(
+        conn.execute(f"SELECT {PUBLIC_COLS} FROM users WHERE id = ?", (cur.lastrowid,)).fetchone()
+    )
 
 
 def update_user(conn: sqlite3.Connection, admin: dict, user_id: int, changes: dict) -> dict:
@@ -48,12 +51,21 @@ def update_user(conn: sqlite3.Connection, admin: dict, user_id: int, changes: di
     if changes.get("name"):
         conn.execute("UPDATE users SET name = ? WHERE id = ?", (changes["name"], user_id))
     if changes.get("active") is not None:
-        conn.execute("UPDATE users SET active = ? WHERE id = ?", (1 if changes["active"] else 0, user_id))
+        conn.execute(
+            "UPDATE users SET active = ? WHERE id = ?", (1 if changes["active"] else 0, user_id)
+        )
     if changes.get("password"):
-        conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hash_password(changes["password"]), user_id))
-    fields = [k for k in changes if k != "password"] + (["password"] if changes.get("password") else [])
+        conn.execute(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (hash_password(changes["password"]), user_id),
+        )
+    fields = [k for k in changes if k != "password"] + (
+        ["password"] if changes.get("password") else []
+    )
     audit(conn, admin["id"], "update", "user", user_id, ",".join(fields))
-    return dict(conn.execute(f"SELECT {PUBLIC_COLS} FROM users WHERE id = ?", (user_id,)).fetchone())
+    return dict(
+        conn.execute(f"SELECT {PUBLIC_COLS} FROM users WHERE id = ?", (user_id,)).fetchone()
+    )
 
 
 def stats(conn: sqlite3.Connection) -> dict:
@@ -63,15 +75,20 @@ def stats(conn: sqlite3.Connection) -> dict:
     return {
         "users_by_role": {
             r["role"]: r["n"]
-            for r in conn.execute("SELECT role, COUNT(*) n FROM users WHERE email != ? GROUP BY role", (SERVICE_EMAIL,))
+            for r in conn.execute(
+                "SELECT role, COUNT(*) n FROM users WHERE email != ? GROUP BY role",
+                (SERVICE_EMAIL,),
+            )
         },
         "suppliers": one("SELECT COUNT(*) FROM suppliers"),
         "inventory_items": one("SELECT COUNT(*) FROM inventory"),
         "requirements_by_status": {
-            r["status"]: r["n"] for r in conn.execute("SELECT status, COUNT(*) n FROM requirements GROUP BY status")
+            r["status"]: r["n"]
+            for r in conn.execute("SELECT status, COUNT(*) n FROM requirements GROUP BY status")
         },
         "orders_by_status": {
-            r["status"]: r["n"] for r in conn.execute("SELECT status, COUNT(*) n FROM purchase_orders GROUP BY status")
+            r["status"]: r["n"]
+            for r in conn.execute("SELECT status, COUNT(*) n FROM purchase_orders GROUP BY status")
         },
         "recent_audit": [
             dict(r)
@@ -100,26 +117,63 @@ def sync_erp(conn: sqlite3.Connection, user: dict, erp: str) -> dict:
         else:
             conn.execute(
                 "INSERT INTO inventory (item_code, description, stock_quantity, warehouse, source, updated_at) VALUES (?,?,?,?,?,?)",
-                (it["item_code"], it["description"], it["stock_quantity"], it["warehouse"], erp, now()),
+                (
+                    it["item_code"],
+                    it["description"],
+                    it["stock_quantity"],
+                    it["warehouse"],
+                    erp,
+                    now(),
+                ),
             )
             added += 1
     for s in connector.list_suppliers():
-        exists = conn.execute("SELECT 1 FROM suppliers WHERE supplier_name = ? COLLATE NOCASE", (s["supplier_name"],)).fetchone()
+        exists = conn.execute(
+            "SELECT 1 FROM suppliers WHERE supplier_name = ? COLLATE NOCASE", (s["supplier_name"],)
+        ).fetchone()
         if not exists:
             conn.execute(
                 "INSERT INTO suppliers (supplier_name, email, phone, address, source, created_at) VALUES (?,?,?,?,?,?)",
                 (s["supplier_name"], s["email"], s["phone"], s["address"], erp, now()),
             )
             suppliers_added += 1
-    audit(conn, user["id"], "sync", "erp", erp, f"items +{added}/~{updated}, suppliers +{suppliers_added}")
-    return {"erp": erp, "items_added": added, "items_updated": updated, "suppliers_added": suppliers_added}
+    audit(
+        conn,
+        user["id"],
+        "sync",
+        "erp",
+        erp,
+        f"items +{added}/~{updated}, suppliers +{suppliers_added}",
+    )
+    return {
+        "erp": erp,
+        "items_added": added,
+        "items_updated": updated,
+        "suppliers_added": suppliers_added,
+    }
 
 
 def reset_data(conn: sqlite3.Connection, admin: dict) -> None:
     """Wipe all business data and reseed. The acting admin is kept so their session stays valid."""
     from ..seed import seed  # local import: seed imports services
 
-    for table in ("api_tokens", "shipment_files", "shipment_units", "inspection_fields", "shipment_items", "shipments", "messages", "quotes", "attachments", "requirement_invites", "requirements", "purchase_order_items", "purchase_orders", "notifications", "audit_logs"):
+    for table in (
+        "api_tokens",
+        "shipment_files",
+        "shipment_units",
+        "inspection_fields",
+        "shipment_items",
+        "shipments",
+        "messages",
+        "quotes",
+        "attachments",
+        "requirement_invites",
+        "requirements",
+        "purchase_order_items",
+        "purchase_orders",
+        "notifications",
+        "audit_logs",
+    ):
         conn.execute(f"DELETE FROM {table}")
     conn.execute("UPDATE users SET supplier_id = NULL WHERE id = ?", (admin["id"],))
     conn.execute("DELETE FROM users WHERE id != ?", (admin["id"],))

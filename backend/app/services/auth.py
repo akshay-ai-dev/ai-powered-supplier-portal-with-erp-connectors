@@ -8,12 +8,19 @@ from .notifications import audit, send_email
 
 
 def _public(user: dict) -> dict:
-    return {k: user.get(k) for k in ("id", "name", "email", "role", "supplier_id", "owner_id", "owner_name")}
+    return {
+        k: user.get(k)
+        for k in ("id", "name", "email", "role", "supplier_id", "owner_id", "owner_name")
+    }
 
 
 def with_owner(conn: sqlite3.Connection, user: dict) -> dict:
     """The user, plus the name of the buyer whose inspector they are (if any)."""
-    owner = conn.execute("SELECT name FROM users WHERE id = ?", (user.get("owner_id"),)).fetchone() if user.get("owner_id") else None
+    owner = (
+        conn.execute("SELECT name FROM users WHERE id = ?", (user.get("owner_id"),)).fetchone()
+        if user.get("owner_id")
+        else None
+    )
     return {**user, "owner_name": owner["name"] if owner else None}
 
 
@@ -46,4 +53,8 @@ def login(conn: sqlite3.Connection, email: str, password: str) -> dict:
 
 
 def _token_response(user: dict) -> dict:
-    return {"access_token": create_access_token(user["id"], user["role"]), "token_type": "bearer", "user": _public(user)}
+    return {
+        "access_token": create_access_token(user["id"], user["role"]),
+        "token_type": "bearer",
+        "user": _public(user),
+    }

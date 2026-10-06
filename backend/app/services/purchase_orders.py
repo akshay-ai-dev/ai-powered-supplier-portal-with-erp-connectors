@@ -4,21 +4,29 @@ import uuid
 from ..config import settings
 from ..connectors import get_connector
 from ..db import now
-from .context import current_channel
 from . import suppliers as suppliers_svc
+from .context import current_channel
 from .errors import DomainError, Forbidden, NotFound
 from .notifications import audit, notify
 
-STATUS_FLOW = {"Draft": {"Pending"}, "Pending": {"Approved"}, "Approved": {"Closed"}, "Closed": set()}
+STATUS_FLOW = {
+    "Draft": {"Pending"},
+    "Pending": {"Approved"},
+    "Approved": {"Closed"},
+    "Closed": set(),
+}
 
 
 def _hydrate(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
     po = dict(row)
     items = conn.execute(
-        "SELECT item_code, quantity, unit_price FROM purchase_order_items WHERE po_id = ? ORDER BY id", (po["id"],)
+        "SELECT item_code, quantity, unit_price FROM purchase_order_items WHERE po_id = ? ORDER BY id",
+        (po["id"],),
     ).fetchall()
     po["items"] = [dict(i) for i in items]
-    supplier = conn.execute("SELECT supplier_name FROM suppliers WHERE id = ?", (po["supplier_id"],)).fetchone()
+    supplier = conn.execute(
+        "SELECT supplier_name FROM suppliers WHERE id = ?", (po["supplier_id"],)
+    ).fetchone()
     po["supplier_name"] = supplier["supplier_name"] if supplier else None
     src = conn.execute("SELECT id FROM requirements WHERE po_id = ?", (po["id"],)).fetchone()
     po["requirement_id"] = src["id"] if src else None
@@ -36,9 +44,15 @@ def _check_visible(user: dict, po: dict) -> None:
     # Buyers only see POs they created (admins see everything).
     if user["role"] == "buyer" and po["created_by"] != user["id"]:
         raise NotFound("Purchase order not found")
-    if user["role"] == "supplier" and (po["supplier_id"] != user.get("supplier_id") or po["status"] == "Draft"):
+    if user["role"] == "supplier" and (
+        po["supplier_id"] != user.get("supplier_id") or po["status"] == "Draft"
+    ):
         raise NotFound("Purchase order not found")
-    if user["role"] == "inspector" and user.get("owner_id") and po["created_by"] != user["owner_id"]:  # a buyer's own inspector
+    if (
+        user["role"] == "inspector"
+        and user.get("owner_id")
+        and po["created_by"] != user["owner_id"]
+    ):  # a buyer's own inspector
         raise NotFound("Purchase order not found")
 
 
@@ -46,10 +60,22 @@ def awaiting_shipment(conn: sqlite3.Connection, pos: list[dict]) -> list[dict]:
     """Approved orders with something still to ship (nothing shipped yet, or part of it, or units to replace)."""
     from . import shipments as ship_svc  # shipments builds on orders, so this is imported late
 
-    return [po for po in pos if po["status"] == "Approved" and po["delivery_status"] != "Delivered" and any(ship_svc.remaining_quantities(conn, po).values())]
+    return [
+        po
+        for po in pos
+        if po["status"] == "Approved"
+        and po["delivery_status"] != "Delivered"
+        and any(ship_svc.remaining_quantities(conn, po).values())
+    ]
 
 
-def list_pos(conn: sqlite3.Connection, user: dict, status: str | None = None, q: str | None = None, view: str | None = None) -> list[dict]:
+def list_pos(
+    conn: sqlite3.Connection,
+    user: dict,
+    status: str | None = None,
+    q: str | None = None,
+    view: str | None = None,
+) -> list[dict]:
     sql = "SELECT po.* FROM purchase_orders po JOIN suppliers s ON s.id = po.supplier_id WHERE 1=1"
     args: list = []
     if user["role"] == "buyer":
@@ -106,7 +132,14 @@ def _notify_new_po(conn: sqlite3.Connection, po: dict) -> None:
     )
 
 
-def create_po(conn: sqlite3.Connection, user: dict, supplier_id: int, items: list[dict], submit: bool = False, erp: str | None = None) -> dict:
+def create_po(
+    conn: sqlite3.Connection,
+    user: dict,
+    supplier_id: int,
+    items: list[dict],
+    submit: bool = False,
+    erp: str | None = None,
+) -> dict:
     if user["role"] not in ("buyer", "admin"):
         raise Forbidden("Only buyers can create purchase orders")
     suppliers_svc.get_supplier(conn, supplier_id)
@@ -114,10 +147,21 @@ def create_po(conn: sqlite3.Connection, user: dict, supplier_id: int, items: lis
     status = "Pending" if submit else "Draft"
     cur = conn.execute(
         "INSERT INTO purchase_orders (po_number, supplier_id, status, total_amount, created_by, created_via, erp, created_at) VALUES (?,?,?,?,?,?,?,?)",
-        (f"TMP-{uuid.uuid4().hex}", supplier_id, status, round(total, 2), user["id"], current_channel(), erp or settings.erp_backend, now()),
+        (
+            f"TMP-{uuid.uuid4().hex}",
+            supplier_id,
+            status,
+            round(total, 2),
+            user["id"],
+            current_channel(),
+            erp or settings.erp_backend,
+            now(),
+        ),
     )
     po_id = cur.lastrowid
-    conn.execute("UPDATE purchase_orders SET po_number = ? WHERE id = ?", (f"PO{1000 + po_id}", po_id))
+    conn.execute(
+        "UPDATE purchase_orders SET po_number = ? WHERE id = ?", (f"PO{1000 + po_id}", po_id)
+    )
     conn.executemany(
         "INSERT INTO purchase_order_items (po_id, item_code, quantity, unit_price) VALUES (?,?,?,?)",
         [(po_id, i["item_code"], i["quantity"], i["unit_price"]) for i in items],
@@ -144,7 +188,9 @@ def update_po(conn: sqlite3.Connection, user: dict, po_id: int, changes: dict) -
             [(po_id, i["item_code"], i["quantity"], i["unit_price"]) for i in changes["items"]],
         )
         total = sum(i["quantity"] * i["unit_price"] for i in changes["items"])
-        conn.execute("UPDATE purchase_orders SET total_amount = ? WHERE id = ?", (round(total, 2), po_id))
+        conn.execute(
+            "UPDATE purchase_orders SET total_amount = ? WHERE id = ?", (round(total, 2), po_id)
+        )
 
     new_status = changes.get("status")
     if new_status and new_status != po["status"]:
@@ -155,13 +201,23 @@ def update_po(conn: sqlite3.Connection, user: dict, po_id: int, changes: dict) -
         if new_status == "Closed" and po["delivery_status"] != "Delivered":
             raise DomainError("Order can only be closed once it has been delivered")
         conn.execute("UPDATE purchase_orders SET status = ? WHERE id = ?", (new_status, po_id))
-        audit(conn, user["id"], "status", "purchase_order", po["po_number"], f"{po['status']} -> {new_status}")
+        audit(
+            conn,
+            user["id"],
+            "status",
+            "purchase_order",
+            po["po_number"],
+            f"{po['status']} -> {new_status}",
+        )
         refreshed = get_po(conn, user, po_id)
         if new_status == "Pending":
             _notify_new_po(conn, refreshed)
         elif new_status == "Approved":
             ref = get_connector(refreshed["erp"]).push_purchase_order(refreshed)
-            conn.execute("UPDATE purchase_orders SET erp_reference = ? WHERE id = ?", (ref["erp_reference"], po_id))
+            conn.execute(
+                "UPDATE purchase_orders SET erp_reference = ? WHERE id = ?",
+                (ref["erp_reference"], po_id),
+            )
             supplier = suppliers_svc.get_supplier(conn, po["supplier_id"])
             notify(
                 conn,
@@ -173,6 +229,8 @@ def update_po(conn: sqlite3.Connection, user: dict, po_id: int, changes: dict) -
 
     new_delivery = changes.get("delivery_status")
     if new_delivery and new_delivery != po["delivery_status"]:
-        raise DomainError("Delivery status follows shipments and warehouse inspection. Suppliers create a shipment; the inspector receives it.")
+        raise DomainError(
+            "Delivery status follows shipments and warehouse inspection. Suppliers create a shipment; the inspector receives it."
+        )
 
     return get_po(conn, user, po_id)

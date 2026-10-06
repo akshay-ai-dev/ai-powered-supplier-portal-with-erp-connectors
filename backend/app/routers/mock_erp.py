@@ -1,4 +1,5 @@
 """Mock SAP and Infor LN endpoints. Unauthenticated on purpose: they stand in for external systems."""
+
 from typing import Any
 
 from fastapi import APIRouter, Body
@@ -30,7 +31,12 @@ def sap_pos():
 
 
 @sap.post("/purchase-orders", status_code=201)
-def sap_create_po(payload: dict[str, Any] = Body(..., examples=[{"LIFNR": "100001", "ITEMS": [{"MATNR": "ITEM001", "MENGE": 10, "NETPR": 0.12}]}])):
+def sap_create_po(
+    payload: dict[str, Any] = Body(
+        ...,
+        examples=[{"LIFNR": "100001", "ITEMS": [{"MATNR": "ITEM001", "MENGE": 10, "NETPR": 0.12}]}],
+    ),
+):
     return _sap.raw_create_purchase_order(payload)
 
 
@@ -80,5 +86,9 @@ def infor_orders():
 
 
 @infor.post("/orders", status_code=201)
-def infor_create_order(payload: dict[str, Any] = Body(..., examples=[{"bpid": "BP-001", "lines": [{"item": "ITEM001", "qty": 10, "price": 0.12}]}])):
+def infor_create_order(
+    payload: dict[str, Any] = Body(
+        ..., examples=[{"bpid": "BP-001", "lines": [{"item": "ITEM001", "qty": 10, "price": 0.12}]}]
+    ),
+):
     return _infor.raw_create_order(payload)

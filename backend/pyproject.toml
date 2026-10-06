@@ -35,6 +35,21 @@ extend-exclude = ["app/db/migrations"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
+# `ruff format` owns line length for code; E501 would only flag the long strings and comments it cannot wrap
+ignore = ["E501"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's dependency markers are meant to be called in argument defaults (B008)
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Header",
+    "fastapi.Form",
+    "fastapi.File",
+    "fastapi.Body",
+    "app.deps.require_roles",   # our own dependency factory: require_roles("buyer", ...)
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

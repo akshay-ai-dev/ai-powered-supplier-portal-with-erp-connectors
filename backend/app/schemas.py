@@ -119,7 +119,11 @@ class AdminUserUpdate(BaseModel):
 class TeamInspectorCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     email: EmailStr
-    password: str = Field(min_length=8, max_length=128, description="Give it to the inspector; they can ask you to reset it")
+    password: str = Field(
+        min_length=8,
+        max_length=128,
+        description="Give it to the inspector; they can ask you to reset it",
+    )
 
 
 class TeamInspectorUpdate(BaseModel):
@@ -140,13 +144,22 @@ class RequirementCreate(BaseModel):
     target_price: float | None = Field(default=None, ge=0)
     needed_by: str | None = Field(default=None, description="ISO date, e.g. 2026-11-30")
     erp: Literal["sap", "infor"] = "sap"
-    quote_deadline: str | None = Field(default=None, description="ISO 8601 date-time (UTC if no offset). Empty = no deadline.")
-    open_to_all: bool = Field(default=False, description="Visible to every supplier, including ones who join later.")
-    supplier_ids: list[int] = Field(default_factory=list, description="Suppliers to invite (ignored when open_to_all). Empty and not open_to_all = invite all current suppliers.")
+    quote_deadline: str | None = Field(
+        default=None, description="ISO 8601 date-time (UTC if no offset). Empty = no deadline."
+    )
+    open_to_all: bool = Field(
+        default=False, description="Visible to every supplier, including ones who join later."
+    )
+    supplier_ids: list[int] = Field(
+        default_factory=list,
+        description="Suppliers to invite (ignored when open_to_all). Empty and not open_to_all = invite all current suppliers.",
+    )
 
 
 class DeadlineIn(BaseModel):
-    quote_deadline: str | None = Field(default=None, description="New ISO 8601 deadline in the future, or null to clear it")
+    quote_deadline: str | None = Field(
+        default=None, description="New ISO 8601 deadline in the future, or null to clear it"
+    )
 
 
 class InviteIn(BaseModel):
@@ -155,7 +168,9 @@ class InviteIn(BaseModel):
 
 class MessageIn(BaseModel):
     body: str = Field(min_length=1, max_length=2000)
-    supplier_id: int | None = Field(default=None, description="Buyers: which supplier's thread. Suppliers: ignored.")
+    supplier_id: int | None = Field(
+        default=None, description="Buyers: which supplier's thread. Suppliers: ignored."
+    )
 
 
 class DeclineIn(BaseModel):
@@ -183,9 +198,13 @@ class ShipmentCreate(BaseModel):
     expected_arrival: str | None = Field(default=None, description="ISO date")
     notes: str = Field(default="", max_length=1000)
     items: list[ShipmentItemIn] = Field(min_length=1)
-    unit_inspection: bool = Field(default=False, description="Give every unit its own QR code so the inspector can test them one by one")
+    unit_inspection: bool = Field(
+        default=False,
+        description="Give every unit its own QR code so the inspector can test them one by one",
+    )
     replaces_shipment_id: int | None = Field(
-        default=None, description="Id of an inspected shipment on this order whose faulty, missing or rejected units this one replaces (see GET /api/purchase-orders/{id}/to-ship)"
+        default=None,
+        description="Id of an inspected shipment on this order whose faulty, missing or rejected units this one replaces (see GET /api/purchase-orders/{id}/to-ship)",
     )
 
 
@@ -195,7 +214,10 @@ class ArrivalLine(BaseModel):
 
 
 class ArrivalIn(BaseModel):
-    lines: list[ArrivalLine] = Field(default_factory=list, description="Received quantity per item. Not used for shipments with QR-coded units: the scanned units are the received quantity.")
+    lines: list[ArrivalLine] = Field(
+        default_factory=list,
+        description="Received quantity per item. Not used for shipments with QR-coded units: the scanned units are the received quantity.",
+    )
     notes: str = Field(default="", max_length=1000)
 
 
@@ -207,14 +229,28 @@ class InspectionIn(BaseModel):
         default_factory=dict,
         description="Quality checklist: packaging, specification, condition, documentation. Approving needs all four true.",
     )
-    improvement: str = Field(default="", max_length=1000, description="What the supplier must fix (sent to them when rejecting)")
-    override_reason: str = Field(default="", max_length=500, description="Unit-level lots: required when the decision goes against what the accuracy threshold suggests")
+    improvement: str = Field(
+        default="",
+        max_length=1000,
+        description="What the supplier must fix (sent to them when rejecting)",
+    )
+    override_reason: str = Field(
+        default="",
+        max_length=500,
+        description="Unit-level lots: required when the decision goes against what the accuracy threshold suggests",
+    )
 
 
 class TokenCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=80, description="For example the laptop or agent that will use it")
-    scope: Literal["read", "write"] = Field(default="read", description="read = look things up; write = read + create Drafts")
-    expires_in_days: int | None = Field(default=90, ge=1, le=365, description="Null = never expires")
+    name: str = Field(
+        min_length=1, max_length=80, description="For example the laptop or agent that will use it"
+    )
+    scope: Literal["read", "write"] = Field(
+        default="read", description="read = look things up; write = read + create Drafts"
+    )
+    expires_in_days: int | None = Field(
+        default=90, ge=1, le=365, description="Null = never expires"
+    )
 
 
 class ScanIn(BaseModel):
@@ -222,9 +258,15 @@ class ScanIn(BaseModel):
 
 
 class UnitResultIn(BaseModel):
-    result: Literal["OK", "Faulty"] | None = Field(default=None, description="Omit to save readings or notes without deciding")
-    checks: dict[str, bool] | None = Field(default=None, description="packaging, specification, condition, documentation")
-    readings: dict[str, str | float | int | bool | None] | None = Field(default=None, description="Test field id -> value")
+    result: Literal["OK", "Faulty"] | None = Field(
+        default=None, description="Omit to save readings or notes without deciding"
+    )
+    checks: dict[str, bool] | None = Field(
+        default=None, description="packaging, specification, condition, documentation"
+    )
+    readings: dict[str, str | float | int | bool | None] | None = Field(
+        default=None, description="Test field id -> value"
+    )
     defect_type: str = Field(default="", max_length=40, description="Required when Faulty")
     notes: str | None = Field(default=None, max_length=1000)
 
@@ -245,8 +287,12 @@ class TestFieldIn(BaseModel):
     min_value: float | None = None
     max_value: float | None = None
     required: bool = False
-    item_code: str | None = Field(default=None, max_length=40, description="Limit the field to one item of the shipment")
-    save_template: bool = Field(default=False, description="Also start future shipments of this item with the field")
+    item_code: str | None = Field(
+        default=None, max_length=40, description="Limit the field to one item of the shipment"
+    )
+    save_template: bool = Field(
+        default=False, description="Also start future shipments of this item with the field"
+    )
 
 
 class TestFieldUpdate(BaseModel):

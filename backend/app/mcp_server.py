@@ -3,14 +3,15 @@
 Auth: callers send `Authorization: Bearer <token>`: a per-user API token (erp_..., created under API access),
 a buyer login JWT, or the optional shared MCP_API_KEY. See agent_auth.py.
 """
+
 import contextvars
 
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 from starlette.responses import JSONResponse
 
-from .db import get_conn
 from .agent_auth import RATE_LIMIT, SERVICE_USER_EMAIL, rate_limited, resolve
+from .db import get_conn
 from .services import agent_tools
 from .services.context import channel as channel_var
 from .services.context import require_write
@@ -18,8 +19,9 @@ from .services.context import scope as scope_var
 from .services.context import token_label as label_var
 from .services.errors import DomainError
 
-
-_current_user_id: contextvars.ContextVar[int | None] = contextvars.ContextVar("mcp_user_id", default=None)
+_current_user_id: contextvars.ContextVar[int | None] = contextvars.ContextVar(
+    "mcp_user_id", default=None
+)
 
 mcp = FastMCP(
     "ERP Copilot",
@@ -66,9 +68,16 @@ def search_supplier(supplier_name: str) -> list[dict]:
 
 
 @mcp.tool
-def create_purchase_order(supplier_id: int, item_code: str, quantity: int, unit_price: float | None = None) -> dict:
+def create_purchase_order(
+    supplier_id: int, item_code: str, quantity: int, unit_price: float | None = None
+) -> dict:
     """Create a Draft purchase order for one item. Unit price defaults to the item's last known price. Needs a write-scope token."""
-    return _run(lambda c: agent_tools.create_purchase_order(c, _acting_user(c), supplier_id, item_code, quantity, unit_price), write=True)
+    return _run(
+        lambda c: agent_tools.create_purchase_order(
+            c, _acting_user(c), supplier_id, item_code, quantity, unit_price
+        ),
+        write=True,
+    )
 
 
 @mcp.tool
@@ -119,7 +128,6 @@ def draft_award(req_number: str) -> dict:
     return _run(lambda c: agent_tools.draft_award(c, _acting_user(c), req_number))
 
 
-
 class MCPAuthMiddleware:
     """Pure ASGI middleware: authenticates the agent, applies the rate limit and records who is acting."""
 
@@ -134,10 +142,15 @@ class MCPAuthMiddleware:
         raw = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
         principal = resolve(raw)
         if principal is None:
-            resp = JSONResponse({"detail": "MCP requires a buyer API token (erp_...) or a buyer login token"}, status_code=401)
+            resp = JSONResponse(
+                {"detail": "MCP requires a buyer API token (erp_...) or a buyer login token"},
+                status_code=401,
+            )
             return await resp(scope, receive, send)
         if rate_limited(principal.key):
-            resp = JSONResponse({"detail": f"Too many requests. Limit is {RATE_LIMIT} per minute."}, status_code=429)
+            resp = JSONResponse(
+                {"detail": f"Too many requests. Limit is {RATE_LIMIT} per minute."}, status_code=429
+            )
             return await resp(scope, receive, send)
         resets = (
             (_current_user_id, _current_user_id.set(principal.user_id)),

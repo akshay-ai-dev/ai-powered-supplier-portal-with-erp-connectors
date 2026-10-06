@@ -6,6 +6,7 @@ Accepted credentials, in order of preference:
   3. the optional shared MCP_API_KEY: acts as the "MCP Service" buyer (legacy; prefer tokens)
 Normal REST endpoints never accept API tokens.
 """
+
 import os
 import time
 from collections import defaultdict, deque
@@ -79,7 +80,9 @@ def _user_row(user_id: int | None) -> dict:
         row = (
             conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
             if user_id
-            else conn.execute("SELECT * FROM users WHERE email = ?", (SERVICE_USER_EMAIL,)).fetchone()
+            else conn.execute(
+                "SELECT * FROM users WHERE email = ?", (SERVICE_USER_EMAIL,)
+            ).fetchone()
         )
     if row is None:
         raise HTTPException(401, "Agent user is not provisioned")
