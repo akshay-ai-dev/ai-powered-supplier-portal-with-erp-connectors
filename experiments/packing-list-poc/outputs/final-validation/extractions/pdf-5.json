@@ -1,0 +1,464 @@
+{
+  "sourceFile": "pdf-5.pdf",
+  "extractorVersion": "0.2.0",
+  "shipDate": "2024-01-16",
+  "carrier": "UPS",
+  "trackingNumbers": [],
+  "shippedQuantity": 42.0,
+  "unitOfMeasure": "PR",
+  "lotNumbers": [
+    "2401"
+  ],
+  "serialNumbers": [],
+  "sublots": [
+    {
+      "sublotNumber": "US310197",
+      "lotNumber": "2401",
+      "quantity": 6.5,
+      "unit": "PR",
+      "page": 3,
+      "itemNumber": "10Y1532-9.75A"
+    },
+    {
+      "sublotNumber": "US310198",
+      "lotNumber": "2401",
+      "quantity": 5.5,
+      "unit": "PR",
+      "page": 3,
+      "itemNumber": "10Y1532-9.75A"
+    },
+    {
+      "sublotNumber": "US310200",
+      "lotNumber": "2401",
+      "quantity": 3.0,
+      "unit": "PR",
+      "page": 3,
+      "itemNumber": "10Y1532-9.75A"
+    },
+    {
+      "sublotNumber": "US330268",
+      "lotNumber": "2401",
+      "quantity": 6.0,
+      "unit": "PR",
+      "page": 3,
+      "itemNumber": "10Y1532-9.75A"
+    },
+    {
+      "sublotNumber": "US330271",
+      "lotNumber": "2401",
+      "quantity": 3.0,
+      "unit": "PR",
+      "page": 3,
+      "itemNumber": "10Y1532-9.75A"
+    },
+    {
+      "sublotNumber": "USD10087",
+      "lotNumber": "2401",
+      "quantity": 18.0,
+      "unit": "PR",
+      "page": 3,
+      "itemNumber": "10Y1532-9.75A"
+    }
+  ],
+  "items": [
+    {
+      "lineNumber": null,
+      "itemNumber": "10Y1532-9.75A",
+      "customerItemNumber": null,
+      "description": "10\" Prt,CSM,15mil,32\"L,Sz9.75A",
+      "salesOrder": null,
+      "customerReference": null,
+      "quantityOrdered": 42.0,
+      "quantityRequired": null,
+      "quantityShipped": 42.0,
+      "quantityOutstanding": null,
+      "quantityBackordered": 0.0,
+      "unitOfMeasure": "PR",
+      "unitRaw": "PR",
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "2401",
+          "quantity": 42.0,
+          "unit": "PR",
+          "page": 2
+        }
+      ],
+      "sublots": [
+        {
+          "sublotNumber": "US310197",
+          "lotNumber": "2401",
+          "quantity": 6.5,
+          "unit": "PR",
+          "rawValue": "US310197LOT2401",
+          "page": 3
+        },
+        {
+          "sublotNumber": "US310198",
+          "lotNumber": "2401",
+          "quantity": 5.5,
+          "unit": "PR",
+          "rawValue": "US310198LOT2401",
+          "page": 3
+        },
+        {
+          "sublotNumber": "US310200",
+          "lotNumber": "2401",
+          "quantity": 3.0,
+          "unit": "PR",
+          "rawValue": "US310200LOT2401",
+          "page": 3
+        },
+        {
+          "sublotNumber": "US330268",
+          "lotNumber": "2401",
+          "quantity": 6.0,
+          "unit": "PR",
+          "rawValue": "US330268LOT2401",
+          "page": 3
+        },
+        {
+          "sublotNumber": "US330271",
+          "lotNumber": "2401",
+          "quantity": 3.0,
+          "unit": "PR",
+          "rawValue": "US330271LOT2401",
+          "page": 3
+        },
+        {
+          "sublotNumber": "USD10087",
+          "lotNumber": "2401",
+          "quantity": 18.0,
+          "unit": "PR",
+          "rawValue": "USD10087LOT2401",
+          "page": 3
+        }
+      ],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        2,
+        3
+      ],
+      "evidence": [
+        {
+          "page": 2,
+          "text": "10Y1532-9.75A PR 42.000 42.000 0.000",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 2,
+          "text": "Lot Number: LOT:2401 QTY: 42.000",
+          "rule": "lot row / lot column"
+        },
+        {
+          "page": 3,
+          "text": "10Y1532-9.75A PR 42.000 42.000 0.000",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 3,
+          "text": "Lot Number: US310197LOT2401 QTY: 6.500",
+          "rule": "lot row / lot column"
+        },
+        {
+          "page": 3,
+          "text": "Lot Number: US310198LOT2401 QTY: 5.500",
+          "rule": "lot row / lot column"
+        },
+        {
+          "page": 3,
+          "text": "Lot Number: US310200LOT2401 QTY: 3.000",
+          "rule": "lot row / lot column"
+        },
+        {
+          "page": 3,
+          "text": "Lot Number: US330268LOT2401 QTY: 6.000",
+          "rule": "lot row / lot column"
+        },
+        {
+          "page": 3,
+          "text": "Lot Number: US330271LOT2401 QTY: 3.000",
+          "rule": "lot row / lot column"
+        },
+        {
+          "page": 3,
+          "text": "Lot Number: USD10087LOT2401 QTY: 18.000",
+          "rule": "lot row / lot column"
+        }
+      ]
+    }
+  ],
+  "quantitySummary": [
+    {
+      "itemNumber": "10Y1532-9.75A",
+      "description": null,
+      "unit": "PR",
+      "quantityShipped": 42.0,
+      "lineCount": 1,
+      "salesOrders": []
+    }
+  ],
+  "references": {
+    "purchaseOrders": [
+      {
+        "value": "PR3412522",
+        "label": "Purchase Order #",
+        "page": 1
+      }
+    ],
+    "salesOrders": [
+      {
+        "value": "0022514",
+        "label": "Order Number",
+        "page": 2
+      }
+    ],
+    "internalShippingNumbers": [
+      {
+        "value": "0041709",
+        "label": "Shipping Number",
+        "page": 2
+      }
+    ],
+    "accountNumbers": [
+      {
+        "value": "20-FIS001",
+        "label": "Customer Number",
+        "page": 2
+      }
+    ]
+  },
+  "shippingDetails": {
+    "serviceLevel": "GND",
+    "shipMethodRaw": "UPSGND",
+    "freightTerms": [
+      "EXW"
+    ],
+    "packageCount": 2,
+    "packages": []
+  },
+  "rawValues": {
+    "shipDate": "1/16/2024",
+    "carrier": "UPSGND",
+    "shippedQuantity": [
+      42.0
+    ]
+  },
+  "fieldIssues": [
+    {
+      "field": "items",
+      "severity": "info",
+      "code": "non_packing_pages_ignored",
+      "message": "1 quantity row(s) on certificate/other pages were not counted (pages [1])."
+    },
+    {
+      "field": "items",
+      "severity": "info",
+      "code": "repeated_line_merged",
+      "message": "Line 10Y1532-9.75A qty 42.0 on page(s) [3] repeats page(s) [2]; counted once."
+    },
+    {
+      "field": "trackingNumbers",
+      "severity": "warning",
+      "code": "not_found",
+      "message": "No trackingNumbers found in the document."
+    },
+    {
+      "field": "serialNumbers",
+      "severity": "info",
+      "code": "not_found",
+      "message": "No serialNumbers found in the document."
+    }
+  ],
+  "evidence": {
+    "shipDate": [
+      {
+        "page": 2,
+        "text": "Ship Date: | 1/16/2024",
+        "rule": "ship-date label (right)"
+      },
+      {
+        "page": 3,
+        "text": "Ship Date: | 1/16/2024",
+        "rule": "ship-date label (right)"
+      }
+    ],
+    "carrier": [
+      {
+        "page": 2,
+        "text": "Ship VIA / UPSGND",
+        "rule": "carrier label (below)"
+      },
+      {
+        "page": 3,
+        "text": "Ship VIA / UPSGND",
+        "rule": "secondary carrier mention"
+      }
+    ],
+    "packageCount": [
+      {
+        "page": 2,
+        "text": "Number of Packages | 2",
+        "rule": "package count (never used as product quantity)"
+      }
+    ],
+    "freightTerms": [
+      {
+        "page": 2,
+        "text": "F. O. B. / EXW",
+        "rule": "label 'F. O. B.'"
+      },
+      {
+        "page": 3,
+        "text": "F. O. B. / EXW",
+        "rule": "label 'F. O. B.'"
+      }
+    ],
+    "items": [
+      {
+        "page": 2,
+        "text": "10Y1532-9.75A PR 42.000 42.000 0.000",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "Lot Number: LOT:2401 QTY: 42.000",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 3,
+        "text": "10Y1532-9.75A PR 42.000 42.000 0.000",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: US310197LOT2401 QTY: 6.500",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: US310198LOT2401 QTY: 5.500",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: US310200LOT2401 QTY: 3.000",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: US330268LOT2401 QTY: 6.000",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: US330271LOT2401 QTY: 3.000",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: USD10087LOT2401 QTY: 18.000",
+        "rule": "lot row / lot column"
+      }
+    ],
+    "shippedQuantity": [
+      {
+        "page": 2,
+        "text": "10Y1532-9.75A PR 42.000 42.000 0.000",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 1,
+        "text": "Quantity: | 42.0",
+        "rule": "certificate quantity agrees"
+      },
+      {
+        "page": 1,
+        "text": "Total Qty / 42.00",
+        "rule": "certificate quantity agrees"
+      }
+    ],
+    "lotNumbers": [
+      {
+        "page": 2,
+        "text": "2401",
+        "rule": "lot on a shipped line"
+      },
+      {
+        "page": 1,
+        "text": "Lot / 2401",
+        "rule": "lot label (below)"
+      },
+      {
+        "page": 2,
+        "text": "LOT:2401",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: US310197LOT2401",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: US310198LOT2401",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: US310200LOT2401",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: US330268LOT2401",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: US330271LOT2401",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 3,
+        "text": "Lot Number: USD10087LOT2401",
+        "rule": "lot label (inline)"
+      }
+    ]
+  },
+  "document": {
+    "pageCount": 3,
+    "pageTypes": {
+      "1": "certificate",
+      "2": "packing",
+      "3": "packing"
+    },
+    "textLayer": true,
+    "ocrUsed": false,
+    "doclingTableCount": 5,
+    "datePreference": "MDY"
+  },
+  "timings": {
+    "converterInitSeconds": 21.475,
+    "conversionSeconds": 21.875,
+    "layoutSeconds": 0.123,
+    "extractionSeconds": 0.031,
+    "totalSeconds": 43.688,
+    "isolation": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ok",
+          "reason": null,
+          "exitCode": 0,
+          "seconds": 45.153,
+          "log": "outputs\\final-validation\\logs\\pdf-5.attempt1.log"
+        }
+      ],
+      "attemptCount": 1,
+      "timeoutSeconds": 600.0
+    }
+  }
+}

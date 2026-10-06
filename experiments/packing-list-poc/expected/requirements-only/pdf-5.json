@@ -1,0 +1,18 @@
+{
+  "sourceFile": "pdf-5.pdf",
+  "shipDate": "2024-01-16",
+  "carrier": "UPS",
+  "trackingNumbers": [],
+  "shippedQuantity": 42,
+  "unitOfMeasure": "PR",
+  "lotNumbers": ["2401"],
+  "serialNumbers": [],
+  "poQuantity": null,
+  "quantityMismatch": null,
+  "fieldIssues": [
+    {"field": "trackingNumbers", "reason": "not_present", "note": "None printed; 'Shipping Number 0041709' is internal."},
+    {"field": "serialNumbers", "reason": "not_present", "note": "No serials; the six US3xxxxx/USD10087 values are sublots of lot 2401 (sum 42 PR)."},
+    {"field": "poQuantity", "reason": "not_present", "note": "No PO quantity supplied, so no mismatch check."}
+  ],
+  "status": "draft_for_supplier_review"
+}
