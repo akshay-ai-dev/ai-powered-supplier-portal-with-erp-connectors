@@ -1,20 +1,29 @@
 import sqlite3
 
 from ..db import now
+from . import scope
 from .errors import Forbidden, NotFound
 
 
-def list_suppliers(conn: sqlite3.Connection, q: str | None = None) -> list[dict]:
+def list_suppliers(conn: sqlite3.Connection, q: str | None = None, user: dict | None = None) -> list[dict]:
     sql, args = "SELECT * FROM suppliers WHERE 1=1", []
     if q:
         sql += " AND (supplier_name LIKE ? OR email LIKE ? OR address LIKE ?)"
         args += [f"%{q}%"] * 3
-    return [dict(r) for r in conn.execute(sql + " ORDER BY supplier_name", args).fetchall()]
+    rows = [dict(r) for r in conn.execute(sql + " ORDER BY supplier_name", args).fetchall()]
+    buyer = scope.own_buyer(user)
+    if buyer is not None:  # a buyer's own inspector knows only the suppliers that buyer works with
+        mine = scope.supplier_ids(conn, buyer)
+        rows = [r for r in rows if r["id"] in mine]
+    return rows
 
 
-def get_supplier(conn: sqlite3.Connection, supplier_id: int) -> dict:
+def get_supplier(conn: sqlite3.Connection, supplier_id: int, user: dict | None = None) -> dict:
     row = conn.execute("SELECT * FROM suppliers WHERE id = ?", (supplier_id,)).fetchone()
     if row is None:
+        raise NotFound("Supplier not found")
+    buyer = scope.own_buyer(user)
+    if buyer is not None and supplier_id not in scope.supplier_ids(conn, buyer):
         raise NotFound("Supplier not found")
     return dict(row)
 

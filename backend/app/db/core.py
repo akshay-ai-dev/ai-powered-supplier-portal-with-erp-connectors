@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
     role TEXT NOT NULL CHECK (role IN ('buyer','supplier','admin','inspector')),
     supplier_id INTEGER REFERENCES suppliers(id),
     active INTEGER NOT NULL DEFAULT 1,
+    owner_id INTEGER REFERENCES users(id),
     created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS inventory (
@@ -138,6 +139,10 @@ CREATE TABLE IF NOT EXISTS shipments (
     rejection_reason TEXT NOT NULL DEFAULT '',
     quality_checks TEXT NOT NULL DEFAULT '{}',
     improvement_request TEXT NOT NULL DEFAULT '',
+    unit_level INTEGER NOT NULL DEFAULT 0,
+    lot_report TEXT NOT NULL DEFAULT '{}',
+    override_reason TEXT NOT NULL DEFAULT '',
+    replaces_shipment_id INTEGER REFERENCES shipments(id),
     created_by INTEGER REFERENCES users(id),
     created_at TEXT NOT NULL
 );
@@ -146,7 +151,8 @@ CREATE TABLE IF NOT EXISTS shipment_items (
     shipment_id INTEGER NOT NULL REFERENCES shipments(id) ON DELETE CASCADE,
     item_code TEXT NOT NULL,
     quantity_shipped INTEGER NOT NULL,
-    quantity_received INTEGER
+    quantity_received INTEGER,
+    quantity_accepted INTEGER
 );
 CREATE TABLE IF NOT EXISTS shipment_files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -157,6 +163,41 @@ CREATE TABLE IF NOT EXISTS shipment_files (
     size INTEGER NOT NULL,
     stored_name TEXT NOT NULL,
     uploaded_by INTEGER REFERENCES users(id),
+    unit_id INTEGER REFERENCES shipment_units(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS shipment_units (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shipment_id INTEGER NOT NULL REFERENCES shipments(id) ON DELETE CASCADE,
+    item_code TEXT NOT NULL,
+    seq INTEGER NOT NULL,
+    code TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL DEFAULT 'Shipped' CHECK (status IN ('Shipped','Received','OK','Faulty','Missing')),
+    checks TEXT NOT NULL DEFAULT '{}',
+    readings TEXT NOT NULL DEFAULT '{}',
+    defect_type TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    received_by INTEGER REFERENCES users(id),
+    received_at TEXT,
+    tested_by INTEGER REFERENCES users(id),
+    tested_at TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_units_shipment ON shipment_units (shipment_id, status);
+CREATE TABLE IF NOT EXISTS inspection_fields (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shipment_id INTEGER REFERENCES shipments(id) ON DELETE CASCADE,
+    item_code TEXT,
+    label TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('pass_fail','number','text')),
+    unit_label TEXT NOT NULL DEFAULT '',
+    min_value REAL,
+    max_value REAL,
+    required INTEGER NOT NULL DEFAULT 0,
+    is_template INTEGER NOT NULL DEFAULT 0,
+    archived INTEGER NOT NULL DEFAULT 0,
+    buyer_id INTEGER REFERENCES users(id),
+    created_by INTEGER REFERENCES users(id),
     created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS api_tokens (
@@ -228,6 +269,14 @@ MIGRATIONS = [  # (table, column, DDL) applied to databases created before the c
     ("requirements", "deadline_closed_notified", "INTEGER NOT NULL DEFAULT 0"),
     ("requirement_invites", "declined", "INTEGER NOT NULL DEFAULT 0"),
     ("requirement_invites", "decline_reason", "TEXT NOT NULL DEFAULT ''"),
+    # unit-by-unit inspection (QR-coded units), replacement shipments and buyer-owned inspectors
+    ("shipments", "unit_level", "INTEGER NOT NULL DEFAULT 0"),
+    ("shipments", "lot_report", "TEXT NOT NULL DEFAULT '{}'"),
+    ("shipments", "override_reason", "TEXT NOT NULL DEFAULT ''"),
+    ("shipments", "replaces_shipment_id", "INTEGER REFERENCES shipments(id)"),
+    ("shipment_items", "quantity_accepted", "INTEGER"),
+    ("shipment_files", "unit_id", "INTEGER REFERENCES shipment_units(id) ON DELETE CASCADE"),
+    ("users", "owner_id", "INTEGER REFERENCES users(id)"),
 ]
 
 
@@ -243,10 +292,13 @@ def _migrate_users_role(conn: sqlite3.Connection) -> None:
     row = conn.execute("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'").fetchone()
     if not row or "'inspector'" in row["sql"]:
         return
+    # owner_id (an inspector created by a buyer) is added by _migrate, which runs first; keep it through the rebuild
+    has_owner = "owner_id" in {r["name"] for r in conn.execute("PRAGMA table_info(users)")}
+    owner_select = "owner_id" if has_owner else "NULL"
     conn.commit()
     conn.execute("PRAGMA foreign_keys = OFF")
     conn.executescript(
-        """
+        f"""
         BEGIN;
         CREATE TABLE users_new (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -256,10 +308,11 @@ def _migrate_users_role(conn: sqlite3.Connection) -> None:
             role TEXT NOT NULL CHECK (role IN ('buyer','supplier','admin','inspector')),
             supplier_id INTEGER REFERENCES suppliers(id),
             active INTEGER NOT NULL DEFAULT 1,
+            owner_id INTEGER REFERENCES users(id),
             created_at TEXT NOT NULL
         );
-        INSERT INTO users_new (id, name, email, password_hash, role, supplier_id, active, created_at)
-            SELECT id, name, email, password_hash, role, supplier_id, active, created_at FROM users;
+        INSERT INTO users_new (id, name, email, password_hash, role, supplier_id, active, owner_id, created_at)
+            SELECT id, name, email, password_hash, role, supplier_id, active, {owner_select}, created_at FROM users;
         DROP TABLE users;
         ALTER TABLE users_new RENAME TO users;
         COMMIT;

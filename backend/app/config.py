@@ -1,4 +1,15 @@
 import os
+import re
+
+
+def _public_url(raw: str) -> str:
+    """PUBLIC_APP_URL as a clean origin: erp.example.com -> https://erp.example.com, 192.168.1.44:3000 -> http://192.168.1.44:3000."""
+    raw = raw.strip().rstrip("/")
+    if not raw:
+        return ""
+    if "://" not in raw:
+        raw = ("http://" if re.match(r"^(localhost|\d{1,3}(\.\d{1,3}){3})(:\d+)?$", raw, re.I) else "https://") + raw
+    return raw
 
 
 class Settings:
@@ -26,6 +37,20 @@ class Settings:
     erp_backend: str = os.getenv("ERP_BACKEND", "sap")
     # How often the background job checks quote deadlines (reminders / "quotes closed"). 0 disables it.
     deadline_check_seconds: int = int(os.getenv("DEADLINE_CHECK_SECONDS", "60"))
+
+    # Unit-by-unit inspection: accuracy (OK units / received units, in percent) at or above which approving is suggested,
+    # and the most units one shipment may track individually.
+    inspection_accept_threshold: float = float(os.getenv("INSPECTION_ACCEPT_THRESHOLD", "95"))
+    inspection_max_units: int = int(os.getenv("INSPECTION_MAX_UNITS", "2000"))
+    # Address of the web app as other devices reach it (for example https://erp.example.com). QR labels encode
+    # {public_app_url}/units/{code}, so scanning one with a phone camera opens the unit page. Set it to your domain
+    # (https://erp.example.com) or, on a local network, to this computer's address (http://192.168.1.44:3000).
+    # Empty = the labels fall back to the address the supplier's browser is on.
+    public_app_url: str = _public_url(os.getenv("PUBLIC_APP_URL", ""))
+
+    # In-app assistant: natural-language form filling uses OpenAI structured outputs. Without a key only the numbered menus work.
+    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o")
 
 
 settings = Settings()

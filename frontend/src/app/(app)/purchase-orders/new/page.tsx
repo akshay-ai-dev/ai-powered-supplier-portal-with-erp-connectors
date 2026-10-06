@@ -5,6 +5,8 @@ import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { api, money } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { AiBanner, useAiFill } from "@/lib/prefill";
+import { cn } from "@/lib/utils";
 import { useFetch } from "@/lib/use-fetch";
 import type { InventoryItem, POItem, PurchaseOrder, Supplier } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,18 @@ export default function NewPurchaseOrderPage() {
   ]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const ai = useAiFill("new_purchase_order", (v) => {
+    if (v.supplier_id != null) setSupplierId(String(v.supplier_id));
+    if (Array.isArray(v.items) && v.items.length > 0) {
+      setItems(
+        v.items.map((l: { item_code: string | null; quantity: number | null; unit_price: number | null }) => ({
+          item_code: l.item_code ?? "",
+          quantity: String(l.quantity ?? 1),
+          unit_price: String(l.unit_price ?? 0),
+        })),
+      );
+    }
+  });
 
   if (user && user.role !== "buyer" && user.role !== "admin") return <ErrorNote message="Only buyers can create purchase orders." />;
 
@@ -51,6 +65,7 @@ export default function NewPurchaseOrderPage() {
   return (
     <>
       <PageHeader title="New purchase order" />
+      <AiBanner show={ai.any} onDismiss={ai.clear} />
       <Card>
         <CardHeader>
           <CardTitle>Details</CardTitle>
@@ -58,7 +73,7 @@ export default function NewPurchaseOrderPage() {
         <CardContent className="space-y-6">
           <div className="max-w-sm space-y-2">
             <Label htmlFor="supplier">Supplier</Label>
-            <select id="supplier" className={selectCls} value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+            <select id="supplier" className={cn(selectCls, ai.ring("supplier_id"))} value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
               <option value="">Select supplier…</option>
               {suppliers.data?.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -70,7 +85,7 @@ export default function NewPurchaseOrderPage() {
           <div className="space-y-3">
             <Label>Items</Label>
             {items.map((it, i) => (
-              <div key={i} className="grid grid-cols-[1fr_90px_110px_auto] items-center gap-2">
+              <div key={i} className={cn("grid grid-cols-[1fr_90px_110px_auto] items-center gap-2 rounded-md", ai.ring("items"))}>
                 <select aria-label="Item" className={selectCls} value={it.item_code} onChange={(e) => update(i, { item_code: e.target.value })}>
                   <option value="">Select item…</option>
                   {inventory.data?.map((inv) => (

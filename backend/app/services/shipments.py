@@ -13,6 +13,7 @@ import json
 import os
 import sqlite3
 from collections import defaultdict
+from datetime import UTC, datetime, time, timedelta
 
 from ..connectors import get_connector
 from ..db import now
@@ -44,6 +45,10 @@ def _row(conn: sqlite3.Connection, shipment_id: int) -> sqlite3.Row:
 
 def _check_visible(conn: sqlite3.Connection, user: dict, row: sqlite3.Row) -> None:
     if _is_inspector(user):
+        if user["role"] == "inspector" and user.get("owner_id"):  # an inspector a buyer created works on that buyer's shipments only
+            po = conn.execute("SELECT created_by FROM purchase_orders WHERE id = ?", (row["po_id"],)).fetchone()
+            if not po or po["created_by"] != user["owner_id"]:
+                raise NotFound("Shipment not found")
         return
     if user["role"] == "supplier":
         if row["supplier_id"] == user.get("supplier_id"):
@@ -60,13 +65,13 @@ def _hydrate(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
     s["items"] = [
         dict(r)
         for r in conn.execute(
-            "SELECT item_code, quantity_shipped, quantity_received FROM shipment_items WHERE shipment_id = ? ORDER BY id", (s["id"],)
+            "SELECT item_code, quantity_shipped, quantity_received, quantity_accepted FROM shipment_items WHERE shipment_id = ? ORDER BY id", (s["id"],)
         )
     ]
     files = [
         dict(r)
         for r in conn.execute(
-            "SELECT id, kind, filename, size, created_at FROM shipment_files WHERE shipment_id = ? ORDER BY id", (s["id"],)
+            "SELECT id, kind, filename, size, created_at FROM shipment_files WHERE shipment_id = ? AND unit_id IS NULL ORDER BY id", (s["id"],)
         )
     ]
     try:
@@ -75,12 +80,23 @@ def _hydrate(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
         checks = {}
     s["quality_checks"] = checks
     s["quality"] = [{"key": k, "label": label, "passed": checks.get(k)} for k, label in QUALITY_CHECKS.items()]
+    s["unit_level"] = bool(s.get("unit_level"))
+    if s["unit_level"]:
+        s["unit_counts"] = {r["status"]: r["n"] for r in conn.execute("SELECT status, COUNT(*) n FROM shipment_units WHERE shipment_id = ? GROUP BY status", (s["id"],))}
+    s.pop("lot_report", None)  # the report has its own endpoint
     s["packing_list"] = next((f for f in files if f["kind"] == "packing_list"), None)
     s["photos"] = [f for f in files if f["kind"] == "photo"]
     po = conn.execute("SELECT po_number, erp, created_by FROM purchase_orders WHERE id = ?", (s["po_id"],)).fetchone()
     s["po_number"], s["erp"] = po["po_number"], po["erp"]
     sup = conn.execute("SELECT supplier_name FROM suppliers WHERE id = ?", (s["supplier_id"],)).fetchone()
     s["supplier_name"] = sup["supplier_name"] if sup else None
+    # replacement links (every linked shipment belongs to the same order, so it is visible to whoever sees this one)
+    s["replaces_shipment_no"] = None
+    if s.get("replaces_shipment_id"):
+        orig = conn.execute("SELECT shipment_no FROM shipments WHERE id = ?", (s["replaces_shipment_id"],)).fetchone()
+        s["replaces_shipment_no"] = orig["shipment_no"] if orig else None
+    s["replaced_by"] = [dict(r) for r in conn.execute("SELECT id, shipment_no, status FROM shipments WHERE replaces_shipment_id = ? ORDER BY id", (s["id"],))]
+    s["owed"] = [{"item_code": d["item_code"], "quantity": d["outstanding"]} for d in owed_detail(conn, row) if d["outstanding"] > 0]
     return s
 
 
@@ -97,8 +113,9 @@ def _buyer(conn: sqlite3.Connection, po: dict):
     return conn.execute("SELECT id, email FROM users WHERE id = ?", (po["created_by"],)).fetchone()
 
 
-def _tell_inspectors(conn: sqlite3.Connection, title: str, message: str) -> None:
-    for u in conn.execute("SELECT id, email FROM users WHERE role = 'inspector' AND active = 1"):
+def _tell_inspectors(conn: sqlite3.Connection, title: str, message: str, buyer_id: int | None = None) -> None:
+    """Company-wide inspectors, plus the inspectors the order's buyer created."""
+    for u in conn.execute("SELECT id, email FROM users WHERE role = 'inspector' AND active = 1 AND (owner_id IS NULL OR owner_id = ?)", (buyer_id,)):
         notify(conn, title=title, message=message, email_to=u["email"], user_id=u["id"])
 
 
@@ -111,14 +128,40 @@ def _tell_supplier_and_buyer(conn: sqlite3.Connection, po: dict, title: str, mes
 
 
 # ---------------------------------------------------------------- queries
-def list_shipments(conn: sqlite3.Connection, user: dict, status: str | None = None, po_id: int | None = None) -> list[dict]:
+VIEWS = ("arriving_today", "overdue", "inspected_today")
+
+
+def view_condition(view: str, tz_minutes: int = 0) -> tuple[str, list]:
+    """The SQL behind the inspector dashboard's counts, so a count and the list it links to always agree.
+    "Today" is the user's own day: `tz_minutes` is their offset from UTC (minutes east), sent by the browser.
+    Expected arrival is a plain date they typed; the inspection time is a UTC timestamp, so it is compared against the user's day in UTC."""
+    offset = timedelta(minutes=max(-840, min(840, tz_minutes)))
+    today = (datetime.now(UTC) + offset).date()
+    start = datetime.combine(today, time.min, tzinfo=UTC) - offset
+    if view == "arriving_today":
+        return "s.status = 'Shipped' AND substr(s.expected_arrival, 1, 10) = ?", [today.isoformat()]
+    if view == "overdue":
+        return "s.status = 'Shipped' AND s.expected_arrival IS NOT NULL AND s.expected_arrival != '' AND substr(s.expected_arrival, 1, 10) < ?", [today.isoformat()]
+    if view == "inspected_today":
+        return "s.status IN ('Approved','Rejected') AND s.inspected_at >= ? AND s.inspected_at < ?", [start.isoformat(timespec="seconds"), (start + timedelta(days=1)).isoformat(timespec="seconds")]
+    raise DomainError(f"Unknown view: {view}")
+
+
+def list_shipments(conn: sqlite3.Connection, user: dict, status: str | None = None, po_id: int | None = None, view: str | None = None, tz_minutes: int = 0) -> list[dict]:
     sql, args = "SELECT s.* FROM shipments s JOIN purchase_orders po ON po.id = s.po_id WHERE 1=1", []
+    if view:
+        cond, cond_args = view_condition(view, tz_minutes)
+        sql += f" AND {cond}"
+        args += cond_args
     if user["role"] == "supplier":
         sql += " AND s.supplier_id = ?"
         args.append(user.get("supplier_id") or -1)
     elif user["role"] == "buyer":
         sql += " AND po.created_by = ?"
         args.append(user["id"])
+    elif user["role"] == "inspector" and user.get("owner_id"):
+        sql += " AND po.created_by = ?"
+        args.append(user["owner_id"])
     if status:
         sql += " AND s.status = ?"
         args.append(status)
@@ -135,6 +178,134 @@ def get_shipment(conn: sqlite3.Connection, user: dict, shipment_id: int) -> dict
 
 
 # ---------------------------------------------------------------- supplier: ship
+def _ordered_and_committed(conn: sqlite3.Connection, po: dict) -> tuple[dict[str, int], dict[str, int]]:
+    ordered: dict[str, int] = defaultdict(int)
+    for i in po["items"]:
+        ordered[i["item_code"].upper()] += i["quantity"]
+    committed: dict[str, int] = defaultdict(int)
+    for r in conn.execute(
+        # in flight: what was declared; already approved: what actually arrived, so a short delivery can be topped up
+        "SELECT si.item_code, SUM(CASE WHEN s.status = 'Approved' THEN COALESCE(si.quantity_accepted, si.quantity_received, 0) ELSE si.quantity_shipped END) AS q "
+        "FROM shipment_items si JOIN shipments s ON s.id = si.shipment_id "
+        "WHERE s.po_id = ? AND s.status != 'Rejected' GROUP BY si.item_code",
+        (po["id"],),
+    ):
+        committed[r["item_code"].upper()] += r["q"]
+    return ordered, committed
+
+
+def remaining_quantities(conn: sqlite3.Connection, po: dict) -> dict[str, int]:
+    """Per item code (upper case): how much of the order can still be shipped."""
+    ordered, committed = _ordered_and_committed(conn, po)
+    return {code: max(qty - committed[code], 0) for code, qty in ordered.items()}
+
+
+def _received_ok(r: sqlite3.Row | dict, status: str) -> int:
+    """What an inspected shipment line delivered: the accepted units; zero when the lot was rejected."""
+    if status != "Approved":
+        return 0
+    return r["quantity_accepted"] if r["quantity_accepted"] is not None else (r["quantity_received"] or 0)
+
+
+def owed_detail(conn: sqlite3.Connection, row: sqlite3.Row | dict) -> list[dict]:
+    """What an inspected shipment still owes, per item: units that were faulty, missing or rejected, less what replacements
+    already delivered (``replaced``) or have on the way (``on_the_way``). Replacements the inspector rejected do not count."""
+    if row["status"] not in ("Approved", "Rejected"):
+        return []
+    short = {}
+    for r in conn.execute("SELECT item_code, quantity_shipped, quantity_received, quantity_accepted FROM shipment_items WHERE shipment_id = ?", (row["id"],)):
+        n = r["quantity_shipped"] - _received_ok(r, row["status"])
+        if n > 0:
+            short[r["item_code"].upper()] = n
+    if not short:
+        return []
+    replaced, on_the_way = defaultdict(int), defaultdict(int)
+    for r in conn.execute(
+        "SELECT si.item_code, si.quantity_shipped, si.quantity_received, si.quantity_accepted, s.status FROM shipment_items si "
+        "JOIN shipments s ON s.id = si.shipment_id WHERE s.replaces_shipment_id = ? AND s.status != 'Rejected'",
+        (row["id"],),
+    ):
+        code = r["item_code"].upper()
+        if r["status"] == "Approved":
+            replaced[code] += _received_ok(r, "Approved")
+        else:
+            on_the_way[code] += r["quantity_shipped"]
+    return [
+        {"item_code": c, "short": n, "replaced": replaced[c], "on_the_way": on_the_way[c], "outstanding": max(n - replaced[c] - on_the_way[c], 0)}
+        for c, n in short.items()
+    ]
+
+
+def _units_to_replace(conn: sqlite3.Connection, shipment_id: int) -> list[dict]:
+    """The faulty and missing units of a unit-level shipment, with the reason, so the supplier knows what to send."""
+    from .units import DEFECT_TYPES
+
+    return [
+        {"code": u["code"], "item_code": u["item_code"], "status": u["status"], "defect_label": DEFECT_TYPES.get(u["defect_type"], u["defect_type"]) if u["defect_type"] else "", "notes": u["notes"] or ""}
+        for u in conn.execute(
+            "SELECT code, item_code, status, defect_type, notes FROM shipment_units WHERE shipment_id = ? AND status IN ('Faulty','Missing') ORDER BY item_code, seq", (shipment_id,)
+        )
+    ]
+
+
+def replacement_summary(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
+    """Both ends of the replacement link for a shipment's report: the shipment it replaces, and the ones that replace it."""
+    replaces = None
+    if row["replaces_shipment_id"]:
+        orig = conn.execute("SELECT * FROM shipments WHERE id = ?", (row["replaces_shipment_id"],)).fetchone()
+        if orig:
+            replaces = {
+                "id": orig["id"], "shipment_no": orig["shipment_no"], "status": orig["status"], "items": owed_detail(conn, orig),
+                "units": _units_to_replace(conn, orig["id"]) if orig["status"] == "Approved" else [],
+            }
+    replaced_by = []
+    for r in conn.execute("SELECT * FROM shipments WHERE replaces_shipment_id = ? ORDER BY id", (row["id"],)):
+        items = [dict(i) for i in conn.execute("SELECT item_code, quantity_shipped, quantity_received, quantity_accepted FROM shipment_items WHERE shipment_id = ?", (r["id"],))]
+        quality = None
+        if r["status"] in ("Approved", "Rejected") and r["lot_report"] and r["lot_report"] != "{}":
+            quality = json.loads(r["lot_report"]).get("quality_accuracy")
+        replaced_by.append({
+            "id": r["id"], "shipment_no": r["shipment_no"], "status": r["status"], "shipped": sum(i["quantity_shipped"] for i in items),
+            "accepted": sum(_received_ok(i, r["status"]) for i in items) if r["status"] in ("Approved", "Rejected") else None, "quality_accuracy": quality,
+        })
+    return {"replaces": replaces, "replaced_by": replaced_by, "owed": owed_detail(conn, row)}
+
+
+def to_ship(conn: sqlite3.Connection, po: dict) -> dict:
+    """What the supplier can still ship on an order: the quantity left per item, the inspected shipments
+    with units to replace, and the delivery progress per item."""
+    ordered, committed = _ordered_and_committed(conn, po)
+    accepted, in_flight = defaultdict(int), defaultdict(int)
+    for r in conn.execute(
+        "SELECT si.item_code, si.quantity_shipped, si.quantity_received, si.quantity_accepted, s.status FROM shipment_items si "
+        "JOIN shipments s ON s.id = si.shipment_id WHERE s.po_id = ? AND s.status != 'Rejected'",
+        (po["id"],),
+    ):
+        if r["status"] == "Approved":
+            accepted[r["item_code"].upper()] += _received_ok(r, "Approved")
+        else:
+            in_flight[r["item_code"].upper()] += r["quantity_shipped"]
+    progress, seen = [], set()
+    for i in po["items"]:
+        code = i["item_code"].upper()
+        if code in seen:
+            continue
+        seen.add(code)
+        progress.append({"item_code": i["item_code"], "ordered": ordered[code], "accepted": accepted[code], "on_the_way": in_flight[code], "left": max(ordered[code] - committed[code], 0)})
+    rows = conn.execute("SELECT * FROM shipments WHERE po_id = ? AND status IN ('Approved','Rejected') ORDER BY id", (po["id"],)).fetchall()
+    rejected_replacements = {r["replaces_shipment_id"] for r in rows if r["status"] == "Rejected" and r["replaces_shipment_id"]}
+    replace = []
+    for r in rows:
+        items = [d for d in owed_detail(conn, r) if d["outstanding"] > 0]
+        if not items or r["id"] in rejected_replacements:  # a rejected replacement now carries what the original owed
+            continue
+        replace.append({
+            "shipment_id": r["id"], "shipment_no": r["shipment_no"], "status": r["status"], "decided_at": r["inspected_at"], "items": items,
+            "units": _units_to_replace(conn, r["id"]) if r["status"] == "Approved" else [],
+        })
+    return {"progress": progress, "replace": replace}
+
+
 def create_shipment(conn: sqlite3.Connection, user: dict, po_id: int, data: dict) -> dict:
     if user["role"] != "supplier" or not user.get("supplier_id"):
         raise Forbidden("Only the assigned supplier can ship an order")
@@ -146,22 +317,30 @@ def create_shipment(conn: sqlite3.Connection, user: dict, po_id: int, data: dict
     if po["delivery_status"] == "Delivered":
         raise DomainError("This order has already been delivered")
 
-    ordered: dict[str, int] = defaultdict(int)
-    for i in po["items"]:
-        ordered[i["item_code"].upper()] += i["quantity"]
-    committed: dict[str, int] = defaultdict(int)
-    for r in conn.execute(
-        # in flight: what was declared; already approved: what actually arrived, so a short delivery can be topped up
-        "SELECT si.item_code, SUM(CASE WHEN s.status = 'Approved' THEN COALESCE(si.quantity_received, 0) ELSE si.quantity_shipped END) AS q "
-        "FROM shipment_items si JOIN shipments s ON s.id = si.shipment_id "
-        "WHERE s.po_id = ? AND s.status != 'Rejected' GROUP BY si.item_code",
-        (po_id,),
-    ):
-        committed[r["item_code"].upper()] += r["q"]
+    ordered, committed = _ordered_and_committed(conn, po)
 
     lines: dict[str, int] = defaultdict(int)
     for it in data["items"]:
         lines[it["item_code"].strip().upper()] += it["quantity"]
+    if data.get("unit_inspection"):
+        from . import units as units_svc
+
+        units_svc.check_cap(lines)
+    replaces = None
+    if data.get("replaces_shipment_id"):  # checked first, so a bad link says so rather than "exceeds the order"
+        replaces = conn.execute("SELECT * FROM shipments WHERE id = ? AND po_id = ?", (data["replaces_shipment_id"], po_id)).fetchone()
+        if replaces is None:
+            raise DomainError("The shipment to replace must be a shipment on this order")
+        if replaces["status"] not in ("Approved", "Rejected"):
+            raise DomainError(f"{replaces['shipment_no']} has not been inspected yet, so there is nothing to replace")
+        owed = {d["item_code"]: d["outstanding"] for d in owed_detail(conn, replaces)}
+        if not any(owed.values()):
+            raise DomainError(f"{replaces['shipment_no']} has no faulty, missing or rejected units left to replace")
+        for code, qty in lines.items():
+            if owed.get(code, 0) == 0:
+                raise DomainError(f"{code} is not owed for {replaces['shipment_no']}. Ship items that are not replacements as a separate shipment")
+            if qty > owed[code]:
+                raise DomainError(f"{code}: {replaces['shipment_no']} still needs {owed[code]} replaced, not {qty}")
     for code, qty in lines.items():
         if code not in ordered:
             raise DomainError(f"{code} is not on this purchase order")
@@ -171,10 +350,10 @@ def create_shipment(conn: sqlite3.Connection, user: dict, po_id: int, data: dict
             raise DomainError(f"{code}: shipping {qty} would exceed the ordered {ordered[code]} (already shipped {committed[code]})")
 
     cur = conn.execute(
-        "INSERT INTO shipments (shipment_no, po_id, supplier_id, carrier, tracking_no, expected_arrival, notes, created_by, created_at) "
-        "VALUES (?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO shipments (shipment_no, po_id, supplier_id, carrier, tracking_no, expected_arrival, notes, replaces_shipment_id, created_by, created_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?)",
         (f"TMP-{now()}-{user['id']}", po_id, user["supplier_id"], data.get("carrier", ""), data.get("tracking_no", ""),
-         data.get("expected_arrival"), data.get("notes", ""), user["id"], now()),
+         data.get("expected_arrival"), data.get("notes", ""), replaces["id"] if replaces else None, user["id"], now()),
     )
     sid = cur.lastrowid
     number = f"SHP{3000 + sid}"
@@ -182,22 +361,32 @@ def create_shipment(conn: sqlite3.Connection, user: dict, po_id: int, data: dict
     conn.executemany(
         "INSERT INTO shipment_items (shipment_id, item_code, quantity_shipped) VALUES (?,?,?)", [(sid, c, q) for c, q in lines.items()]
     )
+    if data.get("unit_inspection"):
+        from . import inspection_fields as fields_svc
+        from . import units as units_svc
+
+        units_svc.create_units(conn, sid, number, lines)
+        conn.execute("UPDATE shipments SET unit_level = 1 WHERE id = ?", (sid,))
+        fields_svc.copy_templates(conn, sid, list(lines), po["created_by"])
+        audit(conn, user["id"], "units", "shipment", number, f"{sum(lines.values())} unit(s) with QR codes")
     shipment = _hydrate(conn, _row(conn, sid))
     ref = get_connector(po["erp"]).create_inbound_delivery(po, shipment)
     conn.execute("UPDATE shipments SET erp_inbound_ref = ? WHERE id = ?", (ref["erp_inbound_ref"], sid))
     conn.execute("UPDATE purchase_orders SET delivery_status = 'In Transit' WHERE id = ?", (po_id,))
-    audit(conn, user["id"], "ship", "purchase_order", po["po_number"], f"{number} inbound={ref['erp_inbound_ref']}")
+    audit(conn, user["id"], "ship", "purchase_order", po["po_number"], f"{number} inbound={ref['erp_inbound_ref']}" + (f"; replaces {replaces['shipment_no']}" if replaces else ""))
 
     msg = f"{shipment['supplier_name']} shipped {po['po_number']} ({number}). Tracking: {data.get('tracking_no') or 'n/a'}."
+    if replaces:
+        msg += f" This replaces the {'rejected' if replaces['status'] == 'Rejected' else 'faulty or missing'} units of {replaces['shipment_no']}."
     buyer = _buyer(conn, po)
     if buyer:
         notify(conn, title=f"Shipment {number} on its way", message=msg, email_to=buyer["email"], user_id=buyer["id"])
-    _tell_inspectors(conn, f"Incoming shipment {number}", msg + " Please receive and inspect it on arrival.")
+    _tell_inspectors(conn, f"Incoming shipment {number}", msg + " Please receive and inspect it on arrival.", po["created_by"])
     return _hydrate(conn, _row(conn, sid))
 
 
 # ---------------------------------------------------------------- files
-def add_file(conn: sqlite3.Connection, user: dict, shipment_id: int, kind: str, filename: str, data: bytes, content_type: str | None) -> dict:
+def add_file(conn: sqlite3.Connection, user: dict, shipment_id: int, kind: str, filename: str, data: bytes, content_type: str | None, unit_id: int | None = None) -> dict:
     if kind not in KINDS:
         raise DomainError(f"kind must be one of {KINDS}")
     s = _row(conn, shipment_id)
@@ -217,8 +406,8 @@ def add_file(conn: sqlite3.Connection, user: dict, shipment_id: int, kind: str, 
             raise DomainError("Inspection photos must be images (png, jpg, gif, webp)", 415)
     stored = attachments_svc.store(filename, data)
     cur = conn.execute(
-        "INSERT INTO shipment_files (shipment_id, kind, filename, content_type, size, stored_name, uploaded_by, created_at) VALUES (?,?,?,?,?,?,?,?)",
-        (shipment_id, kind, stored["filename"], content_type or "application/octet-stream", stored["size"], stored["stored_name"], user["id"], now()),
+        "INSERT INTO shipment_files (shipment_id, kind, filename, content_type, size, stored_name, uploaded_by, unit_id, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+        (shipment_id, kind, stored["filename"], content_type or "application/octet-stream", stored["size"], stored["stored_name"], user["id"], unit_id, now()),
     )
     audit(conn, user["id"], "file", "shipment", s["shipment_no"], f"{kind}: {stored['filename']}")
     return dict(conn.execute("SELECT id, kind, filename, size, created_at FROM shipment_files WHERE id = ?", (cur.lastrowid,)).fetchone())
@@ -243,11 +432,11 @@ def _remaining(conn: sqlite3.Connection, po_id: int) -> dict[str, int]:
         ordered[r["item_code"].upper()] += r["quantity"]
     got: dict[str, int] = defaultdict(int)
     for r in conn.execute(
-        "SELECT si.item_code, si.quantity_received FROM shipment_items si JOIN shipments s ON s.id = si.shipment_id "
+        "SELECT si.item_code, COALESCE(si.quantity_accepted, si.quantity_received, 0) AS q FROM shipment_items si JOIN shipments s ON s.id = si.shipment_id "
         "WHERE s.po_id = ? AND s.status = 'Approved'",
         (po_id,),
     ):
-        got[r["item_code"].upper()] += r["quantity_received"] or 0
+        got[r["item_code"].upper()] += r["q"] or 0
     return {c: q - got[c] for c, q in ordered.items() if q - got[c] > 0}
 
 
@@ -268,10 +457,17 @@ def record_arrival(conn: sqlite3.Connection, user: dict, shipment_id: int, lines
     if not _is_inspector(user):
         raise Forbidden("Only the warehouse inspector can record arrivals")
     s = _row(conn, shipment_id)
+    _check_visible(conn, user, s)
     if s["status"] != "Shipped":
         raise DomainError(f"Shipment is already {s['status']}")
     shipped = {r["item_code"].upper(): r["quantity_shipped"] for r in conn.execute("SELECT item_code, quantity_shipped FROM shipment_items WHERE shipment_id = ?", (shipment_id,))}
-    received = {ln["item_code"].strip().upper(): ln["quantity_received"] for ln in lines}
+    if s["unit_level"]:  # every scanned unit counts as received; the rest are missing
+        from . import units as units_svc
+
+        got = units_svc.close_arrival(conn, shipment_id)
+        received = {code: got.get(code, 0) for code in shipped}
+    else:
+        received = {ln["item_code"].strip().upper(): ln["quantity_received"] for ln in lines}
     if set(received) != set(shipped):
         raise DomainError(f"Enter the received quantity for every shipped item: {', '.join(sorted(shipped))}")
     for code, qty in received.items():
@@ -303,14 +499,20 @@ def inspect(
     reason: str = "",
     checks: dict | None = None,
     improvement: str = "",
+    override_reason: str = "",
 ) -> dict:
     """Quality check and decision. Approve needs every quality check to pass; reject needs a reason and a photo.
     A rejection tells the supplier exactly what to improve and to fulfil the order with a replacement."""
     if not _is_inspector(user):
         raise Forbidden("Only the warehouse inspector can approve or reject a shipment")
     s = _row(conn, shipment_id)
+    _check_visible(conn, user, s)
     if s["status"] != "Arrived":
         raise DomainError("Record the arrival before inspecting" if s["status"] == "Shipped" else f"Shipment is already {s['status']}")
+    if s["unit_level"]:
+        from . import units as units_svc
+
+        return units_svc.decide(conn, user, s, decision, notes, reason, improvement, override_reason)
     checks = _clean_checks(checks)
     po = _po(conn, s["po_id"])
     erp = get_connector(po["erp"])

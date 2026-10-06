@@ -3,6 +3,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { api, shortDate } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { roleLabel } from "@/lib/roles";
+import type { Role } from "@/lib/types";
 import { useFetch } from "@/lib/use-fetch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +19,7 @@ interface AdminUser {
   name: string;
   email: string;
   role: string;
+  owner_name?: string | null;
   active: number;
   created_at: string;
 }
@@ -78,7 +81,7 @@ export default function AdminUsersPage() {
               <select id="ur" value={form.role} onChange={set("role")} className="h-9 w-full rounded-md border bg-background px-3 text-sm">
                 <option value="buyer">Buyer</option>
                 <option value="supplier">Supplier</option>
-                <option value="inspector">Warehouse inspector</option>
+                <option value="inspector">Inspector (company-wide)</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
@@ -114,7 +117,7 @@ export default function AdminUsersPage() {
               <TableRow key={u.id}>
                 <TableCell className="font-medium">{u.name}</TableCell>
                 <TableCell className="hidden sm:table-cell">{u.email}</TableCell>
-                <TableCell className="capitalize">{u.role}</TableCell>
+                <TableCell>{roleLabel({ role: u.role as Role, owner_name: u.owner_name })}</TableCell>
                 <TableCell>
                   {u.active ? (
                     <Badge variant="outline" className="border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">

@@ -48,6 +48,8 @@ class UserOut(BaseModel):
     email: str
     role: str
     supplier_id: int | None = None
+    owner_id: int | None = None
+    owner_name: str | None = None
 
 
 class TokenOut(BaseModel):
@@ -114,6 +116,18 @@ class AdminUserUpdate(BaseModel):
     password: str | None = Field(default=None, min_length=8, max_length=128)
 
 
+class TeamInspectorCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128, description="Give it to the inspector; they can ask you to reset it")
+
+
+class TeamInspectorUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    active: bool | None = None
+    password: str | None = Field(default=None, min_length=8, max_length=128)
+
+
 class ResetIn(BaseModel):
     confirm: str = Field(description='Must be the literal string "RESET"')
 
@@ -169,6 +183,10 @@ class ShipmentCreate(BaseModel):
     expected_arrival: str | None = Field(default=None, description="ISO date")
     notes: str = Field(default="", max_length=1000)
     items: list[ShipmentItemIn] = Field(min_length=1)
+    unit_inspection: bool = Field(default=False, description="Give every unit its own QR code so the inspector can test them one by one")
+    replaces_shipment_id: int | None = Field(
+        default=None, description="Id of an inspected shipment on this order whose faulty, missing or rejected units this one replaces (see GET /api/purchase-orders/{id}/to-ship)"
+    )
 
 
 class ArrivalLine(BaseModel):
@@ -177,7 +195,7 @@ class ArrivalLine(BaseModel):
 
 
 class ArrivalIn(BaseModel):
-    lines: list[ArrivalLine] = Field(min_length=1)
+    lines: list[ArrivalLine] = Field(default_factory=list, description="Received quantity per item. Not used for shipments with QR-coded units: the scanned units are the received quantity.")
     notes: str = Field(default="", max_length=1000)
 
 
@@ -190,9 +208,51 @@ class InspectionIn(BaseModel):
         description="Quality checklist: packaging, specification, condition, documentation. Approving needs all four true.",
     )
     improvement: str = Field(default="", max_length=1000, description="What the supplier must fix (sent to them when rejecting)")
+    override_reason: str = Field(default="", max_length=500, description="Unit-level lots: required when the decision goes against what the accuracy threshold suggests")
 
 
 class TokenCreate(BaseModel):
     name: str = Field(min_length=1, max_length=80, description="For example the laptop or agent that will use it")
     scope: Literal["read", "write"] = Field(default="read", description="read = look things up; write = read + create Drafts")
     expires_in_days: int | None = Field(default=90, ge=1, le=365, description="Null = never expires")
+
+
+class ScanIn(BaseModel):
+    code: str = Field(min_length=1, max_length=120, description="The text of a unit's QR code")
+
+
+class UnitResultIn(BaseModel):
+    result: Literal["OK", "Faulty"] | None = Field(default=None, description="Omit to save readings or notes without deciding")
+    checks: dict[str, bool] | None = Field(default=None, description="packaging, specification, condition, documentation")
+    readings: dict[str, str | float | int | bool | None] | None = Field(default=None, description="Test field id -> value")
+    defect_type: str = Field(default="", max_length=40, description="Required when Faulty")
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+class UnitBulkIn(BaseModel):
+    action: Literal["ok", "set_field"]
+    codes: list[str] | None = Field(default=None, max_length=2000)
+    all_pending: bool = False
+    item_code: str | None = None
+    field_id: int | None = None
+    value: str | float | int | bool | None = None
+
+
+class TestFieldIn(BaseModel):
+    label: str = Field(min_length=1, max_length=80)
+    type: Literal["pass_fail", "number", "text"]
+    unit_label: str = Field(default="", max_length=20)
+    min_value: float | None = None
+    max_value: float | None = None
+    required: bool = False
+    item_code: str | None = Field(default=None, max_length=40, description="Limit the field to one item of the shipment")
+    save_template: bool = Field(default=False, description="Also start future shipments of this item with the field")
+
+
+class TestFieldUpdate(BaseModel):
+    label: str | None = Field(default=None, min_length=1, max_length=80)
+    type: Literal["pass_fail", "number", "text"] | None = None
+    unit_label: str | None = Field(default=None, max_length=20)
+    min_value: float | None = None
+    max_value: float | None = None
+    required: bool | None = None

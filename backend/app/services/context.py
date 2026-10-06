@@ -3,7 +3,7 @@
 channel  web        - the browser UI / normal REST calls
          mcp        - an AI agent through the FastMCP server
          agent-api  - an AI agent through the OpenAPI tool endpoints (/api/mcp/*)
-         assistant  - the built-in in-app assistant (reserved for the assistant phase)
+         assistant  - the built-in in-app assistant (app/ai/engine.py sets it while submitting a confirmed flow)
 scope    read | write - what an agent token may do (write = read + create Drafts); web sessions are always "write"
 token_label  name of the API token an agent used, so the audit log can say which one acted
 """

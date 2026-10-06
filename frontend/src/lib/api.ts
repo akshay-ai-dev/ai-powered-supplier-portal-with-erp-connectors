@@ -37,11 +37,20 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   if (!res.ok) {
     if (res.status === 401 && token) {
       tokenStore.clear();
-      if (typeof window !== "undefined" && !location.pathname.startsWith("/login")) location.href = "/login";
+      if (typeof window !== "undefined" && !location.pathname.startsWith("/login")) {
+        // an expired session on a deep link (a scanned unit page) comes back to that page after signing in again
+        const here = location.pathname + location.search;
+        location.href = location.pathname === "/" || location.pathname === "/dashboard" ? "/login" : `/login?next=${encodeURIComponent(here)}`;
+      }
     }
     throw new ApiError(res.status, errorMessage(data));
   }
   return data as T;
+}
+
+/** This browser's offset from UTC in minutes, east positive. Sent with "today" views so that today means the user's own day. */
+export function tzMinutes(): number {
+  return -new Date().getTimezoneOffset();
 }
 
 export const money = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);

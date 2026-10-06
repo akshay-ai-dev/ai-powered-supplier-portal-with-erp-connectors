@@ -5,6 +5,7 @@ import { ArrowLeft, Download, MessageSquare, Paperclip, Trash2 } from "lucide-re
 import { toast } from "sonner";
 import { api, deadlineLabel, downloadFile, fileSize, localInputToIso, money, shortDate, toLocalInput, uploadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { AiBanner, useAiFill } from "@/lib/prefill";
 import { useFetch } from "@/lib/use-fetch";
 import type { Requirement, Supplier } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,19 @@ export default function RequirementDetail({ params }: { params: Promise<{ id: st
     if (r?.my_quote && r.my_quote.status !== "Withdrawn")
       setQuote({ unit_price: String(r.my_quote.unit_price), lead_time_days: String(r.my_quote.lead_time_days), message: r.my_quote.message });
   }, [r]);
+
+  // declared after the effect above so the assistant's values win over the saved quote
+  const ai = useAiFill(
+    "submit_quote",
+    (v) =>
+      setQuote((q) => ({
+        unit_price: v.unit_price != null ? String(v.unit_price) : q.unit_price,
+        lead_time_days: v.lead_time_days != null ? String(v.lead_time_days) : q.lead_time_days,
+        message: v.message ?? q.message,
+      })),
+    id,
+    !!r,
+  );
 
   async function run(fn: () => Promise<unknown>, ok: string) {
     setBusy(true);
@@ -325,6 +339,11 @@ export default function RequirementDetail({ params }: { params: Promise<{ id: st
 
       {!isSupplier && <HistoryCard history={r.history} />}
 
+      {isSupplier && ai.any && (
+        <div className="max-w-xl">
+          <AiBanner show onDismiss={ai.clear} />
+        </div>
+      )}
       {isSupplier && (
         <Card className="max-w-xl">
           <CardHeader>
@@ -353,16 +372,16 @@ export default function RequirementDetail({ params }: { params: Promise<{ id: st
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="up">Unit price</Label>
-                    <Input id="up" type="number" min={0} step="0.01" required value={quote.unit_price} onChange={(e) => setQuote({ ...quote, unit_price: e.target.value })} />
+                    <Input id="up" type="number" min={0} step="0.01" required value={quote.unit_price} onChange={(e) => setQuote({ ...quote, unit_price: e.target.value })} className={ai.ring("unit_price")} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lt">Lead time (days)</Label>
-                    <Input id="lt" type="number" min={0} required value={quote.lead_time_days} onChange={(e) => setQuote({ ...quote, lead_time_days: e.target.value })} />
+                    <Input id="lt" type="number" min={0} required value={quote.lead_time_days} onChange={(e) => setQuote({ ...quote, lead_time_days: e.target.value })} className={ai.ring("lead_time_days")} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="msg">Message to buyer</Label>
-                  <Textarea id="msg" value={quote.message} onChange={(e) => setQuote({ ...quote, message: e.target.value })} />
+                  <Textarea id="msg" value={quote.message} onChange={(e) => setQuote({ ...quote, message: e.target.value })} className={ai.ring("message")} />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={busy}>
