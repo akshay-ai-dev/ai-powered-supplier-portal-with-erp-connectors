@@ -48,7 +48,7 @@ and prove that it works.
 | CAP, Fiori, UI5, UI5 Web Components, MDK MCP servers | Open-source **developer tools** for building SAP apps | No | Free (npm) |
 | BTP Administration / LeanIX MCP servers | Platform administration, enterprise architecture | No | BTP / LeanIX subscription |
 | Joule | SAP's own AI assistant; uses MCP internally | Not open to third-party agents | SAP licence |
-| **MCP Gateway in SAP Integration Suite** | Turns existing APIs / RFCs into MCP tools (auth, rate limits) | **Yes** | **Paid**: Integration Suite Premium or Enhanced edition (Premium list price USD 29,459/month), API Management + Integration Cell, a real S/4HANA system. Shipped Q2 2026 |
+| **MCP Gateway in SAP Integration Suite** | Turns existing APIs / RFCs into MCP tools (auth, rate limits) | **Yes** | **Paid**: Integration Suite Premium or Enhanced edition (Premium list price USD 29,459/month), API Management + Integration Cell, a real S/4HANA system |
 
 **Usage limits and pricing:** see `FINDINGS.md` section 6.
 

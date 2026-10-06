@@ -81,7 +81,7 @@ Nothing from SAP is saved by our code. Every call reads live data. The AI never 
 | What is needed | Free account on api.sap.com + API key | Customer's SAP URL + a technical user (communication arrangement, read-only roles) created by their SAP admin | BTP account, Integration Suite (**Premium or Enhanced edition**) with API Management + Integration Cell, a real SAP system |
 | Licence / cost | **Free** | Customer already pays for S/4HANA; API access is part of it. Hosting our server is our cost | Integration Suite subscription (list prices below) on top of S/4HANA |
 | Who builds the tools | Us (5 tools; a new API = one line in `SAP_APIS`) | Us (same code, `.env` change only) | Configured from existing API artifacts / RFCs, no code |
-| Status | Working (this experiment) | Same code, untested without a customer system | Shipped Q2 2026; check SAP Note 2903776 for plan availability |
+| Status | Working (this experiment) | Same code, untested without a customer system | Available from SAP; check SAP Note 2903776 for plan availability |
 | Allowed for production | **No** (testing only) | Yes, if it follows the SAP API Policy | Yes |
 
 ### 6.2 Usage limits
@@ -89,12 +89,12 @@ Nothing from SAP is saved by our code. Every call reads live data. The AI never 
 | Item | Limit | Source |
 |---|---|---|
 | Sandbox calls | **No published quota.** SAP does not document a number; the sandbox is for evaluation only, not productive use. No rate-limit headers were returned in our tests (all calls HTTP 200 or 404). | Observed; `sap_client.py` logs any `*RateLimit*` / `Retry-After` header and handles 429 |
-| Sandbox data | Read-only demo data shared by all users; it can change at any time (e.g. new POs appeared on 2026-10-01) | Observed |
+| Sandbox data | Read-only demo data shared by all users; it can change at any time | Observed |
 | Sandbox key | One personal key per api.sap.com account; must stay secret (`.env` only) | api.sap.com |
 | Our server | Max 20 records per call (`top` capped), 20 s timeout | `mcp_server.py`, `sap_client.py` |
 | Real S/4HANA | Set by the customer's system and SAP API Policy; third-party MCP servers must follow the policy and enforce auth on every call | SAP Architecture Center "Third-Party MCP Access to SAP Solutions" |
 
-### 6.3 Pricing (SAP list prices, sap.com, checked 2026-10-02; contracts 3–36 months)
+### 6.3 Pricing (SAP list prices from sap.com; contracts 3–36 months)
 
 | Product | Price |
 |---|---|
@@ -114,6 +114,8 @@ For the prototype: keep this custom read-only MCP server (free, works today). Fo
 the same server against their S/4HANA with a technical user, or, if they already license Integration Suite Premium/Enhanced,
 expose the same APIs through SAP's MCP Gateway for SAP-managed auth, rate limits and monitoring.
 
+**Note (SAP API Policy, April 2026):** an AI calling SAP live is fine for sandbox testing. For a real customer, SAP only allows AI agents to call SAP APIs through SAP-approved routes such as the MCP Gateway, so the portal's AI should read the portal's own synced data instead. Details: `SAP_INTEGRATION_ARCHITECTURE.md`.
+
 ---
 
 ## 7. Validation
@@ -127,7 +129,9 @@ expose the same APIs through SAP's MCP Gateway for SAP-managed auth, rate limits
 - [x] **AI assistant tab, live Gemini** (`ai_agent.py`): "Show the latest 10 purchase orders and tell me which supplier has the most" → Gemini called `list_purchase_orders(top=10)` once (SAP 200, 1754 ms) and answered correctly (USSU_V8000, 4 POs) (`Proof/04_ai_assistant_answer.png`, `Proof/05_ai_tool_call.png`)
 - [x] Gemini busy/retired models handled: retry on 503/429, skip 404, fall back to available models (tested with a simulated API)
 - [x] `list_sap_apis` + `query_sap` (generic tool): allow-list, enum dropdown, filter/select/orderby validation and injection checks (mock mode)
-- [ ] `query_sap` live on each extra API (requisitions, goods receipts, products, invoices): to confirm per API on the sandbox
+- [x] `query_sap` live on extra APIs: **products** (HTTP 200, 5 records, ~0.7 s) and **purchase requisitions** (HTTP 200, 5 records, ~0.6 s) (`Proof/10_products_read.png`, `Proof/11_requisitions_read.png`)
+- [x] Write on the sandbox: blocked by SAP with HTTP 405 *"only supported for GET operations"*, so the sandbox is read-only (`Proof/09_sandbox_write_blocked_405.png`)
+- [ ] `query_sap` live on goods receipts and supplier invoices: not tested yet
 - [x] Localhost demo console (`web_demo.py` + `web_demo.html`, http://localhost:8765): run each tool from the browser and see status, record count, SAP response time, the MCP request, the real SAP calls (endpoint, HTTP status, time) and the MCP result (`Proof/03_tool_explorer_purchase_orders.png`, `Proof/06_console_terminal.png`)
 
 ## 8. What we learned
