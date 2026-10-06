@@ -1,0 +1,21 @@
+{
+  "sourceFile": "pdf-4.pdf",
+  "shipDate": "2022-08-26",
+  "carrier": null,
+  "trackingNumbers": [],
+  "shippedQuantity": null,
+  "unitOfMeasure": null,
+  "lotNumbers": ["MO00043408", "MO00043409", "MO00043410", "MO00043411", "MO00043419"],
+  "serialNumbers": [],
+  "poQuantity": null,
+  "quantityMismatch": null,
+  "fieldIssues": [
+    {"field": "carrier", "reason": "not_present", "note": "'Delivery Method: COLLECTION' = customer collection; no carrier named."},
+    {"field": "trackingNumbers", "reason": "not_present", "note": "None printed; 'Our Reference SH00040386' is the delivery-note number."},
+    {"field": "shippedQuantity", "reason": "multiple_items", "note": "12 lines, 5 products (NAL31016/17/19/20/21) across 3 sales orders; compare per item."},
+    {"field": "unitOfMeasure", "reason": "not_present", "note": "No unit printed for any line quantity."},
+    {"field": "serialNumbers", "reason": "not_present", "note": "No serials; MO000434xx values are batch (lot) numbers."},
+    {"field": "poQuantity", "reason": "not_present", "note": "No PO quantity supplied, so no mismatch check."}
+  ],
+  "status": "draft_for_supplier_review"
+}
