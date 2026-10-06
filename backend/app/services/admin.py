@@ -8,12 +8,16 @@ from . import mailbox
 from .errors import DomainError, NotFound
 from .notifications import audit
 
-PUBLIC_COLS = "id, name, email, role, supplier_id, active, created_at"
+PUBLIC_COLS = "id, name, email, role, supplier_id, active, owner_id, created_at"
 SERVICE_EMAIL = "mcp-service@erp.local"
 
 
 def list_users(conn: sqlite3.Connection) -> list[dict]:
-    rows = conn.execute(f"SELECT {PUBLIC_COLS} FROM users WHERE email != ? ORDER BY id", (SERVICE_EMAIL,)).fetchall()
+    rows = conn.execute(
+        "SELECT u.id, u.name, u.email, u.role, u.supplier_id, u.active, u.owner_id, u.created_at, o.name AS owner_name "
+        "FROM users u LEFT JOIN users o ON o.id = u.owner_id WHERE u.email != ? ORDER BY u.id",
+        (SERVICE_EMAIL,),
+    ).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -115,7 +119,7 @@ def reset_data(conn: sqlite3.Connection, admin: dict) -> None:
     """Wipe all business data and reseed. The acting admin is kept so their session stays valid."""
     from ..seed import seed  # local import: seed imports services
 
-    for table in ("api_tokens", "shipment_files", "shipment_items", "shipments", "messages", "quotes", "attachments", "requirement_invites", "requirements", "purchase_order_items", "purchase_orders", "notifications", "audit_logs"):
+    for table in ("api_tokens", "shipment_files", "shipment_units", "inspection_fields", "shipment_items", "shipments", "messages", "quotes", "attachments", "requirement_invites", "requirements", "purchase_order_items", "purchase_orders", "notifications", "audit_logs"):
         conn.execute(f"DELETE FROM {table}")
     conn.execute("UPDATE users SET supplier_id = NULL WHERE id = ?", (admin["id"],))
     conn.execute("DELETE FROM users WHERE id != ?", (admin["id"],))

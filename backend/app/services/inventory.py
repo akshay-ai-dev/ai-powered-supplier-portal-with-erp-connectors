@@ -1,6 +1,7 @@
 import sqlite3
 
 from ..db import now
+from . import scope
 from .errors import DomainError, Forbidden, NotFound
 from .notifications import audit
 
@@ -28,6 +29,10 @@ def list_items(conn: sqlite3.Connection, q: str | None = None, warehouse: str | 
         sql += " AND warehouse = ?"
         args.append(warehouse)
     items = [dict(r) for r in conn.execute(sql + " ORDER BY item_code", args).fetchall()]
+    buyer = scope.own_buyer(user)
+    if buyer is not None:  # a buyer's own inspector sees only the items that buyer's orders, requirements and stock use
+        mine = scope.item_codes(conn, buyer)
+        items = [it for it in items if it["item_code"].upper() in mine]
     if user is not None:
         for it in items:
             it["can_edit"] = it["can_delete"] = can_manage(user, it)
@@ -35,9 +40,12 @@ def list_items(conn: sqlite3.Connection, q: str | None = None, warehouse: str | 
     return items
 
 
-def get_item(conn: sqlite3.Connection, item_code: str) -> dict:
+def get_item(conn: sqlite3.Connection, item_code: str, user: dict | None = None) -> dict:
     row = conn.execute("SELECT * FROM inventory WHERE item_code = ? COLLATE NOCASE", (item_code,)).fetchone()
     if row is None:
+        raise NotFound(f"Item {item_code} not found")
+    buyer = scope.own_buyer(user)
+    if buyer is not None and row["item_code"].upper() not in scope.item_codes(conn, buyer):
         raise NotFound(f"Item {item_code} not found")
     return dict(row)
 

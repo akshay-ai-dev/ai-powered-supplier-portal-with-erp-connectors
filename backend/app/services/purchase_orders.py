@@ -38,9 +38,18 @@ def _check_visible(user: dict, po: dict) -> None:
         raise NotFound("Purchase order not found")
     if user["role"] == "supplier" and (po["supplier_id"] != user.get("supplier_id") or po["status"] == "Draft"):
         raise NotFound("Purchase order not found")
+    if user["role"] == "inspector" and user.get("owner_id") and po["created_by"] != user["owner_id"]:  # a buyer's own inspector
+        raise NotFound("Purchase order not found")
 
 
-def list_pos(conn: sqlite3.Connection, user: dict, status: str | None = None, q: str | None = None) -> list[dict]:
+def awaiting_shipment(conn: sqlite3.Connection, pos: list[dict]) -> list[dict]:
+    """Approved orders with something still to ship (nothing shipped yet, or part of it, or units to replace)."""
+    from . import shipments as ship_svc  # shipments builds on orders, so this is imported late
+
+    return [po for po in pos if po["status"] == "Approved" and po["delivery_status"] != "Delivered" and any(ship_svc.remaining_quantities(conn, po).values())]
+
+
+def list_pos(conn: sqlite3.Connection, user: dict, status: str | None = None, q: str | None = None, view: str | None = None) -> list[dict]:
     sql = "SELECT po.* FROM purchase_orders po JOIN suppliers s ON s.id = po.supplier_id WHERE 1=1"
     args: list = []
     if user["role"] == "buyer":
@@ -49,6 +58,9 @@ def list_pos(conn: sqlite3.Connection, user: dict, status: str | None = None, q:
     if user["role"] == "supplier":
         sql += " AND po.supplier_id = ? AND po.status != 'Draft'"
         args.append(user.get("supplier_id") or -1)
+    if user["role"] == "inspector" and user.get("owner_id"):
+        sql += " AND po.created_by = ?"
+        args.append(user["owner_id"])
     if status:
         sql += " AND po.status = ?"
         args.append(status)
@@ -56,7 +68,8 @@ def list_pos(conn: sqlite3.Connection, user: dict, status: str | None = None, q:
         sql += " AND (po.po_number LIKE ? OR s.supplier_name LIKE ?)"
         args += [f"%{q}%"] * 2
     rows = conn.execute(sql + " ORDER BY po.id DESC", args).fetchall()
-    return [_hydrate(conn, r) for r in rows]
+    pos = [_hydrate(conn, r) for r in rows]
+    return awaiting_shipment(conn, pos) if view == "to_ship" else pos
 
 
 def history(conn: sqlite3.Connection, entity: str, entity_id: str) -> list[dict]:

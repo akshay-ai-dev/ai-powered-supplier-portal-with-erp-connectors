@@ -8,6 +8,8 @@ export interface User {
   email: string;
   role: Role;
   supplier_id: number | null;
+  owner_id?: number | null;
+  owner_name?: string | null; // an inspector created by a buyer: that buyer
 }
 export interface Supplier {
   id: number;
@@ -162,7 +164,14 @@ export interface Shipment {
   inspection_notes: string;
   rejection_reason: string;
   created_at: string;
-  items: { item_code: string; quantity_shipped: number; quantity_received: number | null }[];
+  items: { item_code: string; quantity_shipped: number; quantity_received: number | null; quantity_accepted?: number | null }[];
+  unit_level?: boolean;
+  unit_counts?: Record<string, number>;
+  override_reason?: string;
+  replaces_shipment_id?: number | null; // the earlier shipment whose faulty, missing or rejected units this one replaces
+  replaces_shipment_no?: string | null;
+  replaced_by?: { id: number; shipment_no: string; status: Shipment["status"] }[];
+  owed?: { item_code: string; quantity: number }[]; // units of this shipment that still need replacing
   packing_list: ShipmentFile | null;
   photos: ShipmentFile[];
   quality: { key: string; label: string; passed: boolean | null }[];
@@ -175,4 +184,187 @@ export interface InspectorDashboard {
   approved: number;
   rejected: number;
   notifications: Notification[];
+}
+
+// ---- Unit-by-unit inspection (QR-coded units, inspector-defined test fields, lot report)
+export type UnitStatus = "Shipped" | "Received" | "OK" | "Faulty" | "Missing";
+export type FieldType = "pass_fail" | "number" | "text";
+export interface TestField {
+  id: number;
+  label: string;
+  type: FieldType;
+  unit_label: string;
+  min_value: number | null;
+  max_value: number | null;
+  required: boolean;
+  item_code: string | null;
+  tolerance?: string;
+}
+export type FieldResult = "pass" | "fail" | null;
+export interface UnitBrief {
+  code: string;
+  item_code: string;
+  seq: number;
+  status: UnitStatus;
+  defect_type: string;
+  defect_label: string;
+  notes: string;
+  tested_at: string | null;
+  readings: Record<string, string | number>;
+  field_results: Record<string, FieldResult>;
+}
+export interface UnitList {
+  total: number;
+  counts: Record<string, number>;
+  offset: number;
+  limit: number;
+  units: UnitBrief[];
+  fields: TestField[];
+  items: string[];
+  shipment_status: string;
+}
+export interface UnitFull extends UnitBrief {
+  checks: { key: string; label: string; passed: boolean | null }[];
+  field_values: { field_id: number; label: string; type: FieldType; unit_label: string; tolerance: string; required: boolean; archived: boolean; value: string | number | null; result: FieldResult }[];
+  photos: ShipmentFile[];
+  history: { action: string; detail: string; channel: string; created_at: string; user_name: string | null }[];
+  received_by: string | null;
+  received_at: string | null;
+  tested_by: string | null;
+  shipment: { id: number; shipment_no: string; status: string; po_number: string; supplier_name: string | null; erp: string };
+  can_test: boolean;
+  can_receive: boolean;
+}
+export interface LotReport {
+  shipment_no: string;
+  status: string;
+  frozen: boolean;
+  totals: { shipped: number; received: number; missing: number; tested: number; untested: number; ok: number; faulty: number };
+  quality_accuracy: number | null;
+  fulfilment_accuracy: number | null;
+  threshold: number;
+  suggestion: "approve" | "reject" | null;
+  per_item: { item_code: string; shipped: number; received: number; ok: number; faulty: number; missing: number }[];
+  defects: { defect_type: string; label: string; count: number }[];
+  failed_checks: { key: string; label: string; count: number }[];
+  fields: { id: number; label: string; type: FieldType; unit_label: string; required: boolean; tolerance: string; units: number; recorded: number; not_recorded: number; passed: number; failed: number; min?: number; max?: number; average?: number }[];
+  faulty_units: { code: string; item_code: string; defect_type: string; defect_label: string; notes: string; failed_checks: string[]; failed_fields: { label: string; value: string | number; unit_label: string; tolerance: string }[] }[];
+  blockers: string[];
+  ready: boolean;
+  decision: "approve" | "reject" | null;
+  decided_at: string | null;
+  decided_by: string | null;
+  override_reason: string;
+  replacement?: ReplacementLinks; // read live, not part of the frozen report
+}
+/** One line of what an inspected shipment still owes: faulty, missing or rejected units less what replacements covered. */
+export interface OwedLine {
+  item_code: string;
+  short: number;
+  replaced: number;
+  on_the_way: number;
+  outstanding: number;
+}
+export interface UnitToReplace {
+  code: string;
+  item_code: string;
+  status: "Faulty" | "Missing";
+  defect_label: string;
+  notes: string;
+}
+export interface ReplacementLinks {
+  replaces: { id: number; shipment_no: string; status: string; items: OwedLine[]; units: UnitToReplace[] } | null;
+  replaced_by: { id: number; shipment_no: string; status: Shipment["status"]; shipped: number; accepted: number | null; quality_accuracy: number | null }[];
+  owed: OwedLine[];
+}
+/** GET /api/purchase-orders/{id}/to-ship */
+export interface ToShip {
+  progress: { item_code: string; ordered: number; accepted: number; on_the_way: number; left: number }[];
+  replace: { shipment_id: number; shipment_no: string; status: "Approved" | "Rejected"; decided_at: string | null; items: OwedLine[]; units: UnitToReplace[] }[];
+}
+export interface LabelData {
+  shipment_no: string;
+  po_number: string;
+  supplier_name: string | null;
+  base_url: string;
+  units: { code: string; item_code: string; seq: number }[];
+}
+
+export const DEFECT_OPTIONS: Record<string, string> = {
+  dimensional: "Dimensional problem",
+  cosmetic: "Cosmetic damage",
+  functional: "Functional failure",
+  wrong_item: "Wrong item",
+  missing_parts: "Missing parts",
+  packaging: "Packaging damage",
+  documentation: "Documentation problem",
+  out_of_tolerance: "Measurement out of tolerance",
+  other: "Other",
+};
+
+/** An inspector a buyer created: they see and inspect only that buyer's shipments. */
+export interface TeamInspector {
+  id: number;
+  name: string;
+  email: string;
+  role: "inspector";
+  active: boolean;
+  created_at: string;
+  last_login: string | null;
+  inspected: number;
+}
+
+// ---- Chat assistant (numbered menus + "Fill this form with AI"; /api/assistant/*)
+export interface AssistantOption {
+  key: string;
+  label: string;
+  description?: string;
+}
+export interface AssistantControls {
+  back: boolean;
+  cancel: boolean;
+  skip: boolean;
+  more: boolean;
+  file: boolean;
+  confirm?: boolean;
+}
+export interface AssistantResult {
+  label: string;
+  href: string;
+  upload?: string;
+}
+export interface AssistantResponse {
+  stage: "menu" | "step" | "summary";
+  state: Record<string, unknown> | null;
+  message: string;
+  error: string | null;
+  options: AssistantOption[];
+  controls: AssistantControls;
+  kind?: "text" | "int" | "number" | "date" | "datetime" | "choice" | "multichoice" | "file";
+  hint?: string;
+  title?: string;
+  filter?: string;
+  summary?: { label: string; value: string }[];
+  warning?: string;
+  progress?: { done: number; total: number };
+  result: AssistantResult | null;
+  ai?: boolean; // menu only: natural-language filling is available (an OpenAI key is configured)
+}
+
+/** One turn of natural-language form filling. It never saves anything: `fill` carries values for the user to review in the real form. */
+export interface FillResponse {
+  mode: "fill";
+  stage: "pick" | "describe" | "ask" | "ready" | "cancelled";
+  state: Record<string, unknown> | null;
+  message: string;
+  error: string | null;
+  form?: string | null;
+  title?: string;
+  options: AssistantOption[];
+  controls: Partial<AssistantControls>;
+  values: { label: string; value: string }[];
+  missing: { key: string; label: string }[];
+  notes: string[];
+  filter?: string;
+  fill: { form: string; route: string; target: number | null; values: Record<string, unknown> } | null;
 }

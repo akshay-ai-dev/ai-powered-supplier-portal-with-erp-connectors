@@ -18,6 +18,10 @@ const styles: Record<string, string> = {
   Shipped: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
   Arrived: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
   Delivered: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  Received: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  OK: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  Faulty: "bg-destructive/15 text-destructive",
+  Missing: "bg-orange-500/15 text-orange-700 dark:text-orange-400",
 };
 
 export function StatusBadge({ status }: { status: string }) {

@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from .config import settings
 from .db import get_conn, init_db
 from .mcp_server import build_mcp_app
-from .routers import admin, ai_tools, api, emails, mock_erp, shipments, tokens
+from .routers import admin, ai_tools, api, assistant, emails, erp_monitor, mock_erp, shipments, team, tokens, units
 from .seed import seed
 from .services import requirements as req_svc
 from .services.errors import DomainError
@@ -75,7 +75,7 @@ def health():
     return {"status": "ok"}
 
 
-for r in (api.auth, api.suppliers, api.requirements, api.files, api.purchase_orders, api.inventory, api.misc, admin.router, admin.erp, emails.router, shipments.router, tokens.router, ai_tools.router, mock_erp.sap, mock_erp.infor):
+for r in (api.auth, api.suppliers, api.requirements, api.files, api.purchase_orders, api.inventory, api.misc, admin.router, admin.erp, emails.router, erp_monitor.router, shipments.router, units.router, team.router, tokens.router, assistant.router, ai_tools.router, mock_erp.sap, mock_erp.infor):
     app.include_router(r)
 
 app.mount("/mcp", mcp_asgi)

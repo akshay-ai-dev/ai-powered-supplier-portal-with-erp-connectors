@@ -56,7 +56,15 @@ def supplier_dashboard(conn: sqlite3.Connection, user: dict) -> dict:
 
 
 def inspector_dashboard(conn: sqlite3.Connection, user: dict) -> dict:
-    by_status = {r["status"]: r["n"] for r in conn.execute("SELECT status, COUNT(*) n FROM shipments GROUP BY status")}
+    """Goods receiving at a glance. A buyer's own inspector counts that buyer's shipments only."""
+    scope_sql, scope_args = ("AND po.created_by = ?", [user["owner_id"]]) if user.get("owner_id") else ("", [])
+    by_status = {
+        r["status"]: r["n"]
+        for r in conn.execute(
+            "SELECT s.status, COUNT(*) n FROM shipments s JOIN purchase_orders po ON po.id = s.po_id WHERE 1=1 " + scope_sql + " GROUP BY s.status",
+            scope_args,
+        )
+    }
     return {
         "incoming": by_status.get("Shipped", 0),
         "awaiting_inspection": by_status.get("Arrived", 0),

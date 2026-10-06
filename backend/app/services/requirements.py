@@ -190,7 +190,10 @@ def _get_owned(conn: sqlite3.Connection, user: dict, req_id: int) -> sqlite3.Row
 def _get_visible(conn: sqlite3.Connection, user: dict, req_id: int) -> sqlite3.Row:
     """Read access for anyone: owner buyer/admin, or a supplier who was invited (while open) or has quoted."""
     if user["role"] == "inspector":  # read-only view of everything except the private chat
-        return _get_row(conn, req_id)
+        row = _get_row(conn, req_id)
+        if user.get("owner_id") and row["created_by"] != user["owner_id"]:  # an inspector a buyer created sees only that buyer's
+            raise NotFound("Requirement not found")
+        return row
     if user["role"] != "supplier":
         return _get_owned(conn, user, req_id)
     row = _get_row(conn, req_id)
@@ -308,6 +311,8 @@ def list_requirements(conn: sqlite3.Connection, user: dict, stage: str | None = 
         ).fetchall()
     elif user["role"] == "buyer":
         rows = conn.execute("SELECT * FROM requirements WHERE created_by = ? ORDER BY id DESC", (user["id"],)).fetchall()
+    elif user["role"] == "inspector" and user.get("owner_id"):
+        rows = conn.execute("SELECT * FROM requirements WHERE created_by = ? ORDER BY id DESC", (user["owner_id"],)).fetchall()
     elif user["role"] in ("admin", "inspector"):
         rows = conn.execute("SELECT * FROM requirements ORDER BY id DESC").fetchall()
     else:

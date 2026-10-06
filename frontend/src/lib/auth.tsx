@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { useRouter } from "next/navigation";
 import { api, tokenStore } from "./api";
 import type { User } from "./types";
+import { safeNext } from "./utils";
 
 interface AuthCtx {
   user: User | null;
@@ -39,7 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const finish = (res: { access_token: string; user: User }) => {
     tokenStore.set(res.access_token);
     setUser(res.user);
-    router.push("/dashboard");
+    // a scanned QR code sends people to /login?next=/units/CODE: bring them back to it after signing in
+    router.push(safeNext(new URLSearchParams(window.location.search).get("next")));
   };
 
   const value: AuthCtx = {

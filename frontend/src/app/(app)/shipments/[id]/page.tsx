@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { ArrowLeft, Download, FileText, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -14,6 +15,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ErrorNote, PageHeader } from "@/components/page-header";
+import { LotReportCard, UnitDecisionCard } from "@/components/lot-report";
+import { ReceivePanel } from "@/components/receive-panel";
+import { UnitInspection } from "@/components/unit-inspection";
 import { StatusBadge } from "@/components/status-badge";
 
 function FileRow({ f }: { f: ShipmentFile }) {
@@ -42,6 +46,8 @@ export default function ShipmentDetail({ params }: { params: Promise<{ id: strin
   const [reason, setReason] = useState("");
   const [checks, setChecks] = useState<Record<string, boolean | null>>({});
   const [improvement, setImprovement] = useState("");
+  const [version, setVersion] = useState(0);
+  const query = useSearchParams();
 
   useEffect(() => {
     if (s) setReceived(Object.fromEntries(s.items.map((i) => [i.item_code, String(i.quantity_received ?? i.quantity_shipped)])));
@@ -66,6 +72,13 @@ export default function ShipmentDetail({ params }: { params: Promise<{ id: strin
   const inspector = user?.role === "inspector" || user?.role === "admin";
   const isSupplier = user?.role === "supplier";
   const decided = s.status === "Approved" || s.status === "Rejected";
+  const unitLevel = !!s.unit_level;
+  const owes = !!s.owed && s.owed.length > 0;
+  const superseded = !!s.replaced_by?.some((r) => r.status === "Rejected"); // a rejected replacement now carries what this one owed
+  const changed = () => {
+    setVersion((n) => n + 1);
+    void reload();
+  };
   const allPass = s.quality.every((q) => checks[q.key] === true);
   const explicitChecks = Object.fromEntries(Object.entries(checks).filter(([, v]) => v !== null && v !== undefined));
 
@@ -77,8 +90,40 @@ export default function ShipmentDetail({ params }: { params: Promise<{ id: strin
       </Link>
       <PageHeader title={s.shipment_no} description={`${s.supplier_name} · order ${s.po_number} · submitted ${dateTime(s.created_at)}`}>
         <StatusBadge status={s.status} />
+        {unitLevel && (isSupplier || inspector) && (
+          <Link href={`/shipments/${s.id}/labels`}>
+            <Button variant="outline">Print QR labels</Button>
+          </Link>
+        )}
       </PageHeader>
 
+      {isSupplier && owes && !superseded && (
+        <div role="status" className={`mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm ${s.status === "Rejected" ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200"}`}>
+          <span>
+            <b>{s.status === "Rejected" ? "This shipment was rejected." : "Some units need replacing."}</b> Still to replace: {s.owed?.map((d) => `${d.quantity} × ${d.item_code}`).join(", ")}.
+          </span>
+          <Link href={`/purchase-orders/${s.po_id}?replace=${s.id}`}>
+            <Button>{s.status === "Rejected" ? "Resend this shipment" : "Ship a replacement"}</Button>
+          </Link>
+        </div>
+      )}
+      {(s.replaces_shipment_id || (s.replaced_by && s.replaced_by.length > 0) || (!isSupplier && owes)) && (
+        <div role="status" className="mb-6 space-y-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-200">
+          {s.replaces_shipment_id && (
+            <p>
+              <b>Replacement shipment.</b> It replaces the faulty, missing or rejected units of{" "}
+              <Link className="font-medium underline" href={`/shipments/${s.replaces_shipment_id}`}>{s.replaces_shipment_no}</Link>.
+            </p>
+          )}
+          {s.replaced_by?.map((r) => (
+            <p key={r.id}>
+              <b>Replaced by</b>{" "}
+              <Link className="font-medium underline" href={`/shipments/${r.id}`}>{r.shipment_no}</Link> ({r.status.toLowerCase()}).
+            </p>
+          ))}
+          {!isSupplier && owes && <p>Still to replace: {s.owed?.map((d) => `${d.quantity} × ${d.item_code}`).join(", ")}.</p>}
+        </div>
+      )}
       {s.status === "Rejected" && (
         <p role="status" className="mb-6 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           <b>Rejected at inspection:</b> {s.rejection_reason}. The goods are in quarantine and the invoice is on hold. A replacement shipment is needed.
@@ -174,7 +219,7 @@ export default function ShipmentDetail({ params }: { params: Promise<{ id: strin
                   <TableCell className="font-mono text-xs">{i.item_code}</TableCell>
                   <TableCell className="text-right">{i.quantity_shipped}</TableCell>
                   <TableCell className="text-right">
-                    {inspector && s.status === "Shipped" ? (
+                    {inspector && s.status === "Shipped" && !unitLevel ? (
                       <Input
                         aria-label={`Received quantity of ${i.item_code}`}
                         className="ml-auto w-24 text-right"
@@ -203,7 +248,7 @@ export default function ShipmentDetail({ params }: { params: Promise<{ id: strin
         </CardContent>
       </Card>
 
-      {decided && (
+      {decided && !unitLevel && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>Inspection result</CardTitle>
@@ -229,7 +274,12 @@ export default function ShipmentDetail({ params }: { params: Promise<{ id: strin
         </Card>
       )}
 
-      {inspector && s.status === "Shipped" && (
+      {inspector && s.status === "Shipped" && unitLevel && <ReceivePanel s={s} version={version} onChanged={changed} />}
+
+      {unitLevel && (s.status !== "Shipped" || isSupplier || !inspector) && <UnitInspection s={s} inspector={inspector} version={version} onChanged={changed} openCode={query?.get("unit")} />}
+      {unitLevel && s.status !== "Shipped" && <LotReportCard shipmentId={s.id} version={version} />}
+
+      {inspector && s.status === "Shipped" && !unitLevel && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>Record arrival</CardTitle>
@@ -252,7 +302,9 @@ export default function ShipmentDetail({ params }: { params: Promise<{ id: strin
         </Card>
       )}
 
-      {inspector && s.status === "Arrived" && (
+      {inspector && s.status === "Arrived" && unitLevel && <UnitDecisionCard s={s} version={version} onDone={changed} />}
+
+      {inspector && s.status === "Arrived" && !unitLevel && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>Inspection decision</CardTitle>

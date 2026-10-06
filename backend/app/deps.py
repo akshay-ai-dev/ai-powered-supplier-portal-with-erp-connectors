@@ -12,7 +12,7 @@ bearer = HTTPBearer(auto_error=False)
 
 def current_user(
     creds: HTTPAuthorizationCredentials | None = Depends(bearer),
-    conn: sqlite3.Connection = Depends(db_dep),
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
 ) -> dict:
     if creds is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")

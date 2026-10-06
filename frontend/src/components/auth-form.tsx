@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "buyer" as "buyer" | "supplier" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [next, setNext] = useState(""); // a scanned QR code arrives as /login?next=/units/CODE; keep it when switching between sign in and register
+  useEffect(() => setNext(new URLSearchParams(window.location.search).get("next") ?? ""), []);
+  const keepNext = next ? `?next=${encodeURIComponent(next)}` : "";
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 
   async function submit(e: React.FormEvent) {
@@ -73,14 +76,14 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             {mode === "login" ? (
               <>
                 No account?{" "}
-                <Link className="underline" href="/register">
+                <Link className="underline" href={`/register${keepNext}`}>
                   Register
                 </Link>
               </>
             ) : (
               <>
                 Have an account?{" "}
-                <Link className="underline" href="/login">
+                <Link className="underline" href={`/login${keepNext}`}>
                   Sign in
                 </Link>
               </>

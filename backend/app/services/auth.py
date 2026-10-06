@@ -8,7 +8,13 @@ from .notifications import audit, send_email
 
 
 def _public(user: dict) -> dict:
-    return {k: user[k] for k in ("id", "name", "email", "role", "supplier_id")}
+    return {k: user.get(k) for k in ("id", "name", "email", "role", "supplier_id", "owner_id", "owner_name")}
+
+
+def with_owner(conn: sqlite3.Connection, user: dict) -> dict:
+    """The user, plus the name of the buyer whose inspector they are (if any)."""
+    owner = conn.execute("SELECT name FROM users WHERE id = ?", (user.get("owner_id"),)).fetchone() if user.get("owner_id") else None
+    return {**user, "owner_name": owner["name"] if owner else None}
 
 
 def register(conn: sqlite3.Connection, name: str, email: str, password: str, role: str) -> dict:
@@ -36,7 +42,7 @@ def login(conn: sqlite3.Connection, email: str, password: str) -> dict:
         raise DomainError("Account is disabled. Contact an administrator.", 403)
     user = dict(row)
     audit(conn, user["id"], "login", "user", user["id"])
-    return _token_response(user)
+    return _token_response(with_owner(conn, user))
 
 
 def _token_response(user: dict) -> dict:
