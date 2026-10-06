@@ -1,0 +1,347 @@
+{
+  "sourceFile": "pdf-1.pdf",
+  "extractorVersion": "0.2.0",
+  "shipDate": "2020-10-01",
+  "carrier": "FedEx",
+  "trackingNumbers": [],
+  "shippedQuantity": 1500.0,
+  "unitOfMeasure": "SF",
+  "lotNumbers": [
+    "6446"
+  ],
+  "serialNumbers": [],
+  "sublots": [
+    {
+      "sublotNumber": "6446-0001",
+      "lotNumber": "6446",
+      "quantity": 750.0,
+      "unit": "SF",
+      "page": 1,
+      "itemNumber": "70430500"
+    },
+    {
+      "sublotNumber": "6446-0002",
+      "lotNumber": "6446",
+      "quantity": 750.0,
+      "unit": "SF",
+      "page": 1,
+      "itemNumber": "70430500"
+    }
+  ],
+  "items": [
+    {
+      "lineNumber": "10/0",
+      "itemNumber": "70430500",
+      "customerItemNumber": null,
+      "description": "FM® 1000 ADHESIVE FILM .06 PSF, 34\"",
+      "salesOrder": null,
+      "customerReference": null,
+      "quantityOrdered": null,
+      "quantityRequired": null,
+      "quantityShipped": 1500.0,
+      "quantityOutstanding": null,
+      "quantityBackordered": null,
+      "unitOfMeasure": "SF",
+      "unitRaw": null,
+      "quantitySource": "sum of lot quantities",
+      "lots": [
+        {
+          "lotNumber": "6446",
+          "quantity": 1500.0,
+          "unit": "SF",
+          "page": 2
+        }
+      ],
+      "sublots": [
+        {
+          "sublotNumber": "6446-0001",
+          "lotNumber": "6446",
+          "quantity": 750.0,
+          "unit": "SF",
+          "rawValue": "6446-0001",
+          "page": 1
+        },
+        {
+          "sublotNumber": "6446-0002",
+          "lotNumber": "6446",
+          "quantity": 750.0,
+          "unit": "SF",
+          "rawValue": "6446-0002",
+          "page": 1
+        }
+      ],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        1,
+        2
+      ],
+      "evidence": [
+        {
+          "page": 1,
+          "text": "Item: 70430500",
+          "rule": "item label above a table without an item column"
+        },
+        {
+          "page": 1,
+          "text": "1 6446-0001 750.0000 SF Net Weight 45.000 lb",
+          "rule": "lot row / lot column"
+        },
+        {
+          "page": 1,
+          "text": "2 6446-0002 750.0000 SF 45.000 lb",
+          "rule": "lot row / lot column"
+        },
+        {
+          "page": 2,
+          "text": "Lot: 6446 Total: 1500.0000 SF 90.000 lb",
+          "rule": "lot row / lot column"
+        }
+      ]
+    }
+  ],
+  "quantitySummary": [
+    {
+      "itemNumber": "70430500",
+      "description": null,
+      "unit": "SF",
+      "quantityShipped": 1500.0,
+      "lineCount": 1,
+      "salesOrders": []
+    }
+  ],
+  "references": {
+    "purchaseOrders": [
+      {
+        "value": "CS-20028",
+        "label": "Cust.P.O.",
+        "page": 1
+      }
+    ],
+    "salesOrders": [
+      {
+        "value": "703071376",
+        "label": "Order No",
+        "page": 1
+      }
+    ],
+    "packingSlips": [
+      {
+        "value": "70307137611",
+        "label": "Packing Slip No",
+        "page": 1
+      }
+    ],
+    "internalShippingNumbers": [
+      {
+        "value": "953024473",
+        "label": "Shipment ID No",
+        "page": 1
+      },
+      {
+        "value": "940594573",
+        "label": "Load ID No",
+        "page": 1
+      }
+    ],
+    "accountNumbers": [
+      {
+        "value": "500503962",
+        "label": "Customer",
+        "page": 1
+      }
+    ]
+  },
+  "shippingDetails": {
+    "serviceLevel": "STANDARD OVERNIGHT",
+    "shipMethodRaw": "FEDEX STANDARD OVERNIGHT (AIR)",
+    "freightTerms": [
+      "EXW (INCOTERMS 2000)"
+    ],
+    "packageCount": null,
+    "packages": []
+  },
+  "rawValues": {
+    "shipDate": "01-Oct-20",
+    "carrier": "FEDEX STANDARD OVERNIGHT (AIR)",
+    "shippedQuantity": [
+      1500.0
+    ]
+  },
+  "fieldIssues": [
+    {
+      "field": "shipDate",
+      "severity": "info",
+      "code": "two_digit_year",
+      "message": "two-digit year interpreted as 2020",
+      "rawValue": "01-Oct-20",
+      "page": 1
+    },
+    {
+      "field": "trackingNumbers",
+      "severity": "review",
+      "code": "unclassified_identifier",
+      "message": "'SHIP VIA FED EX# 149752137': follows 'FED EX' but does not match a FedEx tracking format (often a carrier account number). Not used as a tracking number.",
+      "rawValue": "149752137",
+      "page": 1
+    },
+    {
+      "field": "serialNumbers",
+      "severity": "info",
+      "code": "not_found",
+      "message": "No serialNumbers found in the document."
+    }
+  ],
+  "evidence": {
+    "shipDate": [
+      {
+        "page": 1,
+        "text": "Shipped Date: 01-Oct-20",
+        "rule": "ship-date label (inline)"
+      }
+    ],
+    "carrier": [
+      {
+        "page": 1,
+        "text": "Carrier/F.Forward: FEDEX STANDARD OVERNIGHT (AIR)",
+        "rule": "carrier label (inline)"
+      },
+      {
+        "page": 1,
+        "text": "SHIP VIA FED EX# 149752137",
+        "rule": "secondary carrier mention"
+      }
+    ],
+    "freightTerms": [
+      {
+        "page": 1,
+        "text": "Delivery Terms: EXW (INCOTERMS 2000)",
+        "rule": "label 'Delivery Terms'"
+      }
+    ],
+    "sublots": [
+      {
+        "page": 2,
+        "text": "Sublot Count: 2",
+        "rule": "printed sublot count agrees"
+      }
+    ],
+    "items": [
+      {
+        "page": 1,
+        "text": "Item: 70430500",
+        "rule": "item label above a table without an item column"
+      },
+      {
+        "page": 1,
+        "text": "1 6446-0001 750.0000 SF Net Weight 45.000 lb",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 1,
+        "text": "2 6446-0002 750.0000 SF 45.000 lb",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 2,
+        "text": "Lot: 6446 Total: 1500.0000 SF 90.000 lb",
+        "rule": "lot row / lot column"
+      }
+    ],
+    "shippedQuantity": [
+      {
+        "page": 2,
+        "text": "Lot: 6446 Total: 1500.0000 SF 90.000 lb",
+        "rule": "printed total agrees with line total"
+      },
+      {
+        "page": 2,
+        "text": "Total (Lots): 1 1500.0000 SF 90.000 lb",
+        "rule": "printed total agrees with line total"
+      },
+      {
+        "page": 1,
+        "text": "Item: 70430500",
+        "rule": "item label above a table without an item column"
+      },
+      {
+        "page": 3,
+        "text": "QTY Shipped: | 1500.0000 SF",
+        "rule": "certificate quantity agrees"
+      },
+      {
+        "page": 4,
+        "text": "QTY Shipped: | 1500.0000 SF",
+        "rule": "certificate quantity agrees"
+      },
+      {
+        "page": 5,
+        "text": "QTY Shipped: | 1500.0000 SF",
+        "rule": "certificate quantity agrees"
+      }
+    ],
+    "lotNumbers": [
+      {
+        "page": 2,
+        "text": "6446",
+        "rule": "lot on a shipped line"
+      },
+      {
+        "page": 2,
+        "text": "Lot: 6446",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 3,
+        "text": "Lot No.: | 6446",
+        "rule": "lot label (right)"
+      },
+      {
+        "page": 4,
+        "text": "Lot No.: | 6446",
+        "rule": "lot label (right)"
+      },
+      {
+        "page": 5,
+        "text": "Lot No.: | 6446",
+        "rule": "lot label (right)"
+      }
+    ]
+  },
+  "document": {
+    "pageCount": 5,
+    "pageTypes": {
+      "1": "packing",
+      "2": "packing",
+      "3": "certificate",
+      "4": "certificate",
+      "5": "certificate"
+    },
+    "textLayer": true,
+    "ocrUsed": false,
+    "doclingTableCount": 3,
+    "datePreference": "MDY"
+  },
+  "timings": {
+    "converterInitSeconds": 18.776,
+    "conversionSeconds": 18.199,
+    "layoutSeconds": 0.226,
+    "extractionSeconds": 0.031,
+    "totalSeconds": 37.44,
+    "isolation": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ok",
+          "reason": null,
+          "exitCode": 0,
+          "seconds": 39.599,
+          "log": "outputs\\final-validation\\logs\\pdf-1.attempt1.log"
+        }
+      ],
+      "attemptCount": 1,
+      "timeoutSeconds": 600.0
+    }
+  }
+}
