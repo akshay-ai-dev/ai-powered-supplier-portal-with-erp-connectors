@@ -1,0 +1,20 @@
+{
+  "sourceFile": "pdf-2.pdf",
+  "shipDate": "2024-02-07",
+  "carrier": "FedEx",
+  "trackingNumbers": ["775101717550", "775101716369", "775101716370", "775101717159"],
+  "shippedQuantity": 280,
+  "unitOfMeasure": null,
+  "lotNumbers": [],
+  "serialNumbers": [],
+  "poQuantity": null,
+  "quantityMismatch": null,
+  "fieldIssues": [
+    {"field": "shipDate", "reason": "ambiguous", "note": "'Ship Date: 2/7/2024' read as 7 Feb (US supplier, release date 15-FEB-2024); could also be 2 Jul."},
+    {"field": "unitOfMeasure", "reason": "not_present", "note": "No unit printed for 'Qty Shipped' 280."},
+    {"field": "lotNumbers", "reason": "ambiguous", "note": "'(280)' under the combined Serial/Lot# column; it matches the quantity and is not a clear lot."},
+    {"field": "serialNumbers", "reason": "ambiguous", "note": "'(280)' under the combined Serial/Lot# column; not a clear serial number."},
+    {"field": "poQuantity", "reason": "not_present", "note": "No PO quantity supplied, so no mismatch check."}
+  ],
+  "status": "draft_for_supplier_review"
+}

@@ -1,0 +1,1037 @@
+{
+  "documents": [
+    {
+      "sourceFile": "pdf-1.pdf",
+      "status": "converted",
+      "timings": {
+        "converterInitSeconds": 18.776,
+        "conversionSeconds": 18.199,
+        "layoutSeconds": 0.226,
+        "extractionSeconds": 0.031,
+        "totalSeconds": 37.44,
+        "isolation": {
+          "attempts": [
+            {
+              "attempt": 1,
+              "status": "ok",
+              "reason": null,
+              "exitCode": 0,
+              "seconds": 39.599,
+              "log": "outputs\\final-validation\\logs\\pdf-1.attempt1.log"
+            }
+          ],
+          "attemptCount": 1,
+          "timeoutSeconds": 600.0
+        }
+      },
+      "checks": [
+        {
+          "field": "sublotCount",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": 2,
+          "extracted": 2,
+          "flaggedForReview": false,
+          "basis": "brief: two sublots"
+        },
+        {
+          "field": "sublotQuantities",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": [
+            [
+              750,
+              "SF"
+            ],
+            [
+              750,
+              "SF"
+            ]
+          ],
+          "extracted": [
+            [
+              750.0,
+              "SF"
+            ],
+            [
+              750.0,
+              "SF"
+            ]
+          ],
+          "flaggedForReview": false,
+          "basis": "brief: two 750-square-foot sublots"
+        },
+        {
+          "field": "shippedQuantity",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": 1500,
+          "extracted": 1500.0,
+          "flaggedForReview": false,
+          "basis": "derived from brief: 2 x 750 SF, same item and unit"
+        },
+        {
+          "field": "unitOfMeasure",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": "SF",
+          "extracted": "SF",
+          "flaggedForReview": false,
+          "basis": "brief: square feet"
+        },
+        {
+          "field": "shipDate",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": "2020-10-01",
+          "extracted": "2020-10-01",
+          "flaggedForReview": false,
+          "basis": "proposed: 'Shipped Date: 01-Oct-20', page 1"
+        },
+        {
+          "field": "carrier",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": "FedEx",
+          "extracted": "FedEx",
+          "flaggedForReview": false,
+          "basis": "proposed: 'Carrier/F.Forward: FEDEX STANDARD OVERNIGHT (AIR)'"
+        },
+        {
+          "field": "trackingNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [],
+          "extracted": [],
+          "flaggedForReview": true,
+          "basis": "proposed: no tracking number printed; Bill of Lading is blank"
+        },
+        {
+          "field": "trackingNumbers",
+          "status": "AMBIGUOUS",
+          "verified": false,
+          "expected": "review flag on '149752137'",
+          "extracted": "unclassified_identifier",
+          "flaggedForReview": true,
+          "basis": "proposed: 'SHIP VIA FED EX# 149752137' is 9 digits (FedEx account-number shape, not a FedEx tracking format); must be flagged, not asserted"
+        },
+        {
+          "field": "lotNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "6446"
+          ],
+          "extracted": [
+            "6446"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: 'Lot: 6446' page 2, 'Lot No.: 6446' certificate"
+        },
+        {
+          "field": "sublotNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "6446-0001",
+            "6446-0002"
+          ],
+          "extracted": [
+            "6446-0001",
+            "6446-0002"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: Lot/Sublot No column, page 1"
+        },
+        {
+          "field": "serialNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [],
+          "extracted": [],
+          "flaggedForReview": false,
+          "basis": "proposed: none printed"
+        },
+        {
+          "field": "references.salesOrders",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "703071376"
+          ],
+          "extracted": [
+            "703071376"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: 'Order No: 703071376'"
+        },
+        {
+          "field": "references.purchaseOrders",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "CS-20028"
+          ],
+          "extracted": [
+            "CS-20028"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: 'Cust.P.O.: CS-20028'"
+        }
+      ],
+      "counts": {
+        "verified": {
+          "CORRECT": 4
+        },
+        "unverified": {
+          "CORRECT": 8,
+          "AMBIGUOUS": 1
+        }
+      }
+    },
+    {
+      "sourceFile": "pdf-2.pdf",
+      "status": "converted",
+      "timings": {
+        "converterInitSeconds": 17.316,
+        "conversionSeconds": 5.639,
+        "layoutSeconds": 0.05,
+        "extractionSeconds": 0.019,
+        "totalSeconds": 23.182,
+        "isolation": {
+          "attempts": [
+            {
+              "attempt": 1,
+              "status": "ok",
+              "reason": null,
+              "exitCode": 0,
+              "seconds": 24.71,
+              "log": "outputs\\final-validation\\logs\\pdf-2.attempt1.log"
+            }
+          ],
+          "attemptCount": 1,
+          "timeoutSeconds": 600.0
+        }
+      },
+      "checks": [
+        {
+          "field": "trackingNumbers",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": ">= 2 values",
+          "extracted": "4 values",
+          "flaggedForReview": false,
+          "basis": "brief: lists several tracking numbers"
+        },
+        {
+          "field": "lotNumbers",
+          "status": "AMBIGUOUS",
+          "verified": true,
+          "expected": "review flag on '(280)'",
+          "extracted": "ambiguous_lot_or_serial",
+          "flaggedForReview": true,
+          "basis": "brief: '(280)' under Serial/Lot# is ambiguous and must be flagged"
+        },
+        {
+          "field": "lotNumbers",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": [],
+          "extracted": [],
+          "flaggedForReview": true,
+          "basis": "brief: '(280)' is ambiguous, so it must not be asserted as a lot"
+        },
+        {
+          "field": "serialNumbers",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": [],
+          "extracted": [],
+          "flaggedForReview": true,
+          "basis": "brief: '(280)' is ambiguous, so it must not be asserted as a serial"
+        },
+        {
+          "field": "trackingNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "775101717550",
+            "775101716369",
+            "775101716370",
+            "775101717159"
+          ],
+          "extracted": [
+            "775101716369",
+            "775101716370",
+            "775101717159",
+            "775101717550"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: Tracking Number column"
+        },
+        {
+          "field": "shipDate",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": "2024-02-07",
+          "extracted": "2024-02-07",
+          "flaggedForReview": true,
+          "basis": "proposed: 'Ship Date: 2/7/2024', US supplier so month/day"
+        },
+        {
+          "field": "shipDate",
+          "status": "AMBIGUOUS",
+          "verified": false,
+          "expected": "review flag",
+          "extracted": "ambiguous_date",
+          "flaggedForReview": true,
+          "basis": "proposed: 2/7/2024 is numerically ambiguous (2 Jul vs 7 Feb)"
+        },
+        {
+          "field": "carrier",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": "FedEx",
+          "extracted": "FedEx",
+          "flaggedForReview": false,
+          "basis": "proposed: 'Ship Method: FDX 2Day'"
+        },
+        {
+          "field": "shippedQuantity",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": 280,
+          "extracted": 280.0,
+          "flaggedForReview": true,
+          "basis": "proposed: 280 sits under 'Qty Shipped'; leading '1' looks like a line number"
+        },
+        {
+          "field": "unitOfMeasure",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": null,
+          "extracted": null,
+          "flaggedForReview": true,
+          "basis": "proposed: no unit printed"
+        },
+        {
+          "field": "references.salesOrders",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "SO205641"
+          ],
+          "extracted": [
+            "SO205641"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: 'Order Number: SO205641'"
+        },
+        {
+          "field": "references.purchaseOrders",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "DR6341448"
+          ],
+          "extracted": [
+            "DR6341448"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: 'PO Number: DR6341448'"
+        }
+      ],
+      "counts": {
+        "verified": {
+          "CORRECT": 3,
+          "AMBIGUOUS": 1
+        },
+        "unverified": {
+          "CORRECT": 7,
+          "AMBIGUOUS": 1
+        }
+      }
+    },
+    {
+      "sourceFile": "pdf-3.pdf",
+      "status": "converted",
+      "timings": {
+        "converterInitSeconds": 19.942,
+        "conversionSeconds": 50.701,
+        "layoutSeconds": 0.203,
+        "extractionSeconds": 0.019,
+        "totalSeconds": 71.029,
+        "isolation": {
+          "attempts": [
+            {
+              "attempt": 1,
+              "status": "ok",
+              "reason": null,
+              "exitCode": 0,
+              "seconds": 72.609,
+              "log": "outputs\\final-validation\\logs\\pdf-3.attempt1.log"
+            }
+          ],
+          "attemptCount": 1,
+          "timeoutSeconds": 600.0
+        }
+      },
+      "checks": [
+        {
+          "field": "carrier",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": "DPL/LOGIFISH",
+          "extracted": "DPL/LOGIFISH",
+          "flaggedForReview": false,
+          "basis": "brief: Ship Via DPL/LOGIFISH"
+        },
+        {
+          "field": "shippingDetails.freightTerms",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": "contains 'FREIGHT COLLECT'",
+          "extracted": [
+            "FREIGHT COLLECT"
+          ],
+          "flaggedForReview": false,
+          "basis": "brief: Freight Collect (a freight term, not a carrier or tracking number)"
+        },
+        {
+          "field": "trackingNumbers",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": [],
+          "extracted": [],
+          "flaggedForReview": false,
+          "basis": "brief: Freight Collect and order number 111569 are not tracking numbers"
+        },
+        {
+          "field": "references.salesOrders",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": [
+            "111569"
+          ],
+          "extracted": [
+            "111569"
+          ],
+          "flaggedForReview": false,
+          "basis": "brief: order number 111569"
+        },
+        {
+          "field": "lotNumbers",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": [
+            "9399"
+          ],
+          "extracted": [
+            "9399"
+          ],
+          "flaggedForReview": false,
+          "basis": "brief: lot 9399"
+        },
+        {
+          "field": "shipDate",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": "2025-04-11",
+          "extracted": "2025-04-11",
+          "flaggedForReview": true,
+          "basis": "proposed: only a document 'DATE 04/11/2025' (Miami supplier, month/day)"
+        },
+        {
+          "field": "shipDate",
+          "status": "AMBIGUOUS",
+          "verified": false,
+          "expected": "review flag",
+          "extracted": "inferred_from_document_date",
+          "flaggedForReview": true,
+          "basis": "proposed: no ship-date label and 04/11 is numerically ambiguous"
+        },
+        {
+          "field": "shippedQuantity",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": 150,
+          "extracted": 150.0,
+          "flaggedForReview": false,
+          "basis": "proposed: 'Qty 150' (150 boxes x 10 lb = 1,500 lb)"
+        },
+        {
+          "field": "unitOfMeasure",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": null,
+          "extracted": null,
+          "flaggedForReview": true,
+          "basis": "proposed: Qty column has no unit; 'Lb' belongs to the weight column"
+        },
+        {
+          "field": "references.purchaseOrders",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "JACOB0411"
+          ],
+          "extracted": [
+            "JACOB0411"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: 'PO # JACOB0411'"
+        },
+        {
+          "field": "serialNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [],
+          "extracted": [],
+          "flaggedForReview": false,
+          "basis": "proposed: box numbers 692003... are package numbers, not serials"
+        }
+      ],
+      "counts": {
+        "verified": {
+          "CORRECT": 5
+        },
+        "unverified": {
+          "CORRECT": 5,
+          "AMBIGUOUS": 1
+        }
+      }
+    },
+    {
+      "sourceFile": "pdf-4.pdf",
+      "status": "converted",
+      "timings": {
+        "converterInitSeconds": 18.345,
+        "conversionSeconds": 12.768,
+        "layoutSeconds": 0.118,
+        "extractionSeconds": 0.032,
+        "totalSeconds": 31.415,
+        "isolation": {
+          "attempts": [
+            {
+              "attempt": 1,
+              "status": "ok",
+              "reason": null,
+              "exitCode": 0,
+              "seconds": 33.216,
+              "log": "outputs\\final-validation\\logs\\pdf-4.attempt1.log"
+            }
+          ],
+          "attemptCount": 1,
+          "timeoutSeconds": 600.0
+        }
+      },
+      "checks": [
+        {
+          "field": "salesOrders",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": ">= 2 values",
+          "extracted": "3 values",
+          "flaggedForReview": false,
+          "basis": "brief: multiple sales orders"
+        },
+        {
+          "field": "itemLines",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": ">= 2 values",
+          "extracted": "12 values",
+          "flaggedForReview": false,
+          "basis": "brief: multiple line quantities"
+        },
+        {
+          "field": "salesOrders",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "SO00305748",
+            "SO00305742",
+            "SO00305734"
+          ],
+          "extracted": [
+            "SO00305734",
+            "SO00305742",
+            "SO00305748"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: 'Sales Order No.' group rows"
+        },
+        {
+          "field": "itemLines",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            [
+              "SO00305748",
+              "NAL31016",
+              1
+            ],
+            [
+              "SO00305748",
+              "NAL31019",
+              3
+            ],
+            [
+              "SO00305748",
+              "NAL31020",
+              1
+            ],
+            [
+              "SO00305748",
+              "NAL31021",
+              3
+            ],
+            [
+              "SO00305742",
+              "NAL31016",
+              1
+            ],
+            [
+              "SO00305742",
+              "NAL31017",
+              2
+            ],
+            [
+              "SO00305742",
+              "NAL31019",
+              21
+            ],
+            [
+              "SO00305742",
+              "NAL31021",
+              23
+            ],
+            [
+              "SO00305734",
+              "NAL31016",
+              2
+            ],
+            [
+              "SO00305734",
+              "NAL31019",
+              2
+            ],
+            [
+              "SO00305734",
+              "NAL31020",
+              1
+            ],
+            [
+              "SO00305734",
+              "NAL31021",
+              28
+            ]
+          ],
+          "extracted": [
+            [
+              "SO00305734",
+              "NAL31016",
+              2.0
+            ],
+            [
+              "SO00305734",
+              "NAL31019",
+              2.0
+            ],
+            [
+              "SO00305734",
+              "NAL31020",
+              1.0
+            ],
+            [
+              "SO00305734",
+              "NAL31021",
+              28.0
+            ],
+            [
+              "SO00305742",
+              "NAL31016",
+              1.0
+            ],
+            [
+              "SO00305742",
+              "NAL31017",
+              2.0
+            ],
+            [
+              "SO00305742",
+              "NAL31019",
+              21.0
+            ],
+            [
+              "SO00305742",
+              "NAL31021",
+              23.0
+            ],
+            [
+              "SO00305748",
+              "NAL31016",
+              1.0
+            ],
+            [
+              "SO00305748",
+              "NAL31019",
+              3.0
+            ],
+            [
+              "SO00305748",
+              "NAL31020",
+              1.0
+            ],
+            [
+              "SO00305748",
+              "NAL31021",
+              3.0
+            ]
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: Quantity Shipped column; page-2 lines before SO00305734 continue SO00305742"
+        },
+        {
+          "field": "shipDate",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": "2022-08-26",
+          "extracted": "2022-08-26",
+          "flaggedForReview": false,
+          "basis": "proposed: 'Shipment Date: 26 Aug 2022'"
+        },
+        {
+          "field": "carrier",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": null,
+          "extracted": null,
+          "flaggedForReview": true,
+          "basis": "proposed: 'Delivery Method: COLLECTION' (customer collection, no carrier)"
+        },
+        {
+          "field": "carrier",
+          "status": "AMBIGUOUS",
+          "verified": false,
+          "expected": "review flag",
+          "extracted": "customer_collection",
+          "flaggedForReview": true,
+          "basis": "proposed: collection must be flagged rather than left silently empty"
+        },
+        {
+          "field": "trackingNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [],
+          "extracted": [],
+          "flaggedForReview": false,
+          "basis": "proposed: 'Our Reference SH00040386' is the delivery-note number, not tracking"
+        },
+        {
+          "field": "shippedQuantity",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": null,
+          "extracted": null,
+          "flaggedForReview": true,
+          "basis": "proposed design decision: 5 different items, so no single total; compare per item"
+        },
+        {
+          "field": "shippedQuantity",
+          "status": "AMBIGUOUS",
+          "verified": false,
+          "expected": "review flag",
+          "extracted": "multiple_items",
+          "flaggedForReview": true,
+          "basis": "proposed: multiple items must be flagged"
+        },
+        {
+          "field": "unitOfMeasure",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": null,
+          "extracted": null,
+          "flaggedForReview": true,
+          "basis": "proposed: no unit printed"
+        },
+        {
+          "field": "lotNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "MO00043408",
+            "MO00043409",
+            "MO00043410",
+            "MO00043411",
+            "MO00043419"
+          ],
+          "extracted": [
+            "MO00043408",
+            "MO00043409",
+            "MO00043410",
+            "MO00043411",
+            "MO00043419"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: 'Batch No.' values"
+        }
+      ],
+      "counts": {
+        "verified": {
+          "CORRECT": 2
+        },
+        "unverified": {
+          "CORRECT": 8,
+          "AMBIGUOUS": 2
+        }
+      }
+    },
+    {
+      "sourceFile": "pdf-5.pdf",
+      "status": "converted",
+      "timings": {
+        "converterInitSeconds": 21.475,
+        "conversionSeconds": 21.875,
+        "layoutSeconds": 0.123,
+        "extractionSeconds": 0.031,
+        "totalSeconds": 43.688,
+        "isolation": {
+          "attempts": [
+            {
+              "attempt": 1,
+              "status": "ok",
+              "reason": null,
+              "exitCode": 0,
+              "seconds": 45.153,
+              "log": "outputs\\final-validation\\logs\\pdf-5.attempt1.log"
+            }
+          ],
+          "attemptCount": 1,
+          "timeoutSeconds": 600.0
+        }
+      },
+      "checks": [
+        {
+          "field": "sublotCount",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": 6,
+          "extracted": 6,
+          "flaggedForReview": false,
+          "basis": "brief: six sublots"
+        },
+        {
+          "field": "sublotTotal",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": [
+            42,
+            "PR"
+          ],
+          "extracted": [
+            42.0,
+            "PR"
+          ],
+          "flaggedForReview": false,
+          "basis": "brief: sublot quantities sum to 42 pairs"
+        },
+        {
+          "field": "shippedQuantity",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": 42,
+          "extracted": 42.0,
+          "flaggedForReview": false,
+          "basis": "brief: one shipment of 42 pairs repeated across pages (no double counting)"
+        },
+        {
+          "field": "unitOfMeasure",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": "PR",
+          "extracted": "PR",
+          "flaggedForReview": false,
+          "basis": "brief: pairs"
+        },
+        {
+          "field": "itemLineCount",
+          "status": "CORRECT",
+          "verified": true,
+          "expected": 1,
+          "extracted": 1,
+          "flaggedForReview": false,
+          "basis": "brief: one shipment repeated across pages, counted once"
+        },
+        {
+          "field": "shipDate",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": "2024-01-16",
+          "extracted": "2024-01-16",
+          "flaggedForReview": false,
+          "basis": "proposed: 'Ship Date: 1/16/2024' (unambiguous)"
+        },
+        {
+          "field": "carrier",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": "UPS",
+          "extracted": "UPS",
+          "flaggedForReview": false,
+          "basis": "proposed: 'Ship VIA UPSGND'"
+        },
+        {
+          "field": "trackingNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [],
+          "extracted": [],
+          "flaggedForReview": false,
+          "basis": "proposed: 'Shipping Number 0041709' is internal, not tracking"
+        },
+        {
+          "field": "lotNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "2401"
+          ],
+          "extracted": [
+            "2401"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: 'LOT:2401'"
+        },
+        {
+          "field": "sublotNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "US310197",
+            "US310198",
+            "US310200",
+            "US330268",
+            "US330271",
+            "USD10087"
+          ],
+          "extracted": [
+            "US310197",
+            "US310198",
+            "US310200",
+            "US330268",
+            "US330271",
+            "USD10087"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: certificate list and 'Lot Number: US310197LOT2401' rows"
+        },
+        {
+          "field": "sublotQuantities",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            [
+              6.5,
+              "PR"
+            ],
+            [
+              5.5,
+              "PR"
+            ],
+            [
+              3,
+              "PR"
+            ],
+            [
+              6,
+              "PR"
+            ],
+            [
+              3,
+              "PR"
+            ],
+            [
+              18,
+              "PR"
+            ]
+          ],
+          "extracted": [
+            [
+              3.0,
+              "PR"
+            ],
+            [
+              3.0,
+              "PR"
+            ],
+            [
+              5.5,
+              "PR"
+            ],
+            [
+              6.0,
+              "PR"
+            ],
+            [
+              6.5,
+              "PR"
+            ],
+            [
+              18.0,
+              "PR"
+            ]
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: per-sublot QTY values"
+        },
+        {
+          "field": "references.purchaseOrders",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "PR3412522"
+          ],
+          "extracted": [
+            "PR3412522"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: 'Customer P. O. PR3412522'"
+        },
+        {
+          "field": "references.internalShippingNumbers",
+          "status": "CORRECT",
+          "verified": false,
+          "expected": [
+            "0041709"
+          ],
+          "extracted": [
+            "0041709"
+          ],
+          "flaggedForReview": false,
+          "basis": "proposed: 'Shipping Number: 0041709'"
+        }
+      ],
+      "counts": {
+        "verified": {
+          "CORRECT": 5
+        },
+        "unverified": {
+          "CORRECT": 8
+        }
+      }
+    }
+  ],
+  "conversionErrors": [],
+  "totals": {
+    "verified": {
+      "CORRECT": 19,
+      "AMBIGUOUS": 1
+    },
+    "unverified": {
+      "CORRECT": 36,
+      "AMBIGUOUS": 5
+    }
+  },
+  "totalRuntimeSeconds": 215.546
+}

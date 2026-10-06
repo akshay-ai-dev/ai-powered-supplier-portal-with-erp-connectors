@@ -1,0 +1,18 @@
+{
+  "sourceFile": "pdf-1.pdf",
+  "shipDate": "2020-10-01",
+  "carrier": "FedEx",
+  "trackingNumbers": [],
+  "shippedQuantity": 1500,
+  "unitOfMeasure": "SF",
+  "lotNumbers": ["6446"],
+  "serialNumbers": [],
+  "poQuantity": null,
+  "quantityMismatch": null,
+  "fieldIssues": [
+    {"field": "trackingNumbers", "reason": "ambiguous", "note": "Only 'SHIP VIA FED EX# 149752137' (9 digits, likely a FedEx account number); Bill of Lading is blank."},
+    {"field": "serialNumbers", "reason": "not_present", "note": "No serial numbers printed; 6446-0001 and 6446-0002 are sublots of lot 6446 (750 SF each)."},
+    {"field": "poQuantity", "reason": "not_present", "note": "No PO quantity supplied, so no mismatch check."}
+  ],
+  "status": "draft_for_supplier_review"
+}

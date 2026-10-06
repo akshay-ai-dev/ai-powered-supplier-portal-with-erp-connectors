@@ -1,0 +1,992 @@
+{
+  "sourceFile": "pdf-4.pdf",
+  "extractorVersion": "0.2.0",
+  "shipDate": "2022-08-26",
+  "carrier": null,
+  "trackingNumbers": [],
+  "shippedQuantity": null,
+  "unitOfMeasure": null,
+  "lotNumbers": [
+    "MO00043408",
+    "MO00043409",
+    "MO00043410",
+    "MO00043411",
+    "MO00043419"
+  ],
+  "serialNumbers": [],
+  "sublots": [],
+  "items": [
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31016",
+      "customerItemNumber": "867013-0240",
+      "description": "Cryobox With Red Grid",
+      "salesOrder": "SO00305748",
+      "customerReference": "513/2240000",
+      "quantityOrdered": null,
+      "quantityRequired": 1.0,
+      "quantityShipped": 1.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043408",
+          "quantity": 1.0,
+          "unit": null,
+          "page": 1
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        1
+      ],
+      "evidence": [
+        {
+          "page": 1,
+          "text": "NAL31016 Cryobox With Red Grid 1.00 1.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 1,
+          "text": "Batch No. : MO00043408, Quantity : 1.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    },
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31019",
+      "customerItemNumber": "867013-0243",
+      "description": "Cryobox With Blue Grid",
+      "salesOrder": "SO00305748",
+      "customerReference": "513/2240000",
+      "quantityOrdered": null,
+      "quantityRequired": 3.0,
+      "quantityShipped": 3.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043409",
+          "quantity": 3.0,
+          "unit": null,
+          "page": 1
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        1
+      ],
+      "evidence": [
+        {
+          "page": 1,
+          "text": "NAL31019 Cryobox With Blue Grid 3.00 3.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 1,
+          "text": "Batch No. : MO00043409, Quantity : 3.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    },
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31020",
+      "customerItemNumber": "867013-0244",
+      "description": "Cryobox With Grey Grid",
+      "salesOrder": "SO00305748",
+      "customerReference": "513/2240000",
+      "quantityOrdered": null,
+      "quantityRequired": 1.0,
+      "quantityShipped": 1.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043410",
+          "quantity": 1.0,
+          "unit": null,
+          "page": 1
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        1
+      ],
+      "evidence": [
+        {
+          "page": 1,
+          "text": "NAL31020 Cryobox With Grey Grid 1.00 1.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 1,
+          "text": "Batch No. : MO00043410, Quantity : 1.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    },
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31021",
+      "customerItemNumber": "867013-0245",
+      "description": "Cryobox With Assorted Grid",
+      "salesOrder": "SO00305748",
+      "customerReference": "513/2240000",
+      "quantityOrdered": null,
+      "quantityRequired": 3.0,
+      "quantityShipped": 3.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043411",
+          "quantity": 3.0,
+          "unit": null,
+          "page": 1
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        1
+      ],
+      "evidence": [
+        {
+          "page": 1,
+          "text": "NAL31021 Cryobox With Assorted Grid 3.00 3.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 1,
+          "text": "Batch No. : MO00043411, Quantity : 3.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    },
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31016",
+      "customerItemNumber": "867013-0240",
+      "description": "Cryobox With Red Grid",
+      "salesOrder": "SO00305742",
+      "customerReference": "513/2238791",
+      "quantityOrdered": null,
+      "quantityRequired": 1.0,
+      "quantityShipped": 1.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043408",
+          "quantity": 1.0,
+          "unit": null,
+          "page": 1
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        1
+      ],
+      "evidence": [
+        {
+          "page": 1,
+          "text": "NAL31016 Cryobox With Red Grid 1.00 1.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 1,
+          "text": "Batch No. : MO00043408, Quantity : 1.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    },
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31017",
+      "customerItemNumber": "867013-0241",
+      "description": "Cryobox With Yellow Grid",
+      "salesOrder": "SO00305742",
+      "customerReference": "513/2238791",
+      "quantityOrdered": null,
+      "quantityRequired": 2.0,
+      "quantityShipped": 2.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043419",
+          "quantity": 2.0,
+          "unit": null,
+          "page": 2
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        2
+      ],
+      "evidence": [
+        {
+          "page": 2,
+          "text": "NAL31017 Cryobox With Yellow Grid 2.00 2.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 2,
+          "text": "Batch No. : MO00043419, Quantity : 2.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    },
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31019",
+      "customerItemNumber": "867013-0243",
+      "description": "Cryobox With Blue Grid",
+      "salesOrder": "SO00305742",
+      "customerReference": "513/2238791",
+      "quantityOrdered": null,
+      "quantityRequired": 21.0,
+      "quantityShipped": 21.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043409",
+          "quantity": 21.0,
+          "unit": null,
+          "page": 2
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        2
+      ],
+      "evidence": [
+        {
+          "page": 2,
+          "text": "NAL31019 Cryobox With Blue Grid 21.00 21.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 2,
+          "text": "Batch No. : MO00043409, Quantity : 21.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    },
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31021",
+      "customerItemNumber": "867013-0245",
+      "description": "Cryobox With Assorted Grid",
+      "salesOrder": "SO00305742",
+      "customerReference": "513/2238791",
+      "quantityOrdered": null,
+      "quantityRequired": 23.0,
+      "quantityShipped": 23.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043411",
+          "quantity": 23.0,
+          "unit": null,
+          "page": 2
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        2
+      ],
+      "evidence": [
+        {
+          "page": 2,
+          "text": "NAL31021 Cryobox With Assorted Grid 23.00 23.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 2,
+          "text": "Batch No. : MO00043411, Quantity : 23.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    },
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31016",
+      "customerItemNumber": "867013-0240",
+      "description": "Cryobox With Red Grid",
+      "salesOrder": "SO00305734",
+      "customerReference": "513/2237732",
+      "quantityOrdered": null,
+      "quantityRequired": 2.0,
+      "quantityShipped": 2.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043408",
+          "quantity": 2.0,
+          "unit": null,
+          "page": 2
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        2
+      ],
+      "evidence": [
+        {
+          "page": 2,
+          "text": "NAL31016 Cryobox With Red Grid 2.00 2.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 2,
+          "text": "Batch No. : MO00043408, Quantity : 2.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    },
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31019",
+      "customerItemNumber": "867013-0243",
+      "description": "Cryobox With Blue Grid",
+      "salesOrder": "SO00305734",
+      "customerReference": "513/2237732",
+      "quantityOrdered": null,
+      "quantityRequired": 2.0,
+      "quantityShipped": 2.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043409",
+          "quantity": 2.0,
+          "unit": null,
+          "page": 2
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        2
+      ],
+      "evidence": [
+        {
+          "page": 2,
+          "text": "NAL31019 Cryobox With Blue Grid 2.00 2.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 2,
+          "text": "Batch No. : MO00043409, Quantity : 2.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    },
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31020",
+      "customerItemNumber": "867013-0244",
+      "description": "Cryobox With Grey Grid",
+      "salesOrder": "SO00305734",
+      "customerReference": "513/2237732",
+      "quantityOrdered": null,
+      "quantityRequired": 1.0,
+      "quantityShipped": 1.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043410",
+          "quantity": 1.0,
+          "unit": null,
+          "page": 2
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        2
+      ],
+      "evidence": [
+        {
+          "page": 2,
+          "text": "NAL31020 Cryobox With Grey Grid 1.00 1.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 2,
+          "text": "Batch No. : MO00043410, Quantity : 1.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    },
+    {
+      "lineNumber": null,
+      "itemNumber": "NAL31021",
+      "customerItemNumber": "867013-0245",
+      "description": "Cryobox With Assorted Grid",
+      "salesOrder": "SO00305734",
+      "customerReference": "513/2237732",
+      "quantityOrdered": null,
+      "quantityRequired": 28.0,
+      "quantityShipped": 28.0,
+      "quantityOutstanding": 0.0,
+      "quantityBackordered": null,
+      "unitOfMeasure": null,
+      "unitRaw": null,
+      "quantitySource": "shipped column",
+      "lots": [
+        {
+          "lotNumber": "MO00043411",
+          "quantity": 28.0,
+          "unit": null,
+          "page": 2
+        }
+      ],
+      "sublots": [],
+      "serialNumbers": [],
+      "lotOrSerialNumbers": [],
+      "weight": null,
+      "pages": [
+        2
+      ],
+      "evidence": [
+        {
+          "page": 2,
+          "text": "NAL31021 Cryobox With Assorted Grid 28.00 28.00 0.00",
+          "rule": "quantity table row"
+        },
+        {
+          "page": 2,
+          "text": "Batch No. : MO00043411, Quantity : 28.00",
+          "rule": "lot row / lot column"
+        }
+      ]
+    }
+  ],
+  "quantitySummary": [
+    {
+      "itemNumber": "NAL31016",
+      "description": null,
+      "unit": null,
+      "quantityShipped": 4.0,
+      "lineCount": 3,
+      "salesOrders": [
+        "SO00305748",
+        "SO00305742",
+        "SO00305734"
+      ]
+    },
+    {
+      "itemNumber": "NAL31019",
+      "description": null,
+      "unit": null,
+      "quantityShipped": 26.0,
+      "lineCount": 3,
+      "salesOrders": [
+        "SO00305748",
+        "SO00305742",
+        "SO00305734"
+      ]
+    },
+    {
+      "itemNumber": "NAL31020",
+      "description": null,
+      "unit": null,
+      "quantityShipped": 2.0,
+      "lineCount": 2,
+      "salesOrders": [
+        "SO00305748",
+        "SO00305734"
+      ]
+    },
+    {
+      "itemNumber": "NAL31021",
+      "description": null,
+      "unit": null,
+      "quantityShipped": 54.0,
+      "lineCount": 3,
+      "salesOrders": [
+        "SO00305748",
+        "SO00305742",
+        "SO00305734"
+      ]
+    },
+    {
+      "itemNumber": "NAL31017",
+      "description": null,
+      "unit": null,
+      "quantityShipped": 2.0,
+      "lineCount": 1,
+      "salesOrders": [
+        "SO00305742"
+      ]
+    }
+  ],
+  "references": {
+    "salesOrders": [
+      {
+        "value": "SO00305748",
+        "label": "Sales Order No.",
+        "page": 1
+      },
+      {
+        "value": "SO00305742",
+        "label": "Sales Order No.",
+        "page": 1
+      },
+      {
+        "value": "SO00305734",
+        "label": "Sales Order No.",
+        "page": 2
+      }
+    ],
+    "packingSlips": [
+      {
+        "value": "SH00040386",
+        "label": "DELIVERY NOTE",
+        "page": 1
+      }
+    ],
+    "accountNumbers": [
+      {
+        "value": "C00055",
+        "label": "Account No.",
+        "page": 1
+      }
+    ]
+  },
+  "shippingDetails": {
+    "serviceLevel": null,
+    "shipMethodRaw": "COLLECTION - COLLECTION",
+    "freightTerms": [],
+    "packageCount": null,
+    "packages": []
+  },
+  "rawValues": {
+    "shipDate": "26 Aug 2022",
+    "carrier": "COLLECTION - COLLECTION"
+  },
+  "fieldIssues": [
+    {
+      "field": "carrier",
+      "severity": "review",
+      "code": "customer_collection",
+      "message": "Delivery method 'COLLECTION - COLLECTION' indicates customer collection; no carrier named.",
+      "rawValue": "COLLECTION - COLLECTION",
+      "page": 1
+    },
+    {
+      "field": "shippedQuantity",
+      "severity": "review",
+      "code": "multiple_items",
+      "message": "12 lines cover 5 different items; a single shipped quantity would mix products. See items[] and quantitySummary[] (compare per item)."
+    },
+    {
+      "field": "unitOfMeasure",
+      "severity": "review",
+      "code": "unit_not_stated",
+      "message": "No unit of measure is printed for the shipped quantity; PO comparison needs a unit."
+    },
+    {
+      "field": "trackingNumbers",
+      "severity": "warning",
+      "code": "not_found",
+      "message": "No trackingNumbers found in the document."
+    },
+    {
+      "field": "serialNumbers",
+      "severity": "info",
+      "code": "not_found",
+      "message": "No serialNumbers found in the document."
+    }
+  ],
+  "evidence": {
+    "shipDate": [
+      {
+        "page": 1,
+        "text": "Shipment Date | : 26 Aug 2022",
+        "rule": "ship-date label (right)"
+      }
+    ],
+    "carrier": [
+      {
+        "page": 1,
+        "text": "Delivery Method : COLLECTION - COLLECTION",
+        "rule": "carrier label (inline)"
+      }
+    ],
+    "items": [
+      {
+        "page": 1,
+        "text": "NAL31016 Cryobox With Red Grid 1.00 1.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 1,
+        "text": "Batch No. : MO00043408, Quantity : 1.00",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 1,
+        "text": "NAL31019 Cryobox With Blue Grid 3.00 3.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 1,
+        "text": "Batch No. : MO00043409, Quantity : 3.00",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 1,
+        "text": "NAL31020 Cryobox With Grey Grid 1.00 1.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 1,
+        "text": "Batch No. : MO00043410, Quantity : 1.00",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 1,
+        "text": "NAL31021 Cryobox With Assorted Grid 3.00 3.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 1,
+        "text": "Batch No. : MO00043411, Quantity : 3.00",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 2,
+        "text": "NAL31017 Cryobox With Yellow Grid 2.00 2.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043419, Quantity : 2.00",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 2,
+        "text": "NAL31019 Cryobox With Blue Grid 21.00 21.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043409, Quantity : 21.00",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 2,
+        "text": "NAL31021 Cryobox With Assorted Grid 23.00 23.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043411, Quantity : 23.00",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 2,
+        "text": "NAL31016 Cryobox With Red Grid 2.00 2.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043408, Quantity : 2.00",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 2,
+        "text": "NAL31019 Cryobox With Blue Grid 2.00 2.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043409, Quantity : 2.00",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 2,
+        "text": "NAL31020 Cryobox With Grey Grid 1.00 1.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043410, Quantity : 1.00",
+        "rule": "lot row / lot column"
+      },
+      {
+        "page": 2,
+        "text": "NAL31021 Cryobox With Assorted Grid 28.00 28.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043411, Quantity : 28.00",
+        "rule": "lot row / lot column"
+      }
+    ],
+    "shippedQuantity": [
+      {
+        "page": 1,
+        "text": "NAL31016 Cryobox With Red Grid 1.00 1.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 1,
+        "text": "NAL31019 Cryobox With Blue Grid 3.00 3.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 1,
+        "text": "NAL31020 Cryobox With Grey Grid 1.00 1.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 1,
+        "text": "NAL31021 Cryobox With Assorted Grid 3.00 3.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "NAL31017 Cryobox With Yellow Grid 2.00 2.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "NAL31019 Cryobox With Blue Grid 21.00 21.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "NAL31021 Cryobox With Assorted Grid 23.00 23.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "NAL31016 Cryobox With Red Grid 2.00 2.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "NAL31019 Cryobox With Blue Grid 2.00 2.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "NAL31020 Cryobox With Grey Grid 1.00 1.00 0.00",
+        "rule": "quantity table row"
+      },
+      {
+        "page": 2,
+        "text": "NAL31021 Cryobox With Assorted Grid 28.00 28.00 0.00",
+        "rule": "quantity table row"
+      }
+    ],
+    "lotNumbers": [
+      {
+        "page": 1,
+        "text": "MO00043408",
+        "rule": "lot on a shipped line"
+      },
+      {
+        "page": 1,
+        "text": "MO00043409",
+        "rule": "lot on a shipped line"
+      },
+      {
+        "page": 1,
+        "text": "MO00043410",
+        "rule": "lot on a shipped line"
+      },
+      {
+        "page": 1,
+        "text": "MO00043411",
+        "rule": "lot on a shipped line"
+      },
+      {
+        "page": 2,
+        "text": "MO00043419",
+        "rule": "lot on a shipped line"
+      },
+      {
+        "page": 2,
+        "text": "MO00043409",
+        "rule": "lot on a shipped line"
+      },
+      {
+        "page": 2,
+        "text": "MO00043411",
+        "rule": "lot on a shipped line"
+      },
+      {
+        "page": 2,
+        "text": "MO00043408",
+        "rule": "lot on a shipped line"
+      },
+      {
+        "page": 2,
+        "text": "MO00043410",
+        "rule": "lot on a shipped line"
+      },
+      {
+        "page": 1,
+        "text": "Batch No. : MO00043408, Quantity : 1.00",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 1,
+        "text": "Batch No. : MO00043409, Quantity : 3.00",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 1,
+        "text": "Batch No. : MO00043410, Quantity : 1.00",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 1,
+        "text": "Batch No. : MO00043411, Quantity : 3.00",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043419, Quantity : 2.00",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043409, Quantity : 21.00",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043411, Quantity : 23.00",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043408, Quantity : 2.00",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043409, Quantity : 2.00",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043410, Quantity : 1.00",
+        "rule": "lot label (inline)"
+      },
+      {
+        "page": 2,
+        "text": "Batch No. : MO00043411, Quantity : 28.00",
+        "rule": "lot label (inline)"
+      }
+    ]
+  },
+  "document": {
+    "pageCount": 2,
+    "pageTypes": {
+      "1": "packing",
+      "2": "packing"
+    },
+    "textLayer": true,
+    "ocrUsed": false,
+    "doclingTableCount": 2,
+    "datePreference": "DMY"
+  },
+  "timings": {
+    "converterInitSeconds": 18.345,
+    "conversionSeconds": 12.768,
+    "layoutSeconds": 0.118,
+    "extractionSeconds": 0.032,
+    "totalSeconds": 31.415,
+    "isolation": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "ok",
+          "reason": null,
+          "exitCode": 0,
+          "seconds": 33.216,
+          "log": "outputs\\final-validation\\logs\\pdf-4.attempt1.log"
+        }
+      ],
+      "attemptCount": 1,
+      "timeoutSeconds": 600.0
+    }
+  }
+}

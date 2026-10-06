@@ -1,0 +1,18 @@
+{
+  "sourceFile": "pdf-2.pdf",
+  "_note": "verified=true: fact stated in the project brief (2026-10-02). verified=false: proposed by reading the PDF; a person must confirm against the document and then set verified=true and verifiedBy.",
+  "checks": [
+    {"field": "trackingNumbers", "minCount": 2, "verified": true, "basis": "brief: lists several tracking numbers"},
+    {"field": "lotNumbers", "expectReview": true, "rawContains": "(280)", "verified": true, "basis": "brief: '(280)' under Serial/Lot# is ambiguous and must be flagged"},
+    {"field": "lotNumbers", "expected": [], "verified": true, "basis": "brief: '(280)' is ambiguous, so it must not be asserted as a lot"},
+    {"field": "serialNumbers", "expected": [], "verified": true, "basis": "brief: '(280)' is ambiguous, so it must not be asserted as a serial"},
+    {"field": "trackingNumbers", "expected": ["775101717550", "775101716369", "775101716370", "775101717159"], "verified": false, "basis": "proposed: Tracking Number column"},
+    {"field": "shipDate", "expected": "2024-02-07", "verified": false, "basis": "proposed: 'Ship Date: 2/7/2024', US supplier so month/day"},
+    {"field": "shipDate", "expectReview": true, "verified": false, "basis": "proposed: 2/7/2024 is numerically ambiguous (2 Jul vs 7 Feb)"},
+    {"field": "carrier", "expected": "FedEx", "verified": false, "basis": "proposed: 'Ship Method: FDX 2Day'"},
+    {"field": "shippedQuantity", "expected": 280, "verified": false, "basis": "proposed: 280 sits under 'Qty Shipped'; leading '1' looks like a line number"},
+    {"field": "unitOfMeasure", "expected": null, "verified": false, "basis": "proposed: no unit printed"},
+    {"field": "references.salesOrders", "expected": ["SO205641"], "verified": false, "basis": "proposed: 'Order Number: SO205641'"},
+    {"field": "references.purchaseOrders", "expected": ["DR6341448"], "verified": false, "basis": "proposed: 'PO Number: DR6341448'"}
+  ]
+}
