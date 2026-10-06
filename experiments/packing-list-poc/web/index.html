@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Packing-List Pre-Fill · Local POC</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">PL</div>
+      <div>
+        <h1>Packing-List Pre-Fill</h1>
+        <p class="subtitle">Upload a supplier packing list, review the extracted draft, compare with the PO.</p>
+      </div>
+    </div>
+    <span class="poc-pill" title="Everything runs on this computer. Nothing is submitted as a shipment or posted to ERP.">
+      Local POC · nothing is submitted
+    </span>
+  </header>
+
+  <main class="layout">
+    <!-- 1. Upload -------------------------------------------------------- -->
+    <section id="upload-card" class="card" aria-labelledby="upload-title">
+      <h2 id="upload-title"><span class="step">1</span> Upload packing list</h2>
+      <form id="upload-form" novalidate>
+        <label id="dropzone" class="dropzone" for="file-input">
+          <input id="file-input" type="file" accept=".pdf,application/pdf">
+          <span class="dz-icon" aria-hidden="true">⬆</span>
+          <span class="dz-main">Choose a PDF or drop it here</span>
+          <span class="dz-hint" id="dz-hint">PDF only · up to 25 MB</span>
+          <span class="dz-file" id="dz-file" hidden></span>
+        </label>
+
+        <fieldset class="po-fields">
+          <legend>PO details <span class="optional">(optional, from the PO, not the document)</span></legend>
+          <div class="field-row">
+            <label>PO quantity<input id="po-qty" type="text" inputmode="decimal" placeholder="e.g. 42"></label>
+            <label>PO unit<input id="po-unit" type="text" list="unit-list" placeholder="e.g. EA, PR, SF"></label>
+            <label>PO item / part no.<input id="po-item" type="text" placeholder="needed if several items"></label>
+          </div>
+        </fieldset>
+
+        <p id="upload-error" class="inline-error" role="alert" hidden></p>
+        <div class="actions">
+          <button id="extract-btn" class="btn primary" type="submit">Extract draft</button>
+          <span class="muted small">Conversion runs locally and can take 25–170 seconds per PDF.</span>
+        </div>
+      </form>
+    </section>
+
+    <!-- 2. Processing ------------------------------------------------------ -->
+    <section id="processing-card" class="card processing" hidden aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="processing-body">
+        <h2>Reading <span id="proc-file"></span></h2>
+        <p class="elapsed"><span id="proc-elapsed">0</span> s elapsed</p>
+        <ol class="steps">
+          <li id="step-upload">Uploading the PDF to the local server</li>
+          <li id="step-convert">Converting pages with Docling (layout, tables, OCR if scanned)</li>
+          <li id="step-extract">Applying the extraction rules and building the draft</li>
+        </ol>
+        <p class="muted small" id="proc-note">
+          Please keep this tab open. Most packing lists take 25–70 seconds; scanned PDFs can take about
+          3 minutes. If the PDF reader fails, the file is retried once automatically.
+        </p>
+      </div>
+    </section>
+
+    <!-- Error ------------------------------------------------------------- -->
+    <section id="error-card" class="card error-card" hidden role="alert">
+      <h2 id="error-title">The PDF could not be processed</h2>
+      <p id="error-message"></p>
+      <p id="error-advice" class="muted"></p>
+      <details id="error-details" hidden>
+        <summary>Attempt details</summary>
+        <ul id="error-attempts"></ul>
+      </details>
+      <button id="error-retry" class="btn" type="button">Choose another file</button>
+    </section>
+
+    <!-- 3. Review --------------------------------------------------------- -->
+    <section id="results" hidden>
+      <div class="results-grid">
+        <div class="results-main">
+          <div class="card summary-card">
+            <div>
+              <h2><span class="step">2</span> Review the draft</h2>
+              <p class="muted" id="summary-line"></p>
+            </div>
+            <div class="summary-badges" id="summary-badges"></div>
+          </div>
+
+          <div class="card attention-card" id="attention-card">
+            <h3>Needs your attention</h3>
+            <p class="muted small">Values marked “Needs review” must be confirmed or corrected before you can finish.
+              Missing values are allowed but shown in the summary.</p>
+            <ul id="attention-list" class="attention-list"></ul>
+          </div>
+
+          <div class="card">
+            <h3>Shipment details</h3>
+            <div class="field-grid">
+              <div class="field" data-field="shipDate">
+                <div class="field-head"><label for="f-shipDate">Ship date</label><span class="badges"></span></div>
+                <input id="f-shipDate" type="text" inputmode="numeric" maxlength="10" placeholder="YYYY-MM-DD" autocomplete="off">
+                <div class="field-foot"><span class="raw muted small"></span><button class="link evidence-btn" type="button">Evidence</button></div>
+              </div>
+              <div class="field" data-field="carrier">
+                <div class="field-head"><label for="f-carrier">Carrier</label><span class="badges"></span></div>
+                <input id="f-carrier" type="text" placeholder="Carrier name">
+                <div class="field-foot"><span class="raw muted small"></span><button class="link evidence-btn" type="button">Evidence</button></div>
+              </div>
+              <div class="field" data-field="shippedQuantity">
+                <div class="field-head"><label for="f-shippedQuantity">Shipped quantity</label><span class="badges"></span></div>
+                <div class="qty-row">
+                  <input id="f-shippedQuantity" type="text" inputmode="decimal" placeholder="—">
+                  <input id="f-unitOfMeasure" type="text" list="unit-list" placeholder="Unit" aria-label="Unit of measure">
+                </div>
+                <div class="field-foot"><span class="raw muted small" id="qty-note"></span><button class="link evidence-btn" type="button">Evidence</button></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Identifiers</h3>
+            <div class="list-grid">
+              <div class="list-field" data-field="trackingNumbers">
+                <div class="field-head"><span class="label">Tracking numbers</span><span class="badges"></span></div>
+                <ul class="chips"></ul>
+                <div class="add-row"><input id="add-trackingNumbers" name="add-trackingNumbers" type="text" placeholder="Add tracking number" aria-label="Add tracking number"><button class="btn small add-btn" type="button">Add</button></div>
+                <button class="link evidence-btn" type="button">Evidence</button>
+              </div>
+              <div class="list-field" data-field="lotNumbers">
+                <div class="field-head"><span class="label">Lot numbers</span><span class="badges"></span></div>
+                <ul class="chips"></ul>
+                <div class="add-row"><input id="add-lotNumbers" name="add-lotNumbers" type="text" placeholder="Add lot number" aria-label="Add lot number"><button class="btn small add-btn" type="button">Add</button></div>
+                <button class="link evidence-btn" type="button">Evidence</button>
+              </div>
+              <div class="list-field" data-field="serialNumbers">
+                <div class="field-head"><span class="label">Serial numbers</span><span class="badges"></span></div>
+                <ul class="chips"></ul>
+                <div class="add-row"><input id="add-serialNumbers" name="add-serialNumbers" type="text" placeholder="Add serial number" aria-label="Add serial number"><button class="btn small add-btn" type="button">Add</button></div>
+                <button class="link evidence-btn" type="button">Evidence</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="items-card">
+            <h3>Item lines</h3>
+            <p class="muted small" id="items-note"></p>
+            <div class="table-wrap">
+              <table class="items">
+                <thead><tr>
+                  <th>#</th><th>Item / description</th><th>Order</th><th class="num">Ordered / required</th>
+                  <th class="num">Shipped</th><th>Unit</th><th class="num">Outstanding</th><th></th>
+                </tr></thead>
+                <tbody id="items-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" id="packages-card" hidden>
+            <h3>Boxes / packages <span class="muted small">(read-only; box quantities are never added to item totals)</span></h3>
+            <div class="table-wrap">
+              <table class="items">
+                <thead><tr><th>Box</th><th class="num">Quantity</th><th class="num">Weight</th><th>Tracking</th><th>Page</th></tr></thead>
+                <tbody id="packages-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <aside class="results-side">
+          <div class="card po-card">
+            <h3>PO comparison</h3>
+            <p class="muted small">Uses your current edited values. Different units or different products are never combined.</p>
+            <div class="field-row compact">
+              <label>PO quantity<input id="side-po-qty" type="text" inputmode="decimal"></label>
+              <label>Unit<input id="side-po-unit" type="text" list="unit-list"></label>
+              <label>Item / part no.<input id="side-po-item" type="text"></label>
+            </div>
+            <div id="po-status" class="po-status neutral">
+              <span class="po-status-label">Not requested</span>
+              <span class="po-status-detail">Enter a PO quantity and unit to compare.</span>
+            </div>
+            <dl class="po-numbers" id="po-numbers" hidden>
+              <dt>Shipped</dt><dd id="po-shipped">—</dd>
+              <dt>PO</dt><dd id="po-po">—</dd>
+              <dt>Difference</dt><dd id="po-diff">—</dd>
+            </dl>
+            <ul id="po-issues" class="po-issues"></ul>
+          </div>
+
+          <div class="card finish-card">
+            <h3>Finish</h3>
+            <button id="finish-btn" class="btn primary wide" type="button">Finish review (local)</button>
+            <p class="muted small">Checks your edits and shows a shipment summary you can download (TXT, PDF, DOCX).
+              <strong>Local POC action:</strong> it does not submit a shipment or post anything to ERP.</p>
+            <div class="finish-secondary">
+              <button id="new-btn" class="btn ghost" type="button">Upload another PDF</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <!-- Evidence drawer ------------------------------------------------------ -->
+  <div id="drawer-backdrop" class="backdrop" hidden></div>
+  <aside id="evidence-drawer" class="drawer" hidden aria-labelledby="drawer-title" role="dialog" aria-modal="true">
+    <div class="drawer-head">
+      <h3 id="drawer-title">Evidence</h3>
+      <button id="drawer-close" class="icon-btn" type="button" aria-label="Close evidence">✕</button>
+    </div>
+    <p class="muted small">Where the value was found in the document, and which rule read it.</p>
+    <div id="drawer-issues"></div>
+    <ol id="drawer-list" class="evidence-list"></ol>
+  </aside>
+
+  <!-- Finish dialog --------------------------------------------------------- -->
+  <dialog id="finish-dialog" class="finish-dialog" aria-labelledby="finish-title">
+    <div class="dialog-head">
+      <h3 id="finish-title">Review result</h3>
+      <button id="finish-close" class="icon-btn" type="button" aria-label="Close">✕</button>
+    </div>
+    <p class="poc-note">Local POC only: this reviewed draft has <strong>not</strong> been submitted as a shipment and
+      <strong>not</strong> posted to ERP.</p>
+    <div id="finish-errors"></div>
+    <div id="finish-warnings"></div>
+    <div id="finish-summary-wrap" hidden>
+      <div id="finish-summary" class="shipment-summary"></div>
+      <div class="download-row">
+        <span class="muted small">Download this summary (Reviewed draft — not submitted to ERP):</span>
+        <div class="actions">
+          <button class="btn primary export-btn" type="button" data-format="pdf">Download PDF</button>
+          <button class="btn export-btn" type="button" data-format="docx">Download DOCX</button>
+          <button class="btn export-btn" type="button" data-format="txt">Download TXT</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <datalist id="unit-list">
+    <option value="EA"><option value="PR"><option value="SF"><option value="LB"><option value="KG">
+    <option value="BOX"><option value="CS"><option value="CTN"><option value="RL"><option value="FT">
+    <option value="M"><option value="MG"><option value="G"><option value="ML"><option value="SET"><option value="KIT">
+  </datalist>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script src="/app.js"></script>
+</body>
+</html>

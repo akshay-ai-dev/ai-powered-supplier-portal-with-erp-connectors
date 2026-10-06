@@ -1,0 +1,147 @@
+{
+  "sourceFile": "unseen-1.pdf",
+  "extractorVersion": "0.2.0",
+  "shipDate": "2023-12-28",
+  "carrier": "FedEx",
+  "trackingNumbers": [
+    "774630872620"
+  ],
+  "shippedQuantity": null,
+  "unitOfMeasure": null,
+  "lotNumbers": [],
+  "serialNumbers": [],
+  "sublots": [],
+  "items": [],
+  "quantitySummary": [],
+  "references": {
+    "salesOrders": [
+      {
+        "value": "231226-01",
+        "label": "Order No",
+        "page": 5
+      }
+    ],
+    "invoices": [
+      {
+        "value": "231226-0101",
+        "label": "INVOICE",
+        "page": 1
+      },
+      {
+        "value": "231226-01",
+        "label": "Invoice No.",
+        "page": 5
+      }
+    ]
+  },
+  "shippingDetails": {
+    "serviceLevel": "EXPRESS",
+    "shipMethodRaw": "FedEx Express",
+    "freightTerms": [
+      "CIP (INCOTERMS 2020)"
+    ],
+    "packageCount": null
+  },
+  "rawValues": {
+    "shipDate": "December 28, 2023",
+    "carrier": "FedEx Express"
+  },
+  "fieldIssues": [
+    {
+      "field": "shippedQuantity",
+      "severity": "warning",
+      "code": "not_found",
+      "message": "No shippedQuantity found in the document."
+    },
+    {
+      "field": "unitOfMeasure",
+      "severity": "warning",
+      "code": "not_found",
+      "message": "No unitOfMeasure found in the document."
+    },
+    {
+      "field": "lotNumbers",
+      "severity": "warning",
+      "code": "not_found",
+      "message": "No lotNumbers found in the document."
+    },
+    {
+      "field": "serialNumbers",
+      "severity": "info",
+      "code": "not_found",
+      "message": "No serialNumbers found in the document."
+    }
+  ],
+  "evidence": {
+    "shipDate": [
+      {
+        "page": 4,
+        "text": "SHIPMENT DATE: | December 28, 2023",
+        "rule": "ship-date label (right)"
+      },
+      {
+        "page": 5,
+        "text": "Ship Date: / 28 Dec, 2023",
+        "rule": "ship-date label (below)"
+      },
+      {
+        "page": 1,
+        "text": "SHIPMENT DATE: December 28, 2023",
+        "rule": "ship-date label (inline)"
+      }
+    ],
+    "carrier": [
+      {
+        "page": 4,
+        "text": "SHIPPED VIA: FedEx Express",
+        "rule": "carrier label (inline)"
+      }
+    ],
+    "freightTerms": [
+      {
+        "page": 1,
+        "text": "SHIPPING TERMS: CIP (INCOTERMS 2020)",
+        "rule": "label 'SHIPPING TERMS'"
+      },
+      {
+        "page": 4,
+        "text": "SHIPPING TERMS: CIP (INCOTERMS 2020)",
+        "rule": "label 'SHIPPING TERMS'"
+      }
+    ],
+    "trackingNumbers": [
+      {
+        "page": 1,
+        "text": "TRACKING NO.: 774630872620",
+        "rule": "label 'TRACKING NO.' (inline)"
+      },
+      {
+        "page": 4,
+        "text": "TRACKING NO.: 774630872620",
+        "rule": "label 'TRACKING NO.' (inline)"
+      }
+    ]
+  },
+  "document": {
+    "pageCount": 6,
+    "pageTypes": {
+      "1": "unknown",
+      "2": "certificate",
+      "3": "certificate",
+      "4": "packing",
+      "5": "packing",
+      "6": "packing"
+    },
+    "textLayer": true,
+    "ocrUsed": false,
+    "doclingTableCount": 17,
+    "datePreference": "MDY"
+  },
+  "timings": {
+    "converterInitSeconds": 26.014,
+    "conversionSeconds": 30.814,
+    "layoutSeconds": 0.326,
+    "extractionSeconds": 0.032,
+    "totalSeconds": 57.493
+  }
+}

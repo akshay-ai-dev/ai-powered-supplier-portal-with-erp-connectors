@@ -11,9 +11,14 @@ backend/data/
 # Python
 __pycache__/
 *.py[cod]
+*.pyo
 .venv/
 .pytest_cache/
 .ruff_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
 
 # Node / Vite
 node_modules/
@@ -24,6 +29,10 @@ frontend/dist/
 .DS_Store
 .idea/
 .vscode/
+Thumbs.db
+
+# Claude Code (machine-specific session data)
+.claude/
 
 # Local ONNX model files for experiments (hundreds of MB)
 experiments/*/models/
