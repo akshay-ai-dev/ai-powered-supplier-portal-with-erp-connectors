@@ -107,6 +107,11 @@ export interface Requirement {
   quantity: number;
   target_price: number | null;
   needed_by: string | null;
+  ship_date?: string | null;
+  carrier?: string;
+  tracking_number?: string;
+  lot_numbers?: string;
+  serial_numbers?: string;
   status: "Open" | "Awarded" | "Cancelled";
   erp: "sap" | "infor";
   open_to_all: number;

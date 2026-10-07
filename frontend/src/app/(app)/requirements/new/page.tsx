@@ -2,10 +2,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { api, fileSize, localInputToIso, toLocalInput, uploadFile } from "@/lib/api";
+import { api, uploadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { AiBanner, useAiFill } from "@/lib/prefill";
-import { cn } from "@/lib/utils";
 import { useFetch } from "@/lib/use-fetch";
 import type { InventoryItem, Requirement, Supplier } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -14,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ErrorNote, PageHeader } from "@/components/page-header";
+import { RequirementUpload } from "@/components/requirement-upload";
+import { RequirementNumberFields } from "@/components/requirement-number-fields";
 
 const selectCls = "h-9 w-full rounded-md border bg-background px-3 text-sm";
 
@@ -23,28 +23,13 @@ export default function NewRequirementPage() {
   const isSupplier = user?.role === "supplier";
   const inventory = useFetch<InventoryItem[]>(isSupplier ? null : "/api/inventory");
   const suppliers = useFetch<Supplier[]>(isSupplier ? null : "/api/suppliers");
-  const [f, setF] = useState({ title: "", description: "", item_code: "", quantity: "1", target_price: "", needed_by: "", erp: "sap" });
-  const [deadline, setDeadline] = useState(() => toLocalInput(new Date(Date.now() + 7 * 24 * 3600 * 1000)));
-  const [audience, setAudience] = useState<"all" | "selected">("all");
+  const [f, setF] = useState({ title: "", description: "", item_code: "", quantity: "1", ship_date: "", carrier: "" });
+  const [numbers, setNumbers] = useState({ tracking_number: [""], lot_numbers: [""], serial_numbers: [""] });
+  const [audience, setAudience] = useState<"all" | "selected">("selected");
   const [invited, setInvited] = useState<number[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const ai = useAiFill("new_requirement", (v) => {
-    setF((p) => ({
-      ...p,
-      ...(v.item_code !== undefined ? { item_code: v.item_code } : {}),
-      ...(v.title ? { title: v.title } : {}),
-      ...(v.description ? { description: v.description } : {}),
-      ...(v.quantity != null ? { quantity: String(v.quantity) } : {}),
-      ...(v.target_price != null ? { target_price: String(v.target_price) } : {}),
-      ...(v.needed_by ? { needed_by: v.needed_by } : {}),
-      ...(v.erp ? { erp: v.erp } : {}),
-    }));
-    if (v.audience) setAudience(v.audience === "selected" ? "selected" : "all");
-    if (Array.isArray(v.supplier_ids)) setInvited(v.supplier_ids);
-    if (v.quote_deadline !== undefined) setDeadline(v.quote_deadline === "none" ? "" : v.quote_deadline);
-  });
 
   if (user && user.role !== "buyer" && user.role !== "admin") return <ErrorNote message="Only buyers can post requirements." />;
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
@@ -55,10 +40,26 @@ export default function NewRequirementPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setError(null);
     if (!title) return setError("Describe the item you need.");
-    if (deadline && new Date(deadline).getTime() <= Date.now()) return setError("The quote deadline must be in the future.");
-    if (audience === "selected" && invited.length === 0) return setError("Select at least one supplier, or choose Open to all suppliers.");
+    if (!f.ship_date) return setError("Enter the ship date.");
+    if (!f.carrier.trim()) return setError("Enter the carrier.");
+    if (!Number.isInteger(Number(f.quantity)) || Number(f.quantity) < 1) return setError("Enter a quantity of at least 1.");
+    for (const [label, values] of [
+      ["tracking number", numbers.tracking_number],
+      ["lot number", numbers.lot_numbers],
+      ["serial number", numbers.serial_numbers],
+    ] as const) {
+      if (!values.length || values.some((value) => !value.trim())) return setError(`Enter a ${label} in each row, or remove empty extra rows.`);
+    }
+    const identifiers = {
+      tracking_number: numbers.tracking_number.map((value) => value.trim()).filter(Boolean).join("\n"),
+      lot_numbers: numbers.lot_numbers.map((value) => value.trim()).filter(Boolean).join("\n"),
+      serial_numbers: numbers.serial_numbers.map((value) => value.trim()).filter(Boolean).join("\n"),
+    };
+    if (Object.values(identifiers).some((value) => value.length > 2000)) return setError("Keep each category of numbers within 2,000 characters in total.");
+    if (audience === "selected" && invited.length === 0) return setError("Select at least one supplier.");
     setBusy(true);
     let created: Requirement;
     try {
@@ -68,10 +69,9 @@ export default function NewRequirementPage() {
           description: f.description,
           item_code: f.item_code || null,
           quantity: Number(f.quantity),
-          target_price: f.target_price ? Number(f.target_price) : null,
-          needed_by: f.needed_by || null,
-          erp: f.erp,
-          quote_deadline: localInputToIso(deadline),
+          ship_date: f.ship_date || null,
+          carrier: f.carrier.trim(),
+          ...identifiers,
           open_to_all: audience === "all",
           supplier_ids: audience === "all" ? [] : invited,
         },
@@ -98,128 +98,108 @@ export default function NewRequirementPage() {
   return (
     <>
       <PageHeader title="New requirement" description="Open it to every supplier, or invite specific ones. Only they can see it and respond with a quote." />
-      <div className="max-w-2xl">
-        <AiBanner show={ai.any} onDismiss={ai.clear} />
-      </div>
-      <Card className="max-w-2xl">
+      <Card className="max-w-3xl min-w-0">
         <CardContent className="pt-6">
-          <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="item">Item</Label>
-              <select id="item" value={f.item_code} onChange={set("item_code")} className={cn(selectCls, ai.ring("item_code"))}>
-                <option value="">New item (not in inventory)</option>
-                {inventory.data?.map((i) => (
-                  <option key={i.id} value={i.item_code}>
-                    {i.item_code} · {i.description}
-                  </option>
-                ))}
-              </select>
-              {chosen ? (
-                <p className="text-xs text-muted-foreground">
-                  In stock: <b>{chosen.stock_quantity.toLocaleString()}</b> at {chosen.warehouse}. Suppliers will see it as &quot;{chosen.description}&quot;.
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">Choose an item you already stock, or describe a new one below.</p>
-              )}
-            </div>
-            {!chosen && (
-              <div className="space-y-2">
-                <Label htmlFor="title">New item name</Label>
-                <Input id="title" required value={f.title} onChange={set("title")} placeholder="e.g. Hydraulic pump assembly" className={ai.ring("title")} />
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="desc">Specs and notes (optional)</Label>
-              <Textarea id="desc" value={f.description} onChange={set("description")} placeholder="Specs, quality, delivery location…" className={ai.ring("description")} />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="qty">Quantity</Label>
-                <Input id="qty" type="number" min={1} required value={f.quantity} onChange={set("quantity")} className={ai.ring("quantity")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="erp">ERP system</Label>
-                <select id="erp" value={f.erp} onChange={set("erp")} className={cn(selectCls, ai.ring("erp"))}>
-                  <option value="sap">SAP</option>
-                  <option value="infor">Infor LN</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tp">Target unit price (optional)</Label>
-                <Input id="tp" type="number" min={0} step="0.01" value={f.target_price} onChange={set("target_price")} className={ai.ring("target_price")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nb">Needed by (optional)</Label>
-                <Input id="nb" type="date" value={f.needed_by} onChange={set("needed_by")} className={ai.ring("needed_by")} />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="dl">Quote deadline</Label>
-                <div className="flex gap-2">
-                  <Input id="dl" type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={ai.ring("quote_deadline")} />
-                  <Button type="button" variant="outline" onClick={() => setDeadline("")} disabled={!deadline}>
-                    No deadline
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Suppliers can quote until this time. After it, quotes are closed and you can award or extend the deadline. Suppliers who haven&apos;t quoted get a reminder a day before.
-                </p>
-              </div>
-            </div>
+          <form onSubmit={submit}>
+            <fieldset disabled={busy} className="space-y-4">
+              <RequirementUpload files={files} onChange={setFiles} disabled={busy} />
 
-            <fieldset className={cn("space-y-2 rounded-md", ai.ring("audience"))}>
-              <legend className="text-sm font-medium">Who can respond?</legend>
-              <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm">
-                <input type="radio" name="audience" className="mt-1" checked={audience === "all"} onChange={() => setAudience("all")} />
-                <span>
-                  <b>Open to all suppliers</b>
-                  <span className="block text-xs text-muted-foreground">Every supplier can see and quote it, including suppliers who join later.</span>
-                </span>
-              </label>
-              <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm">
-                <input type="radio" name="audience" className="mt-1" checked={audience === "selected"} onChange={() => setAudience("selected")} />
-                <span>
-                  <b>Selected suppliers only</b>
-                  <span className="block text-xs text-muted-foreground">Only the suppliers you tick below can see it.</span>
-                </span>
-              </label>
-              {audience === "selected" && (
-                <div className="space-y-2 pl-1">
-                  <div className="flex justify-end">
-                    <button type="button" className="text-xs underline" onClick={() => setInvited(invited.length === allIds.length ? [] : allIds)}>
-                      {invited.length === allIds.length ? "Clear all" : "Select all"}
-                    </button>
+              <fieldset className="space-y-3 rounded-lg border p-4">
+                <legend className="px-1 text-sm font-semibold">Shipping details</legend>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="ship-date">Ship date</Label>
+                    <Input id="ship-date" type="date" required value={f.ship_date} onChange={set("ship_date")} />
                   </div>
-                  <div className="grid gap-2 rounded-md border p-3 sm:grid-cols-2">
-                    {suppliers.data?.map((s) => (
-                      <label key={s.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                        <input type="checkbox" checked={invited.includes(s.id)} onChange={() => toggle(s.id)} />
-                        {s.supplier_name}
-                      </label>
-                    ))}
-                    {suppliers.data?.length === 0 && <p className="text-sm text-muted-foreground">No suppliers yet.</p>}
+                  <div className="space-y-2">
+                    <Label htmlFor="carrier">Carrier</Label>
+                    <Input id="carrier" maxLength={200} required value={f.carrier} onChange={set("carrier")} placeholder="e.g. DHL, FedEx" />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="qty">Quantity</Label>
+                    <Input id="qty" type="number" min={1} required value={f.quantity} onChange={set("quantity")} />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <RequirementNumberFields id="tracking-number" label="Tracking numbers" entryLabel="Tracking number" values={numbers.tracking_number} disabled={busy}
+                      onChange={(values) => setNumbers((current) => ({ ...current, tracking_number: values }))} />
+                  </div>
+                  <RequirementNumberFields id="lot-numbers" label="Lot numbers" entryLabel="Lot number" values={numbers.lot_numbers} disabled={busy}
+                    onChange={(values) => setNumbers((current) => ({ ...current, lot_numbers: values }))} />
+                  <RequirementNumberFields id="serial-numbers" label="Serial numbers" entryLabel="Serial number" values={numbers.serial_numbers} disabled={busy}
+                    onChange={(values) => setNumbers((current) => ({ ...current, serial_numbers: values }))} />
                 </div>
-              )}
-            </fieldset>
+              </fieldset>
 
-            <div className="space-y-2">
-              <Label htmlFor="files">Attachments (drawings, specs; max 10 MB each)</Label>
-              <Input id="files" type="file" multiple onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
-              {files.length > 0 && (
-                <ul className="text-xs text-muted-foreground">
-                  {files.map((file) => (
-                    <li key={file.name}>
-                      {file.name} ({fileSize(file.size)})
-                    </li>
+              <div className="space-y-2">
+                <Label htmlFor="item">Item</Label>
+                <select id="item" value={f.item_code} onChange={set("item_code")} className={selectCls}>
+                  <option value="">New item (not in inventory)</option>
+                  {inventory.data?.map((i) => (
+                    <option key={i.id} value={i.item_code}>
+                      {i.item_code} · {i.description}
+                    </option>
                   ))}
-                </ul>
+                </select>
+                {chosen ? (
+                  <p className="text-xs text-muted-foreground">
+                    In stock: <b>{chosen.stock_quantity.toLocaleString()}</b> at {chosen.warehouse}. Suppliers will see it as &quot;{chosen.description}&quot;.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Choose an item you already stock, or describe a new one below.</p>
+                )}
+              </div>
+              {!chosen && (
+                <div className="space-y-2">
+                  <Label htmlFor="title">New item name</Label>
+                  <Input id="title" required maxLength={200} value={f.title} onChange={set("title")} placeholder="e.g. Hydraulic pump assembly" />
+                </div>
               )}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="desc">Specs and notes (optional)</Label>
+                <Textarea id="desc" maxLength={2000} value={f.description} onChange={set("description")} placeholder="Specs, quality, delivery location…" />
+              </div>
 
-            <ErrorNote message={error} />
-            <Button type="submit" disabled={busy}>
-              {busy ? "Posting…" : "Post requirement"}
-            </Button>
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium">Who can respond?</legend>
+                <label className="flex cursor-not-allowed items-start gap-2 rounded-md border bg-muted/50 p-3 text-sm opacity-50">
+                  <input type="radio" name="audience" className="mt-1 cursor-not-allowed" checked={audience === "all"} disabled />
+                  <span>
+                    <b>Open to all suppliers</b>
+                    <span className="block text-xs text-muted-foreground">Every supplier can see and quote it, including suppliers who join later.</span>
+                  </span>
+                </label>
+                <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm">
+                  <input type="radio" name="audience" className="mt-1" checked={audience === "selected"} onChange={() => setAudience("selected")} />
+                  <span>
+                    <b>Selected suppliers only</b>
+                    <span className="block text-xs text-muted-foreground">Only the suppliers you tick below can see it.</span>
+                  </span>
+                </label>
+                {audience === "selected" && (
+                  <div className="space-y-2 pl-1">
+                    <div className="flex justify-end">
+                      <button type="button" className="text-xs underline" onClick={() => setInvited(invited.length === allIds.length ? [] : allIds)}>
+                        {invited.length === allIds.length ? "Clear all" : "Select all"}
+                      </button>
+                    </div>
+                    <div className="grid gap-2 rounded-md border p-3 sm:grid-cols-2">
+                      {suppliers.data?.map((s) => (
+                        <label key={s.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                          <input type="checkbox" checked={invited.includes(s.id)} onChange={() => toggle(s.id)} />
+                          {s.supplier_name}
+                        </label>
+                      ))}
+                      {suppliers.data?.length === 0 && <p className="text-sm text-muted-foreground">No suppliers yet.</p>}
+                    </div>
+                  </div>
+                )}
+              </fieldset>
+
+              <ErrorNote message={error} />
+              <Button type="submit" disabled={busy}>
+                {busy ? "Posting…" : "Post requirement"}
+              </Button>
+            </fieldset>
           </form>
         </CardContent>
       </Card>
