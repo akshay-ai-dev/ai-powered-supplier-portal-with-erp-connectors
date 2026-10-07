@@ -30,7 +30,9 @@ def _ensure_user(conn: sqlite3.Connection, name, email, role, supplier_id=None) 
 
 
 def _supplier_id(conn: sqlite3.Connection, name_prefix: str) -> int:
-    return conn.execute("SELECT id FROM suppliers WHERE supplier_name LIKE ?", (f"{name_prefix}%",)).fetchone()["id"]
+    return conn.execute(
+        "SELECT id FROM suppliers WHERE supplier_name LIKE ?", (f"{name_prefix}%",)
+    ).fetchone()["id"]
 
 
 def _seed_requests(conn: sqlite3.Connection, buyer: dict) -> None:
@@ -55,7 +57,11 @@ def _seed_requests(conn: sqlite3.Connection, buyer: dict) -> None:
         )
         # Inserted directly: only ABC has a supplier login, and the quote service needs one.
         # Expected ranking: Globex (on time, cheapest), Northwind (on time), ABC (cheapest but late).
-        for prefix, price, lead_days in (("Globex", 12.0, 3), ("ABC", 11.5, 20), ("Northwind", 13.0, 2)):
+        for prefix, price, lead_days in (
+            ("Globex", 12.0, 3),
+            ("ABC", 11.5, 20),
+            ("Northwind", 13.0, 2),
+        ):
             sid = _supplier_id(conn, prefix)
             conn.execute(
                 "INSERT INTO quotes (requirement_id, supplier_id, unit_price, lead_time_days, message, created_at) VALUES (?,?,?,?,?,?)",
@@ -65,7 +71,15 @@ def _seed_requests(conn: sqlite3.Connection, buyer: dict) -> None:
 
     if not exists("Gearbox housing"):
         req_svc.create_requirement(
-            conn, buyer, {"title": "Gearbox housing", "item_code": "ITEM005", "quantity": 5, "erp": "infor", "open_to_all": True}
+            conn,
+            buyer,
+            {
+                "title": "Gearbox housing",
+                "item_code": "ITEM005",
+                "quantity": 5,
+                "erp": "infor",
+                "open_to_all": True,
+            },
         )
 
 
