@@ -54,6 +54,10 @@ extend-immutable-calls = [
 ]
 
 [tool.pytest.ini_options]
+# The portal suite. (The supplier_packing_list/tests suite is kept out of the commit
+# via .gitignore, so it is not listed here; run it locally with
+# `pytest supplier_packing_list/tests` when those files are present.)
 testpaths = ["tests"]
+# "." (backend/) makes both the app and supplier_packing_list packages importable.
 pythonpath = ["."]
 asyncio_mode = "auto"

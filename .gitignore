@@ -13,12 +13,18 @@ __pycache__/
 *.py[cod]
 *.pyo
 .venv/
+venv/
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
 dist/
 build/
 .eggs/
+# Test coverage artifacts
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
 
 # Node / Vite
 node_modules/
@@ -39,3 +45,8 @@ experiments/*/models/
 
 # AI Assistant browser models (served from public/, set up by `npm run fetch:models`)
 frontend/public/models/
+
+# Supplier packing-list integration: keep these test files local, out of the commit
+# (path-anchored, so the team's other tests/ are unaffected)
+backend/supplier_packing_list/tests/
+backend/tests/test_requirement_fields.py

@@ -35,11 +35,27 @@ services:
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      # Supplier packing-list integration (backend/supplier_packing_list).
+      # Optional override for the image OCR model (defaults to OPENAI_MODEL):
+      SPL_OCR_MODEL: ${SPL_OCR_MODEL:-}
+      # Per-attempt timeout (seconds) for the isolated Docling PDF conversion:
+      PACKING_CONVERT_TIMEOUT_S: ${PACKING_CONVERT_TIMEOUT_S:-600}
+      # Docling downloads its layout/table (and, for scanned PDFs, OCR) models on
+      # first use into these dirs, which are backed by the spl_models volume below.
+      HF_HOME: /models/huggingface
+      EASYOCR_MODULE_PATH: /models/easyocr
     volumes:
       - erp_data:/data
+      - spl_models:/models
     ports:
       - "8000:8000"
     networks: [erp]
+    # Docling's layout/table models are memory-hungry; give the backend headroom.
+    # Honoured by `docker compose up` (Compose v2); ignore the swarm-only note.
+    deploy:
+      resources:
+        limits:
+          memory: 4g
 
   frontend:
     build:
@@ -75,6 +91,7 @@ services:
 
 volumes:
   erp_data:
+  spl_models:  # Docling model cache (layout/table/OCR), downloaded on first use
 
 networks:
   erp:

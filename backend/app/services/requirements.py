@@ -6,6 +6,7 @@ was raised) | Cancelled. After award, the stage follows the PO: Awarded -> In Tr
 Each requirement targets one ERP (sap | infor); the PO raised on award is pushed to that ERP when approved.
 """
 
+import json
 import sqlite3
 from datetime import UTC, datetime, timedelta
 
@@ -103,6 +104,16 @@ def _hydrate(
     conn: sqlite3.Connection, row: sqlite3.Row, user: dict, with_quotes: bool = False
 ) -> dict:
     req = dict(row)
+    # lot_numbers / serial_numbers are stored as JSON arrays; return them as lists.
+    for _key in ("lot_numbers", "serial_numbers"):
+        raw = req.get(_key)
+        if isinstance(raw, str):
+            try:
+                req[_key] = json.loads(raw) if raw else []
+            except ValueError:
+                req[_key] = []
+        elif raw is None:
+            req[_key] = []
     po = (
         conn.execute("SELECT * FROM purchase_orders WHERE id = ?", (req["po_id"],)).fetchone()
         if req["po_id"]
@@ -282,8 +293,10 @@ def create_requirement(conn: sqlite3.Connection, user: dict, data: dict) -> dict
         bool(deadline) and datetime.fromisoformat(deadline) - datetime.now(UTC) <= REMINDER_WINDOW
     )
     cur = conn.execute(
-        "INSERT INTO requirements (req_number, title, description, item_code, quantity, target_price, needed_by, erp, open_to_all, "
-        "quote_deadline, deadline_reminded, created_by, created_via, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO requirements (req_number, title, description, item_code, quantity, target_price, needed_by, "
+        "ship_date, carrier, tracking_number, lot_numbers, serial_numbers, erp, open_to_all, "
+        "quote_deadline, deadline_reminded, created_by, created_via, created_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             f"TMP-{now()}-{user['id']}",
             data["title"],
@@ -292,6 +305,11 @@ def create_requirement(conn: sqlite3.Connection, user: dict, data: dict) -> dict
             data["quantity"],
             data.get("target_price"),
             data.get("needed_by"),
+            data.get("ship_date") or None,
+            (data.get("carrier") or "").strip(),
+            (data.get("tracking_number") or "").strip(),
+            json.dumps(data.get("lot_numbers") or []),
+            json.dumps(data.get("serial_numbers") or []),
             erp,
             1 if open_to_all else 0,
             deadline,
