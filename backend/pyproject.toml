@@ -17,6 +17,7 @@ dependencies = [
     "anthropic>=1.9",             # Claude API
     "openai>=1.50",               # in-app assistant: natural-language form filling
     "mcp>=2.2",                   # MCP Python SDK (FastMCP)
+    "pillow>=10.3",               # image validation for the packing-list draft extractor (supplier_packing_list)
 ]
 
 [dependency-groups]
