@@ -162,7 +162,8 @@ class RequirementCreate(BaseModel):
     # Optional shipping details, typically pre-filled from an uploaded document via the
     # supplier_packing_list draft-extraction endpoint, then reviewed/edited by the buyer before posting.
     ship_date: str | None = Field(
-        default=None, description="ISO date the goods shipped per an uploaded document, e.g. 2026-02-10"
+        default=None,
+        description="ISO date the goods shipped per an uploaded document, e.g. 2026-02-10",
     )
     carrier: str = Field(default="", max_length=120)
     tracking_number: str = Field(default="", max_length=200)

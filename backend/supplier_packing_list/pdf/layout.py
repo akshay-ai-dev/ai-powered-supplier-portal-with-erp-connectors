@@ -18,8 +18,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 PACKING_TITLE_RE = re.compile(
-    r"packing\s*(slip|list)|delivery\s*note|shipping\s*(list|notice|manifest)|dispatch\s*note|despatch\s*note", re.I)
-INVOICE_TITLE_RE = re.compile(r"^\s*((commercial|pro\s*-?\s*forma|tax|customs)\s+)?invoice\s*$", re.I)
+    r"packing\s*(slip|list)|delivery\s*note|shipping\s*(list|notice|manifest)|dispatch\s*note|despatch\s*note",
+    re.I,
+)
+INVOICE_TITLE_RE = re.compile(
+    r"^\s*((commercial|pro\s*-?\s*forma|tax|customs)\s+)?invoice\s*$", re.I
+)
 CERT_TITLE_RE = re.compile(r"certificat(e|ion)|test\s*report|analysis|conformity|conformance", re.I)
 
 
@@ -27,7 +31,7 @@ CERT_TITLE_RE = re.compile(r"certificat(e|ion)|test\s*report|analysis|conformity
 class Word:
     text: str
     page: int
-    l: float
+    left: float
     t: float
     r: float
     b: float
@@ -39,7 +43,7 @@ class Word:
 
     @property
     def xc(self):
-        return (self.l + self.r) / 2
+        return (self.left + self.r) / 2
 
     @property
     def yc(self):
@@ -96,8 +100,13 @@ def get_converter(ocr: bool):
         # One native docling-parse worker: its multi-threaded page decoding intermittently raised
         # access violations (pdf_parsers.pyd) on Windows. All other backend options stay default.
         backend_opts = ThreadedDoclingParseBackendOptions(parser_threads=1)
-        conv = DocumentConverter(format_options={
-            InputFormat.PDF: PdfFormatOption(pipeline_options=opts, backend_options=backend_opts)})
+        conv = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(
+                    pipeline_options=opts, backend_options=backend_opts
+                )
+            }
+        )
         conv.initialize_pipeline(InputFormat.PDF)  # load layout/table models now, not inside timing
         _CONVERTERS[ocr] = conv
     return _CONVERTERS[ocr]
@@ -108,7 +117,9 @@ def has_text_layer(pdf_path) -> bool:
 
     pdf = pdfium.PdfDocument(str(pdf_path))
     try:
-        return all(len(pdf[i].get_textpage().get_text_range().strip()) >= 20 for i in range(len(pdf)))
+        return all(
+            len(pdf[i].get_textpage().get_text_range().strip()) >= 20 for i in range(len(pdf))
+        )
     finally:
         pdf.close()
 
@@ -170,13 +181,29 @@ def build_layout(res, source_file, text_layer) -> Layout:
                 bb = it.prov[0].bbox.to_top_left_origin(page_height=h)
                 lines.append(Line(it.text.strip(), pno, bb.l, bb.t, bb.r, bb.b))
         words = link_words(lines, words)
-        lines.sort(key=lambda x: (round(x.t), x.l))
-        pages.append(Page(pno, w, h, lines, words, headings_by_page.get(pno, []),
-                          docling_tables=tables_by_page.get(pno, 0)))
+        lines.sort(key=lambda x: (round(x.t), x.left))
+        pages.append(
+            Page(
+                pno,
+                w,
+                h,
+                lines,
+                words,
+                headings_by_page.get(pno, []),
+                docling_tables=tables_by_page.get(pno, 0),
+            )
+        )
 
     classify_pages(pages)
-    return Layout(source_file, pages, len(pages), text_layer, ocr_used=not text_layer,
-                  markdown=doc.export_to_markdown(), docling_table_count=sum(tables_by_page.values()))
+    return Layout(
+        source_file,
+        pages,
+        len(pages),
+        text_layer,
+        ocr_used=not text_layer,
+        markdown=doc.export_to_markdown(),
+        docling_table_count=sum(tables_by_page.values()),
+    )
 
 
 def _approx_words(line):
@@ -184,8 +211,8 @@ def _approx_words(line):
     if not toks:
         return []
     total = sum(len(t) for t in toks) + len(toks) - 1
-    unit = (line.r - line.l) / max(total, 1)
-    out, x = [], line.l
+    unit = (line.r - line.left) / max(total, 1)
+    out, x = [], line.left
     for t in toks:
         out.append(Word(t, line.page, x, line.t, x + unit * len(t), line.b))
         x += unit * (len(t) + 1)
@@ -207,14 +234,14 @@ def _attach_words(lines, words):
     for w_ in words:
         best, best_ov = None, 0.0
         for idx, ln in enumerate(lines):
-            ov = overlap(w_.l, w_.r, ln.l, ln.r) * overlap(w_.t, w_.b, ln.t, ln.b)
+            ov = overlap(w_.left, w_.r, ln.left, ln.r) * overlap(w_.t, w_.b, ln.t, ln.b)
             if ov > best_ov:
                 best, best_ov = (idx, ln), ov
         if best is not None:
             w_.line_id = best[0]
             best[1].words.append(w_)
     for ln in lines:
-        ln.words.sort(key=lambda x: x.l)
+        ln.words.sort(key=lambda x: x.left)
 
 
 def classify_pages(pages):
@@ -252,6 +279,7 @@ def classify_pages(pages):
 
 # --------------------------------------------------------------------------- geometry helpers
 
+
 def overlap(a0, a1, b0, b1):
     return max(0.0, min(a1, b1) - max(a0, b0))
 
@@ -270,7 +298,7 @@ def group_rows(items, tol=None):
             rows[-1]["yc"] += (it.yc - rows[-1]["yc"]) / n
         else:
             rows.append({"yc": it.yc, "items": [it]})
-    return [sorted(r["items"], key=lambda x: x.l) for r in rows]
+    return [sorted(r["items"], key=lambda x: x.left) for r in rows]
 
 
 LABEL_LIKE_RE = re.compile(r"^[A-Za-z][A-Za-z0-9 .#/&()'\-]{0,35}\s?:(\s|$)")
@@ -300,8 +328,15 @@ def _not_a_header(value):
     return not re.fullmatch(r"(?i)[a-z .]{1,20}#|terms|date|via|ship\s*via|salesperson", v)
 
 
-def find_label_values(layout, label_pattern, pages=None, inline_without_colon=False,
-                      allow_right=True, allow_below=True, validator=None):
+def find_label_values(
+    layout,
+    label_pattern,
+    pages=None,
+    inline_without_colon=False,
+    allow_right=True,
+    allow_below=True,
+    validator=None,
+):
     """Find values for a label anywhere in the document.
 
     A label must start a text line. Its value is taken from the same line after the
@@ -309,7 +344,9 @@ def find_label_values(layout, label_pattern, pages=None, inline_without_colon=Fa
     directly below it. The first candidate that is not another label/header and that
     passes `validator` (if given) is used.
     """
-    rx = re.compile(r"^\s*(?P<label>" + label_pattern + r")(?![A-Za-z/])\s*(?P<sep>[:#])?\s*(?P<rest>.*)$", re.I)
+    rx = re.compile(
+        r"^\s*(?P<label>" + label_pattern + r")(?![A-Za-z/])\s*(?P<sep>[:#])?\s*(?P<rest>.*)$", re.I
+    )
 
     def ok(v):
         return _not_a_header(v) and (validator is None or validator(v))
@@ -325,20 +362,38 @@ def find_label_values(layout, label_pattern, pages=None, inline_without_colon=Fa
             rest = m.group("rest").strip()
             rest = re.sub(r"^[:#\-]\s*", "", rest)
             if rest:
-                if (m.group("sep") or inline_without_colon) and (validator is None or validator(rest)):
+                if (m.group("sep") or inline_without_colon) and (
+                    validator is None or validator(rest)
+                ):
                     hits.append(Hit(m.group("label"), rest, page.number, ln.text, "inline", ln))
                 continue
             if allow_right:
                 val = _right_neighbor(page, ln)
                 if val is not None and ok(_strip_sep(val.text)):
-                    hits.append(Hit(m.group("label"), _strip_sep(val.text), page.number,
-                                    f"{ln.text} | {val.text}", "right", val))
+                    hits.append(
+                        Hit(
+                            m.group("label"),
+                            _strip_sep(val.text),
+                            page.number,
+                            f"{ln.text} | {val.text}",
+                            "right",
+                            val,
+                        )
+                    )
                     continue
             if allow_below:
                 val = _below_neighbor(page, ln)
                 if val is not None and ok(_strip_sep(val.text)):
-                    hits.append(Hit(m.group("label"), _strip_sep(val.text), page.number,
-                                    f"{ln.text} / {val.text}", "below", val))
+                    hits.append(
+                        Hit(
+                            m.group("label"),
+                            _strip_sep(val.text),
+                            page.number,
+                            f"{ln.text} / {val.text}",
+                            "below",
+                            val,
+                        )
+                    )
     return hits
 
 
@@ -347,22 +402,34 @@ def _strip_sep(text):
 
 
 def _right_neighbor(page, ln, max_gap=260):
-    cands = [o for o in page.lines if o is not ln and o.l >= ln.r - 2 and o.l - ln.r <= max_gap
-             and abs(o.yc - ln.yc) <= 0.6 * max(o.h, ln.h)]
+    cands = [
+        o
+        for o in page.lines
+        if o is not ln
+        and o.left >= ln.r - 2
+        and o.left - ln.r <= max_gap
+        and abs(o.yc - ln.yc) <= 0.6 * max(o.h, ln.h)
+    ]
     if not cands:
         return None
-    o = min(cands, key=lambda x: x.l)
+    o = min(cands, key=lambda x: x.left)
     if looks_like_label(o.text) and not o.text.lstrip().startswith(":"):
         return None
     return o
 
 
 def _below_neighbor(page, ln):
-    cands = [o for o in page.lines if o is not ln and o.t >= ln.b - 1.5 and o.t - ln.b <= 1.6 * ln.h
-             and overlap(o.l - 4, o.r + 4, ln.l, ln.r) > 0]
+    cands = [
+        o
+        for o in page.lines
+        if o is not ln
+        and o.t >= ln.b - 1.5
+        and o.t - ln.b <= 1.6 * ln.h
+        and overlap(o.left - 4, o.r + 4, ln.left, ln.r) > 0
+    ]
     if not cands:
         return None
-    o = min(cands, key=lambda x: (x.t, abs(x.l - ln.l)))
+    o = min(cands, key=lambda x: (x.t, abs(x.left - ln.left)))
     if looks_like_label(o.text):
         return None
     return o
@@ -397,14 +464,16 @@ COLUMN_ROLES = [
 ]
 QTY_ROLES = {"shipped", "qty"}
 HEADER_KEYWORD_RE = re.compile(
-    r"\b(qty|quantity|shipped|ordered|required|outstanding|backordered|tracking)\b|delivery\s*qty", re.I)
+    r"\b(qty|quantity|shipped|ordered|required|outstanding|backordered|tracking)\b|delivery\s*qty",
+    re.I,
+)
 
 
 @dataclass
 class Column:
     text: str
     role: str
-    l: float
+    left: float
     r: float
 
 
@@ -432,13 +501,20 @@ def make_phrases(words, gap_factor=0.8):
         for w_ in row:
             wl = getattr(w_, "line_id", -1)
             same_line = wl < 0 or getattr(cur, "line_id", -1) < 0 or wl == cur.line_id
-            if cur and same_line and w_.l - cur.r <= gap_factor * max(cur.h, w_.h):
-                cur = Word(cur.text + " " + w_.text, cur.page, cur.l, min(cur.t, w_.t), w_.r, max(cur.b, w_.b),
-                           cur.line_id)
+            if cur and same_line and w_.left - cur.r <= gap_factor * max(cur.h, w_.h):
+                cur = Word(
+                    cur.text + " " + w_.text,
+                    cur.page,
+                    cur.left,
+                    min(cur.t, w_.t),
+                    w_.r,
+                    max(cur.b, w_.b),
+                    cur.line_id,
+                )
             else:
                 if cur:
                     phrases.append(cur)
-                cur = Word(w_.text, w_.page, w_.l, w_.t, w_.r, w_.b, wl)
+                cur = Word(w_.text, w_.page, w_.left, w_.t, w_.r, w_.b, wl)
         if cur:
             phrases.append(cur)
     return phrases
@@ -459,15 +535,25 @@ def _is_header_phrase(text):
 def find_tables(page):
     """Detect header bands (stacked header phrases) and collect the rows below each one."""
     phrases = make_phrases(page.words)
-    anchors = [p for p in phrases if HEADER_KEYWORD_RE.search(p.text) and _is_header_phrase(p.text)
-               and not p.text.rstrip().endswith(":")]
+    anchors = [
+        p
+        for p in phrases
+        if HEADER_KEYWORD_RE.search(p.text)
+        and _is_header_phrase(p.text)
+        and not p.text.rstrip().endswith(":")
+    ]
     tables, used = [], set()
     for a in sorted(anchors, key=lambda x: x.t):
         if id(a) in used:
             continue
         window = [p for p in phrases if a.t - 1.3 * a.h <= p.yc <= a.b + 1.3 * a.h]
         # a header band row contains only header-like phrases (no data values)
-        band = [p for row in group_rows(window) if all(_is_header_phrase(x.text) for x in row) for p in row]
+        band = [
+            p
+            for row in group_rows(window)
+            if all(_is_header_phrase(x.text) for x in row)
+            for p in row
+        ]
         if a not in band:
             continue
         cols = _merge_columns(band)
@@ -479,7 +565,7 @@ def find_tables(page):
             continue
         # duplicate role names (e.g. two "Item Number" columns) -> keep first, demote others
         seen = set()
-        for c in sorted(named, key=lambda x: x.l):
+        for c in sorted(named, key=lambda x: x.left):
             if c.role in seen:
                 c.role = c.role + "_extra"
             seen.add(c.role)
@@ -487,10 +573,12 @@ def find_tables(page):
             used.add(id(p))
         for c in cols:
             if not c.role:
-                c.role = "other"  # unnamed header (e.g. 'Origin'): keeps its text out of other columns
+                c.role = (
+                    "other"  # unnamed header (e.g. 'Origin'): keeps its text out of other columns
+                )
         top = min(p.t for p in band)
         bottom = max(p.b for p in band)
-        tables.append(Table(page.number, sorted(cols, key=lambda x: x.l), top, bottom, []))
+        tables.append(Table(page.number, sorted(cols, key=lambda x: x.left), top, bottom, []))
     for i, tb in enumerate(tables):
         limit = tables[i + 1].top if i + 1 < len(tables) else page.height
         tb.rows = _rows_below(page, tb, limit)
@@ -501,21 +589,27 @@ def _merge_columns(band):
     cols = []
     for p in sorted(band, key=lambda x: x.t):
         for c in cols:
-            if overlap(p.l, p.r, c["l"], c["r"]) > 0.3 * min(p.r - p.l, c["r"] - c["l"]):
+            if overlap(p.left, p.r, c["l"], c["r"]) > 0.3 * min(p.r - p.left, c["r"] - c["l"]):
                 c["parts"].append(p)
-                c["l"], c["r"] = min(c["l"], p.l), max(c["r"], p.r)
+                c["l"], c["r"] = min(c["l"], p.left), max(c["r"], p.r)
                 break
         else:
-            cols.append({"l": p.l, "r": p.r, "parts": [p]})
-    return [Column(" ".join(x.text for x in sorted(c["parts"], key=lambda z: z.t)), None, c["l"], c["r"])
-            for c in cols]
+            cols.append({"l": p.left, "r": p.r, "parts": [p]})
+    return [
+        Column(
+            " ".join(x.text for x in sorted(c["parts"], key=lambda z: z.t)), None, c["l"], c["r"]
+        )
+        for c in cols
+    ]
 
 
 FOOTER_RE = re.compile(r"^\s*(continued|printed\s*:|page\s+\d+)|\bpage\s+\d+\s+of\s+\d+\b", re.I)
 # label rows that still belong to a line (lot/batch/customer part/qty/order grouping/totals)
 DETAIL_LABEL_RE = re.compile(
     r"^\s*(lot|batch|sublot|serial|cust(omer)?\.?\s*(p/?n|part)|qty|quantity|sales\s*order|your\s*reference|"
-    r"total|rf)\b", re.I)
+    r"total|rf)\b",
+    re.I,
+)
 
 
 def _rows_below(page, table, limit, max_gap=45):
@@ -527,19 +621,25 @@ def _rows_below(page, table, limit, max_gap=45):
             break
         phrases = make_phrases(row)
         text = " ".join(w_.text for w_ in row)
-        left, right = table.columns[0].l - 6, table.columns[-1].r + 6
-        if not any(overlap(w_.l, w_.r, left, right) > 0 for w_ in row):
+        left, right = table.columns[0].left - 6, table.columns[-1].r + 6
+        if not any(overlap(w_.left, w_.r, left, right) > 0 for w_ in row):
             break  # nothing within the table's width
-        if len(phrases) >= 2 and all(_is_header_phrase(p.text) for p in phrases) and \
-                any(_role_of(p.text) for p in phrases):
+        if (
+            len(phrases) >= 2
+            and all(_is_header_phrase(p.text) for p in phrases)
+            and any(_role_of(p.text) for p in phrases)
+        ):
             break  # a new (non-quantity) header row starts
-        if max(p.r - p.l for p in phrases) > 0.5 * page.width and len(text) > 50:
+        if max(p.r - p.left for p in phrases) > 0.5 * page.width and len(text) > 50:
             break  # paragraph text
         if FOOTER_RE.search(text):
             break  # page footer / "Continued"
-        if phrases[0].l < table.columns[0].r and looks_like_label(phrases[0].text) and \
-                not DETAIL_LABEL_RE.match(phrases[0].text) and \
-                not any(re.fullmatch(r"[\d.,]+", p.text) for p in phrases[1:]):
+        if (
+            phrases[0].left < table.columns[0].r
+            and looks_like_label(phrases[0].text)
+            and not DETAIL_LABEL_RE.match(phrases[0].text)
+            and not any(re.fullmatch(r"[\d.,]+", p.text) for p in phrases[1:])
+        ):
             break  # e.g. "Country of Origin: ..." starting at the table's left edge after the last line
         rows.append(row)
         last_b = max(w_.b for w_ in row)
@@ -549,7 +649,7 @@ def _rows_below(page, table, limit, max_gap=45):
 def _best_column(item, columns):
     best, best_ov = None, 0.0
     for c in columns:
-        ov = overlap(item.l, item.r, c.l, c.r)
+        ov = overlap(item.left, item.r, c.left, c.r)
         if ov > best_ov:
             best, best_ov = c, ov
     return best, best_ov
@@ -568,25 +668,37 @@ def assign_columns(row, columns):
         cells.setdefault(col.role, []).extend(ws)
 
     for ph in make_phrases(row):
-        ws = [w_ for w_ in row if w_.l >= ph.l - 0.1 and w_.r <= ph.r + 0.1]
+        ws = [w_ for w_ in row if w_.left >= ph.left - 0.1 and w_.r <= ph.r + 0.1]
         per_word = [_best_column(w_, columns) for w_ in ws]
-        if len(ws) > 1 and all(c is not None and ov >= 0.5 * (w_.r - w_.l)
-                               for w_, (c, ov) in zip(ws, per_word)) and len({id(c) for c, _ in per_word}) > 1:
-            for w_, (c, _) in zip(ws, per_word):
+        if (
+            len(ws) > 1
+            and all(
+                c is not None and ov >= 0.5 * (w_.r - w_.left)
+                for w_, (c, ov) in zip(ws, per_word, strict=False)
+            )
+            and len({id(c) for c, _ in per_word}) > 1
+        ):
+            for w_, (c, _) in zip(ws, per_word, strict=False):
                 put(c, [w_])
             continue
         col, _ = _best_column(ph, columns)
         if col is None:
             # right-aligned numbers can sit slightly outside the header text; allow a small margin
-            near = [c for c in columns if overlap(ph.l, ph.r, c.l - 8, c.r + 8) > 0]
+            near = [c for c in columns if overlap(ph.left, ph.r, c.left - 8, c.r + 8) > 0]
             col = near[0] if len(near) == 1 else None
-        if col is None and not re.fullmatch(r"[\d.,/\-]+", ph.text) and \
-                columns[0].l - 6 <= ph.l <= columns[-1].r:
+        if (
+            col is None
+            and not re.fullmatch(r"[\d.,/\-]+", ph.text)
+            and columns[0].left - 6 <= ph.left <= columns[-1].r
+        ):
             # wrapped text under a narrow, centred header belongs to the table's text column
-            col = next((c for c in columns if c.role == "description"), None) or \
-                next((c for c in columns if c.role == "item"), None)
+            col = next((c for c in columns if c.role == "description"), None) or next(
+                (c for c in columns if c.role == "item"), None
+            )
         if col is None:
             unassigned.extend(ws)
         else:
             put(col, ws)
-    return {k: " ".join(x.text for x in sorted(v, key=lambda z: z.l)) for k, v in cells.items()}, unassigned
+    return {
+        k: " ".join(x.text for x in sorted(v, key=lambda z: z.left)) for k, v in cells.items()
+    }, unassigned

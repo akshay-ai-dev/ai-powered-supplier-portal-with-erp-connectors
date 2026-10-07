@@ -9,9 +9,11 @@ a real OpenAI account.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import tempfile
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from starlette.concurrency import run_in_threadpool
 
@@ -81,10 +83,8 @@ async def _extract_pdf(
         )
     finally:
         if tmp_path:
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
-            except OSError:
-                pass
     return normalize.from_pdf(result, filename)
 
 

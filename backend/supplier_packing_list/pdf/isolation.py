@@ -23,6 +23,7 @@ result is an explicit conversion-error document that contains no extracted field
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
@@ -43,7 +44,9 @@ _WINDOWS_CODES = {
     0xC000001D: "illegal instruction (0xC000001D)",
     0xC0000374: "heap corruption (0xC0000374)",
 }
-_SECRET_RE = re.compile(r"(?i)\b(password|passwd|token|secret|api[_-]?key|authorization)\b(\s*[:=]\s*)\S+")
+_SECRET_RE = re.compile(
+    r"(?i)\b(password|passwd|token|secret|api[_-]?key|authorization)\b(\s*[:=]\s*)\S+"
+)
 _NOISE_RE = re.compile(r"Loading weights|\[INFO\]|UserWarning|return F\.conv")
 
 
@@ -56,6 +59,7 @@ def timeout_from_env(default=DEFAULT_TIMEOUT_S):
 
 
 # --------------------------------------------------------------------------- atomic files
+
 
 def write_text_atomic(path, text, encoding="utf-8"):
     """Write via a temp file in the same folder, fsync, then rename over the target.
@@ -70,10 +74,8 @@ def write_text_atomic(path, text, encoding="utf-8"):
             os.fsync(fh.fileno())
         os.replace(tmp, path)
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp)
-        except OSError:
-            pass
         raise
 
 
@@ -83,6 +85,7 @@ def write_json_atomic(path, obj):
 
 
 # --------------------------------------------------------------------------- parent side
+
 
 def describe_exit(code):
     if code is None:
@@ -97,8 +100,12 @@ def describe_exit(code):
 
 def _kill_tree(proc):
     if os.name == "nt":
-        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"],
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        subprocess.run(
+            ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
     else:
         proc.kill()
     try:
@@ -120,8 +127,16 @@ def default_worker_argv(pdf_path, payload_path):
     # Run the worker as a module so the vendored package-relative imports resolve
     # without any sys.path manipulation. PACKAGE_ROOT (the directory that holds the
     # ``supplier_packing_list`` package) is put on PYTHONPATH for the child in ``_run_attempt``.
-    return [sys.executable, "-X", "faulthandler", "-m", "supplier_packing_list.pdf.isolation", "--worker",
-            str(pdf_path), str(payload_path)]
+    return [
+        sys.executable,
+        "-X",
+        "faulthandler",
+        "-m",
+        "supplier_packing_list.pdf.isolation",
+        "--worker",
+        str(pdf_path),
+        str(payload_path),
+    ]
 
 
 # The directory that contains the top-level ``supplier_packing_list`` package
@@ -135,21 +150,36 @@ def _run_attempt(pdf_path, attempt, timeout_s, worker_argv, work_dir, log_dir):
     for p in (payload,):
         if p.exists():
             p.unlink()
-    record = {"attempt": attempt, "status": None, "reason": None, "exitCode": None,
-              "seconds": None, "log": str(log_path)}
+    record = {
+        "attempt": attempt,
+        "status": None,
+        "reason": None,
+        "exitCode": None,
+        "seconds": None,
+        "log": str(log_path),
+    }
     t0 = time.perf_counter()
     child_env = dict(os.environ)
     child_env["PYTHONPATH"] = os.pathsep.join(
-        [str(PACKAGE_ROOT), child_env["PYTHONPATH"]] if child_env.get("PYTHONPATH") else [str(PACKAGE_ROOT)]
+        [str(PACKAGE_ROOT), child_env["PYTHONPATH"]]
+        if child_env.get("PYTHONPATH")
+        else [str(PACKAGE_ROOT)]
     )
     with open(log_path, "w", encoding="utf-8", errors="replace") as log:
-        proc = subprocess.Popen(worker_argv(pdf_path, payload), stdout=log, stderr=subprocess.STDOUT,
-                                cwd=str(PACKAGE_ROOT), env=child_env)
+        proc = subprocess.Popen(
+            worker_argv(pdf_path, payload),
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            cwd=str(PACKAGE_ROOT),
+            env=child_env,
+        )
         try:
             proc.wait(timeout=timeout_s)
         except subprocess.TimeoutExpired:
             _kill_tree(proc)
-            record.update(status="timeout", reason=f"exceeded {timeout_s:g} s timeout; process tree killed")
+            record.update(
+                status="timeout", reason=f"exceeded {timeout_s:g} s timeout; process tree killed"
+            )
     record["seconds"] = round(time.perf_counter() - t0, 3)
     record["exitCode"] = proc.returncode
     if record["status"] == "timeout":
@@ -169,7 +199,10 @@ def _run_attempt(pdf_path, attempt, timeout_s, worker_argv, work_dir, log_dir):
         record.update(status="no_output", reason="child exited 0 but wrote no payload")
     elif record["status"] is None and not data.get("ok"):
         err = data.get("error") or {}
-        record.update(status="worker_error", reason=f"{err.get('type', 'Error')}: {err.get('message', '')}"[:500])
+        record.update(
+            status="worker_error",
+            reason=f"{err.get('type', 'Error')}: {err.get('message', '')}"[:500],
+        )
         data = None
     elif record["status"] is None and not isinstance(data.get("result"), dict):
         record.update(status="invalid_output", reason="payload has no result object")
@@ -179,10 +212,8 @@ def _run_attempt(pdf_path, attempt, timeout_s, worker_argv, work_dir, log_dir):
     else:
         record["stderrTail"] = _stderr_tail(log_path)
         data = None
-    try:
+    with contextlib.suppress(OSError):
         payload.unlink()
-    except OSError:
-        pass
     return record, data
 
 
@@ -196,7 +227,7 @@ def conversion_error(pdf_path, attempts, extractor_version=None):
         "conversionError": {
             "pdf": str(pdf_path),
             "message": f"Conversion failed after {len(attempts)} attempt(s); last failure: "
-                       f"{last.get('status')} - {last.get('reason')}",
+            f"{last.get('status')} - {last.get('reason')}",
             "attempts": attempts,
         },
     }
@@ -206,7 +237,9 @@ def is_conversion_error(result):
     return isinstance(result, dict) and result.get("status") == "conversion_error"
 
 
-def convert_isolated(pdf_path, timeout_s=None, max_attempts=MAX_ATTEMPTS, worker_argv=None, log_dir=None):
+def convert_isolated(
+    pdf_path, timeout_s=None, max_attempts=MAX_ATTEMPTS, worker_argv=None, log_dir=None
+):
     """Return (result, markdown). On failure result is a conversion-error document and markdown is None.
 
     A successful result is exactly what the in-process extractor returns, plus
@@ -219,14 +252,19 @@ def convert_isolated(pdf_path, timeout_s=None, max_attempts=MAX_ATTEMPTS, worker
         log_dir = Path(log_dir) if log_dir else Path(work_dir)
         log_dir.mkdir(parents=True, exist_ok=True)
         for attempt in range(1, max_attempts + 1):
-            record, data = _run_attempt(pdf_path, attempt, timeout_s, worker_argv, work_dir, log_dir)
+            record, data = _run_attempt(
+                pdf_path, attempt, timeout_s, worker_argv, work_dir, log_dir
+            )
             if log_dir == Path(work_dir):
                 record["log"] = None  # temp log is deleted with the work dir
             attempts.append(record)
             if data is not None:
                 result = data["result"]
                 result.setdefault("timings", {})["isolation"] = {
-                    "attempts": attempts, "attemptCount": len(attempts), "timeoutSeconds": timeout_s}
+                    "attempts": attempts,
+                    "attemptCount": len(attempts),
+                    "timeoutSeconds": timeout_s,
+                }
                 return result, data.get("markdown")
     return conversion_error(pdf_path, attempts, _extractor_version()), None
 
@@ -234,6 +272,7 @@ def convert_isolated(pdf_path, timeout_s=None, max_attempts=MAX_ATTEMPTS, worker
 def _extractor_version():
     try:
         from .fields import EXTRACTOR_VERSION
+
         return EXTRACTOR_VERSION
     except Exception:  # pragma: no cover - fields.py is part of this project
         return None
@@ -241,14 +280,18 @@ def _extractor_version():
 
 # --------------------------------------------------------------------------- child side
 
+
 def _worker(pdf_path, payload_path):
     try:
         from .extractor import extract_pdf, to_json_ready
 
         result = extract_pdf(Path(pdf_path))
         layout = result.pop("_layout", None)
-        payload = {"ok": True, "result": to_json_ready(result),
-                   "markdown": layout.markdown if layout is not None else None}
+        payload = {
+            "ok": True,
+            "result": to_json_ready(result),
+            "markdown": layout.markdown if layout is not None else None,
+        }
     except Exception as exc:  # report Python-level failures; native crashes end the process
         payload = {"ok": False, "error": {"type": type(exc).__name__, "message": str(exc)[:1000]}}
     write_json_atomic(payload_path, payload)

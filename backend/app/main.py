@@ -6,6 +6,11 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+# Buyer requirement draft extraction (PDF/image -> reviewable draft that pre-fills
+# the New requirement form). The supplier_packing_list package sits beside ``app``
+# under backend/ (and /srv in Docker), so it imports like any other top-level package.
+from supplier_packing_list.router import router as packing_list_router
+
 from .config import settings
 from .db import get_conn, init_db
 from .mcp_server import build_mcp_app
@@ -25,11 +30,6 @@ from .routers import (
 from .seed import seed
 from .services import requirements as req_svc
 from .services.errors import DomainError
-
-# Buyer requirement draft extraction (PDF/image -> reviewable draft that pre-fills
-# the New requirement form). The supplier_packing_list package sits beside ``app``
-# under backend/ (and /srv in Docker), so it imports like any other top-level package.
-from supplier_packing_list.router import router as packing_list_router
 
 mcp_inner, mcp_asgi = build_mcp_app()
 

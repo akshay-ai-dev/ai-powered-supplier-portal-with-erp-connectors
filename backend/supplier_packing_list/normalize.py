@@ -63,8 +63,7 @@ def from_pdf(result: dict[str, Any], source_file: str) -> DraftExtraction:
                     code="conversion_error",
                     message=(
                         "The PDF could not be converted, so no fields were extracted. "
-                        "Enter the shipment details manually. "
-                        + str(conv.get("message", ""))
+                        "Enter the shipment details manually. " + str(conv.get("message", ""))
                     ).strip(),
                 )
             ],

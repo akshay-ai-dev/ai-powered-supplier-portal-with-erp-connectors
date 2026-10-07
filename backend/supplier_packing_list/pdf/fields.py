@@ -94,7 +94,19 @@ def is_number_token(text) -> bool:
 _UNIT_ALIASES = {
     "PR": {"PR", "PRS", "PAIR", "PAIRS", "PAIR(S)", "PR(S)"},
     "SF": {"SF", "SQFT", "SQ FT", "SQ.FT.", "SQ. FT.", "FT2", "SQUARE FEET", "SQUARE FOOT"},
-    "EA": {"EA", "EACH", "PC", "PCS", "PCE", "PIECE", "PIECES", "PIECE(S)", "UNIT", "UNITS", "UNIT(S)"},
+    "EA": {
+        "EA",
+        "EACH",
+        "PC",
+        "PCS",
+        "PCE",
+        "PIECE",
+        "PIECES",
+        "PIECE(S)",
+        "UNIT",
+        "UNITS",
+        "UNIT(S)",
+    },
     "LB": {"LB", "LBS", "LB(S)", "POUND", "POUNDS"},
     "KG": {"KG", "KGS", "KILOGRAM", "KILOGRAMS"},
     "BOX": {"BOX", "BOXES", "BX"},
@@ -156,9 +168,20 @@ def parse_quantity_with_unit(text):
 _MONTHS = {
     m: i + 1
     for i, names in enumerate(
-        [("jan", "january"), ("feb", "february"), ("mar", "march"), ("apr", "april"), ("may",),
-         ("jun", "june"), ("jul", "july"), ("aug", "august"), ("sep", "sept", "september"),
-         ("oct", "october"), ("nov", "november"), ("dec", "december")]
+        [
+            ("jan", "january"),
+            ("feb", "february"),
+            ("mar", "march"),
+            ("apr", "april"),
+            ("may",),
+            ("jun", "june"),
+            ("jul", "july"),
+            ("aug", "august"),
+            ("sep", "sept", "september"),
+            ("oct", "october"),
+            ("nov", "november"),
+            ("dec", "december"),
+        ]
     )
     for m in names
 }
@@ -193,25 +216,43 @@ def parse_date(raw, prefer="MDY"):
     m = re.search(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b", s)
     if m:
         iso = _safe_date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-        return iso and {"iso": iso, "raw": s, "ambiguous": False, "alternatives": [], "notes": notes}
+        return iso and {
+            "iso": iso,
+            "raw": s,
+            "ambiguous": False,
+            "alternatives": [],
+            "notes": notes,
+        }
 
     # 01-Oct-20, 26 Aug 2022, 16-JAN-2024
     m = re.search(r"\b(\d{1,2})[\s\-./]+([A-Za-z]{3,9})\.?[\s\-./,]+(\d{2,4})\b", s)
     if m and m.group(2).lower() in _MONTHS:
         y, two = _year(m.group(3))
         if two:
-            notes.append("two-digit year interpreted as %d" % y)
+            notes.append(f"two-digit year interpreted as {y}")
         iso = _safe_date(y, _MONTHS[m.group(2).lower()], int(m.group(1)))
-        return iso and {"iso": iso, "raw": s, "ambiguous": False, "alternatives": [], "notes": notes}
+        return iso and {
+            "iso": iso,
+            "raw": s,
+            "ambiguous": False,
+            "alternatives": [],
+            "notes": notes,
+        }
 
     # January 16, 2024 / Aug 26 2022
     m = re.search(r"\b([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{2,4})\b", s)
     if m and m.group(1).lower() in _MONTHS:
         y, two = _year(m.group(3))
         if two:
-            notes.append("two-digit year interpreted as %d" % y)
+            notes.append(f"two-digit year interpreted as {y}")
         iso = _safe_date(y, _MONTHS[m.group(1).lower()], int(m.group(2)))
-        return iso and {"iso": iso, "raw": s, "ambiguous": False, "alternatives": [], "notes": notes}
+        return iso and {
+            "iso": iso,
+            "raw": s,
+            "ambiguous": False,
+            "alternatives": [],
+            "notes": notes,
+        }
 
     # 2/7/2024, 04/11/2025, 16.01.24
     m = re.search(r"\b(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2,4})\b", s)
@@ -219,7 +260,7 @@ def parse_date(raw, prefer="MDY"):
         a, b = int(m.group(1)), int(m.group(2))
         y, two = _year(m.group(3))
         if two:
-            notes.append("two-digit year interpreted as %d" % y)
+            notes.append(f"two-digit year interpreted as {y}")
         mdy = _safe_date(y, a, b)
         dmy = _safe_date(y, b, a)
         if mdy and not dmy:
@@ -228,10 +269,22 @@ def parse_date(raw, prefer="MDY"):
             return {"iso": dmy, "raw": s, "ambiguous": False, "alternatives": [], "notes": notes}
         if mdy and dmy:
             if mdy == dmy:
-                return {"iso": mdy, "raw": s, "ambiguous": False, "alternatives": [], "notes": notes}
+                return {
+                    "iso": mdy,
+                    "raw": s,
+                    "ambiguous": False,
+                    "alternatives": [],
+                    "notes": notes,
+                }
             first, second = (mdy, dmy) if prefer == "MDY" else (dmy, mdy)
-            notes.append("numeric date could be month/day or day/month; %s reading used" % prefer)
-            return {"iso": first, "raw": s, "ambiguous": True, "alternatives": [second], "notes": notes}
+            notes.append(f"numeric date could be month/day or day/month; {prefer} reading used")
+            return {
+                "iso": first,
+                "raw": s,
+                "ambiguous": True,
+                "alternatives": [second],
+                "notes": notes,
+            }
     return None
 
 
@@ -249,10 +302,15 @@ _CARRIERS = [
 ]
 _SERVICE_RE = re.compile(
     r"(standard\s+overnight|priority\s+overnight|first\s+overnight|2\s*-?\s*day|next\s+day(\s+air)?|"
-    r"ground|gnd|express|economy|freight|air|ocean|sea)", re.I)
-_COLLECTION_RE = re.compile(r"\b(collection|customer\s+pick\s*-?\s*up|will\s+call|pick\s*-?\s*up)\b", re.I)
+    r"ground|gnd|express|economy|freight|air|ocean|sea)",
+    re.I,
+)
+_COLLECTION_RE = re.compile(
+    r"\b(collection|customer\s+pick\s*-?\s*up|will\s+call|pick\s*-?\s*up)\b", re.I
+)
 FREIGHT_TERM_RE = re.compile(
-    r"\b(freight\s+)?(collect|prepaid|pre-paid|ppd|third\s+party|3rd\s+party)\b", re.I)
+    r"\b(freight\s+)?(collect|prepaid|pre-paid|ppd|third\s+party|3rd\s+party)\b", re.I
+)
 
 
 def normalize_carrier(raw):
@@ -290,7 +348,7 @@ def split_freight_terms(value):
     if not m:
         return value, None
     term = re.sub(r"\s+", " ", m.group(0)).upper()
-    rest = (value[: m.start()] + value[m.end():]).strip(" ,;-")
+    rest = (value[: m.start()] + value[m.end() :]).strip(" ,;-")
     if re.search(r"\bfreight$", rest, re.I) and not term.startswith("FREIGHT"):
         rest = re.sub(r"\s*\bfreight$", "", rest, flags=re.I).strip()
         term = "FREIGHT " + term
@@ -315,19 +373,39 @@ def tracking_format_carriers(value):
 
 # Label text -> identifier type. Order matters: first match wins.
 LABEL_TYPES = [
-    ("tracking", r"tracking\s*(?:no\.?|number|#)?|air\s*waybill|waybill|awb|pro\s*(?:no\.?|number|#)"),
+    (
+        "tracking",
+        r"tracking\s*(?:no\.?|number|#)?|air\s*waybill|waybill|awb|pro\s*(?:no\.?|number|#)",
+    ),
     ("bill_of_lading", r"bill\s*of\s*lading|b/l\s*(?:no\.?|#)?|bol\s*(?:no\.?|#)?"),
-    ("purchase_order", r"(?:cust(?:omer)?\.?\s*)?p\.?\s*o\.?(?!\s*box)\s*(?:#|no\.?|number)?|purchase\s*order\s*(?:#|no\.?|number)?"),
+    (
+        "purchase_order",
+        r"(?:cust(?:omer)?\.?\s*)?p\.?\s*o\.?(?!\s*box)\s*(?:#|no\.?|number)?|purchase\s*order\s*(?:#|no\.?|number)?",
+    ),
     ("sales_order", r"sales\s*order\s*(?:no\.?|#|number)?|s\.?o\.?\s*#|order\s*(?:no\.?|#|number)"),
     ("invoice", r"invoice\s*(?:no\.?|#|number)?"),
-    ("packing_slip", r"packing\s*slip\s*(?:no\.?|#|number)?|delivery\s*note\s*(?:no\.?|#)?|our\s*reference"),
-    ("internal_shipping", r"shipping\s*(?:no\.?|number)|shipment\s*id(?:\s*no\.?)?|load\s*id(?:\s*no\.?)?|cust\.?\s*ship\s*#"),
+    (
+        "packing_slip",
+        r"packing\s*slip\s*(?:no\.?|#|number)?|delivery\s*note\s*(?:no\.?|#)?|our\s*reference",
+    ),
+    (
+        "internal_shipping",
+        r"shipping\s*(?:no\.?|number)|shipment\s*id(?:\s*no\.?)?|load\s*id(?:\s*no\.?)?|cust\.?\s*ship\s*#",
+    ),
     ("customer_reference", r"your\s*reference"),
     ("account", r"account\s*(?:no\.?|#|number)|customer\s*(?:no\.?|#|number)|customer"),
-    ("package_count", r"number\s*of\s*packages|no\.?\s*of\s*(?:packages|cartons|boxes|pieces)|total\s*shipping\s*units|packages|cartons"),
-    ("freight_terms", r"freight\s*terms|shipping\s*terms|delivery\s*terms|f\.?\s*o\.?\s*b\.?|incoterms?"),
+    (
+        "package_count",
+        r"number\s*of\s*packages|no\.?\s*of\s*(?:packages|cartons|boxes|pieces)|total\s*shipping\s*units|packages|cartons",
+    ),
+    (
+        "freight_terms",
+        r"freight\s*terms|shipping\s*terms|delivery\s*terms|f\.?\s*o\.?\s*b\.?|incoterms?",
+    ),
 ]
-_LABEL_TYPE_RES = [(t, re.compile(r"^\s*(?:" + p + r")\s*[:#.]?\s*$", re.I)) for t, p in LABEL_TYPES]
+_LABEL_TYPE_RES = [
+    (t, re.compile(r"^\s*(?:" + p + r")\s*[:#.]?\s*$", re.I)) for t, p in LABEL_TYPES
+]
 
 
 def label_type(label):
@@ -348,8 +426,12 @@ def classify_identifier(value, label=None, column_header=None, carrier=None):
     if not v:
         return {"type": None, "isTracking": False, "ambiguous": False, "reason": "empty value"}
     if FREIGHT_TERM_RE.fullmatch(v) or re.fullmatch(r"(?i)(fob|exw|ddp|dap|fca|cif)\b.*", v):
-        return {"type": "freight_terms", "isTracking": False, "ambiguous": False,
-                "reason": "value is a freight/delivery term"}
+        return {
+            "type": "freight_terms",
+            "isTracking": False,
+            "ambiguous": False,
+            "reason": "value is a freight/delivery term",
+        }
     if not re.search(r"\d", v):
         return {"type": "text", "isTracking": False, "ambiguous": False, "reason": "no digits"}
 
@@ -361,34 +443,67 @@ def classify_identifier(value, label=None, column_header=None, carrier=None):
     if ltype == "tracking":
         fmts = tracking_format_carriers(compact)
         if not re.fullmatch(r"[0-9A-Za-z]{8,35}", compact):
-            return {"type": "tracking", "isTracking": False, "ambiguous": True,
-                    "reason": "under a tracking label but not a plausible tracking-number shape"}
+            return {
+                "type": "tracking",
+                "isTracking": False,
+                "ambiguous": True,
+                "reason": "under a tracking label but not a plausible tracking-number shape",
+            }
         if carrier and fmts and carrier not in fmts:
-            return {"type": "tracking", "isTracking": True, "ambiguous": True,
-                    "reason": f"format looks like {'/'.join(fmts)} but carrier is {carrier}"}
-        return {"type": "tracking", "isTracking": True, "ambiguous": False,
-                "reason": "labelled as tracking" + (f"; matches {'/'.join(fmts)} format" if fmts else "")}
+            return {
+                "type": "tracking",
+                "isTracking": True,
+                "ambiguous": True,
+                "reason": f"format looks like {'/'.join(fmts)} but carrier is {carrier}",
+            }
+        return {
+            "type": "tracking",
+            "isTracking": True,
+            "ambiguous": False,
+            "reason": "labelled as tracking"
+            + (f"; matches {'/'.join(fmts)} format" if fmts else ""),
+        }
 
     if ltype:
-        return {"type": ltype, "isTracking": False, "ambiguous": False,
-                "reason": f"label '{ctx}' identifies a {ltype.replace('_', ' ')}, not a tracking number"}
+        return {
+            "type": ltype,
+            "isTracking": False,
+            "ambiguous": False,
+            "reason": f"label '{ctx}' identifies a {ltype.replace('_', ' ')}, not a tracking number",
+        }
 
     # Carrier name used as a label, e.g. "FED EX# 149752137": could be an account or a tracking number.
     name = known_carrier(ctx) if ctx else None
     if name and re.fullmatch(r"(?i)[a-z .\-]{2,20}#?", ctx):
         fmts = tracking_format_carriers(compact)
         if name in fmts:
-            return {"type": "tracking", "isTracking": True, "ambiguous": True,
-                    "reason": f"follows '{ctx}' and matches the {name} tracking format; confirm"}
-        return {"type": "carrier_reference", "isTracking": False, "ambiguous": True,
-                "reason": f"follows '{ctx}' but does not match a {name} tracking format "
-                          f"(often a carrier account number)"}
+            return {
+                "type": "tracking",
+                "isTracking": True,
+                "ambiguous": True,
+                "reason": f"follows '{ctx}' and matches the {name} tracking format; confirm",
+            }
+        return {
+            "type": "carrier_reference",
+            "isTracking": False,
+            "ambiguous": True,
+            "reason": f"follows '{ctx}' but does not match a {name} tracking format "
+            f"(often a carrier account number)",
+        }
 
     if re.fullmatch(r"1Z[0-9A-Z]{16}", compact.upper()):
-        return {"type": "tracking", "isTracking": True, "ambiguous": True,
-                "reason": "unlabelled but matches the UPS 1Z format; confirm"}
-    return {"type": "unknown", "isTracking": False, "ambiguous": True,
-            "reason": "no label identifies this number"}
+        return {
+            "type": "tracking",
+            "isTracking": True,
+            "ambiguous": True,
+            "reason": "unlabelled but matches the UPS 1Z format; confirm",
+        }
+    return {
+        "type": "unknown",
+        "isTracking": False,
+        "ambiguous": True,
+        "reason": "no label identifies this number",
+    }
 
 
 def clean_lot_value(raw):
@@ -398,7 +513,12 @@ def clean_lot_value(raw):
     s = str(raw).strip()
     if re.fullmatch(r"\(\s*[\d.,]+\s*\)", s):
         return None, "parenthesised number: may be a quantity or reference, not a lot/serial"
-    s = re.sub(r"^(?:(?:lot|batch|sublot|serial|ref|rf)\s*(?:no\.?|number|#)?\s*[:#]\s*)+", "", s, flags=re.I)
+    s = re.sub(
+        r"^(?:(?:lot|batch|sublot|serial|ref|rf)\s*(?:no\.?|number|#)?\s*[:#]\s*)+",
+        "",
+        s,
+        flags=re.I,
+    )
     token = s.split()[0].strip(",;") if s.split() else ""
     if not token or not re.search(r"\d", token):
         return None, "no identifier with digits"
@@ -409,7 +529,9 @@ def clean_lot_value(raw):
 
 def split_composite_lot(identifier):
     """'US310197LOT2401' -> ('US310197', '2401'): sublot with embedded parent lot."""
-    m = re.fullmatch(r"(?P<sub>[A-Z0-9][A-Z0-9-]*?)LOT(?P<lot>[A-Z0-9][A-Z0-9-]*)", identifier or "", re.I)
+    m = re.fullmatch(
+        r"(?P<sub>[A-Z0-9][A-Z0-9-]*?)LOT(?P<lot>[A-Z0-9][A-Z0-9-]*)", identifier or "", re.I
+    )
     if m and re.search(r"\d", m.group("sub")) and re.search(r"\d", m.group("lot")):
         return m.group("sub"), m.group("lot")
     return identifier, None

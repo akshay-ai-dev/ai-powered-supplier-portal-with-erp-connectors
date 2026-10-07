@@ -119,9 +119,7 @@ def extract_image(
     except openai.APIStatusError as exc:
         raise _classify_status_error(exc, settings) from exc
     except openai.APITimeoutError as exc:
-        raise ExtractionError(
-            f"request timed out after {settings.max_retries} retries"
-        ) from exc
+        raise ExtractionError(f"request timed out after {settings.max_retries} retries") from exc
     except openai.APIConnectionError as exc:
         raise ExtractionError(
             f"could not connect to the OpenAI API after {settings.max_retries} retries"
