@@ -1,7 +1,5 @@
 # SAP MCP server (POC)
 
-▶️ **Demo video (≈3 min):** [Watch the demo](https://srsconsultinc-my.sharepoint.com/:v:/g/personal/nagamani_ch_srsconsultinginc_com/IQBc9_3F4Y7xRZ3mUNfeGZLEAQUtITzbHaS0D7xFYyy9UpM?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D&e=6wIn7u)
-
 A custom, **read-only MCP server** that lets an AI read SAP S/4HANA data (suppliers, purchase orders, requisitions,
 goods receipts, …) through SAP's standard OData APIs. Tested live against the **SAP Business Accelerator Hub sandbox**,
 with Claude Desktop and with Gemini in a local demo console.
@@ -22,6 +20,8 @@ AI (Claude / Gemini) ──MCP──▶ mcp_server.py (5 read-only tools) ──
 | Demo console, Tool explorer | Live POs, SAP 200 ≈ 1.7 s | `Proof/03_tool_explorer_purchase_orders.png` |
 | Gemini answers from SAP via MCP | 1 tool call, correct answer | `Proof/04_ai_assistant_answer.png`, `Proof/05_ai_tool_call.png` |
 | Claude Desktop answers from SAP via MCP | `search_suppliers`, SAP 200 | `Proof/07_claude_answer.png`, `Proof/08_docker_mcp_log.png` |
+| Generic tool on more APIs (products, requisitions) | Live data, SAP 200 | `Proof/10_products_read.png`, `Proof/11_requisitions_read.png` |
+| Write on the sandbox | Blocked, HTTP 405 (read-only) | `Proof/09_sandbox_write_blocked_405.png` |
 
 ## Files
 
@@ -36,6 +36,7 @@ AI (Claude / Gemini) ──MCP──▶ mcp_server.py (5 read-only tools) ──
 | `Proof/` | Screenshots and outputs |
 | `FINDINGS.md` | Design, data flow, failure handling, limits, pricing, what we learned, spec fit |
 | `API_REFERENCE.md` | Requirements, SAP MCP research, SAP APIs used, references |
+| `SAP_INTEGRATION_ARCHITECTURE.md` | How the portal connects to SAP: integration points, test results, pricing, constraints |
 
 ## Quick start
 
@@ -68,7 +69,8 @@ AI (Claude / Gemini) ──MCP──▶ mcp_server.py (5 read-only tools) ──
 - **Secrets:** SAP and AI keys only in `.env`; the AI never sees the SAP key or URLs.
 - **Sandbox:** demo data, testing only, no published quota. A real customer needs one technical user from their SAP admin
   with the required APIs enabled; then set `SAP_MODE=real`, `SAP_BASE_URL`, `SAP_USERNAME`, `SAP_PASSWORD` (no code change).
-- **Not yet verified live:** `query_sap` on requisitions, goods receipts, products and invoices.
+- **Verified live:** suppliers, purchase orders, products and purchase requisitions. Not yet tested: goods receipts and supplier invoices.
+- **Writes:** the sandbox is read-only (SAP returns HTTP 405); testing writes needs a real SAP system.
 
 ## Next steps
 
