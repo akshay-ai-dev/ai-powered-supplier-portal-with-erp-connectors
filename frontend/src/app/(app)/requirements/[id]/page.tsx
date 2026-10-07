@@ -3,7 +3,7 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { ArrowLeft, Download, MessageSquare, Paperclip, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { api, deadlineLabel, downloadFile, fileSize, localInputToIso, money, shortDate, toLocalInput, uploadFile } from "@/lib/api";
+import { api, deadlineLabel, downloadFile, fileSize, localInputToIso, money, shortDate, uploadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { AiBanner, useAiFill } from "@/lib/prefill";
 import { useFetch } from "@/lib/use-fetch";
@@ -123,6 +123,11 @@ export default function RequirementDetail({ params }: { params: Promise<{ id: st
             {r.po_id ? <Link className="underline" href={`/purchase-orders/${r.po_id}`}>{r.po_number}</Link> : "—"}
           </div>
           <div><div className="text-muted-foreground">ERP</div><span className="uppercase">{r.erp}</span></div>
+          <div><div className="text-muted-foreground">Ship date</div>{r.ship_date || "—"}</div>
+          <div><div className="text-muted-foreground">Carrier</div>{r.carrier || "—"}</div>
+          <div><div className="text-muted-foreground">Tracking numbers</div><span className="whitespace-pre-wrap break-all">{r.tracking_number || "—"}</span></div>
+          <div className="sm:col-span-2"><div className="text-muted-foreground">Lot numbers</div><p className="whitespace-pre-wrap break-words">{r.lot_numbers || "—"}</p></div>
+          <div className="sm:col-span-2"><div className="text-muted-foreground">Serial numbers</div><p className="whitespace-pre-wrap break-words">{r.serial_numbers || "—"}</p></div>
           {r.description && <p className="whitespace-pre-wrap sm:col-span-4">{r.description}</p>}
         </CardContent>
       </Card>
