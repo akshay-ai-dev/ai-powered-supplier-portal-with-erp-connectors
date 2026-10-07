@@ -11,21 +11,21 @@ const ERPS = {
   sap: {
     label: "SAP",
     views: [
-      ["Purchase orders", "/mock/sap/purchase-orders"],
-      ["Inbound deliveries", "/mock/sap/inbound-deliveries"],
-      ["Stock movements", "/mock/sap/stock-movements"],
-      ["Invoice blocks", "/mock/sap/invoice-blocks"],
-      ["Materials", "/mock/sap/materials"],
+      ["Purchase orders", "/api/erp-monitor/sap/purchase-orders"],
+      ["Inbound deliveries", "/api/erp-monitor/sap/inbound-deliveries"],
+      ["Stock movements", "/api/erp-monitor/sap/stock-movements"],
+      ["Invoice blocks", "/api/erp-monitor/sap/invoice-blocks"],
+      ["Materials", "/api/erp-monitor/sap/materials"],
     ],
   },
   infor: {
     label: "Infor LN",
     views: [
-      ["Orders", "/mock/infor/orders"],
-      ["Receipts", "/mock/infor/receipts"],
-      ["Stock movements", "/mock/infor/stock-movements"],
-      ["Invoice holds", "/mock/infor/invoice-holds"],
-      ["Items", "/mock/infor/items"],
+      ["Orders", "/api/erp-monitor/infor/orders"],
+      ["Receipts", "/api/erp-monitor/infor/receipts"],
+      ["Stock movements", "/api/erp-monitor/infor/stock-movements"],
+      ["Invoice holds", "/api/erp-monitor/infor/invoice-holds"],
+      ["Items", "/api/erp-monitor/infor/items"],
     ],
   },
 } as const;
@@ -37,9 +37,11 @@ export default function ErpMonitorPage() {
   const [erp, setErp] = useState<keyof typeof ERPS>("sap");
   const [view, setView] = useState(0);
   const path = ERPS[erp].views[view][1];
-  const { data, error, loading, reload } = useFetch<Record<string, unknown>[]>(user && user.role !== "supplier" ? path : null);
+  // Only buyers and admins use the ERP Monitor; the backend feed enforces the same rule.
+  const allowed = user?.role === "buyer" || user?.role === "admin";
+  const { data, error, loading, reload } = useFetch<Record<string, unknown>[]>(allowed ? path : null);
 
-  if (user?.role === "supplier") return <ErrorNote message="Not available for suppliers." />;
+  if (user && !allowed) return <ErrorNote message="The ERP Monitor is only available to buyers and admins." />;
   const columns = data && data.length ? Object.keys(data[0]) : [];
 
   return (

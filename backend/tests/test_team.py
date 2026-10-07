@@ -413,7 +413,7 @@ def test_saved_test_fields_stay_with_the_buyer_they_were_saved_for(client):
     )
 
 
-def test_a_buyers_inspector_sees_only_that_buyers_suppliers_inventory_and_erp_documents(client):
+def test_a_buyers_inspector_sees_only_that_buyers_suppliers_and_inventory(client):
     buyer_a, buyer_b = login(client, "buyer@demo.com"), second_buyer(client, "team-scope@x.com")
     sup, company = login(client, "supplier@demo.com"), login(client, "inspector@demo.com")
     ia, _ = add_inspector(client, buyer_a, "ia-scope2@x.com")
@@ -474,7 +474,7 @@ def test_a_buyers_inspector_sees_only_that_buyers_suppliers_inventory_and_erp_do
     assert client.get("/api/inventory/SCOPE-B-ONLY", headers=ib).status_code == 200
     assert req["id"]
 
-    # the ERP monitor feed
+    # the ERP monitor feed: buyers and admins only (inspectors and suppliers are refused)
     def ref(po_id):
         return client.get(
             f"/api/purchase-orders/{po_id}", headers=buyer_a if po_id == po_a else buyer_b
@@ -485,23 +485,13 @@ def test_a_buyers_inspector_sees_only_that_buyers_suppliers_inventory_and_erp_do
             p["EBELN"] for p in client.get("/api/erp-monitor/sap/purchase-orders", headers=h).json()
         }
 
-    assert ref(po_a) in pos(ia) and ref(po_b) not in pos(ia)
-    assert ref(po_b) in pos(ib) and ref(po_a) not in pos(ib)
-    assert {ref(po_a), ref(po_b)} <= pos(company) and {ref(po_a), ref(po_b)} <= pos(buyer_a)
-
-    def deliveries(h):
-        return {
-            d["EBELN"]
-            for d in client.get("/api/erp-monitor/sap/inbound-deliveries", headers=h).json()
-        }
-
-    assert ref(po_a) in deliveries(ia) and ref(po_b) not in deliveries(ia)
-
-    def mats(h):
-        return {m["MATNR"] for m in client.get("/api/erp-monitor/sap/materials", headers=h).json()}
-
-    assert "SCOPE-B-ONLY" not in mats(ia) and "ITEM002" in mats(ia)
-    assert client.get("/api/erp-monitor/infor/orders", headers=ia).status_code == 200
-    assert client.get("/api/erp-monitor/sap/nonsense", headers=ia).status_code == 404
+    assert {ref(po_a), ref(po_b)} <= pos(buyer_a)
+    assert {ref(po_a), ref(po_b)} <= pos(login(client, "admin@demo.com"))
+    assert client.get("/api/erp-monitor/infor/orders", headers=buyer_a).status_code == 200
+    assert client.get("/api/erp-monitor/sap/nonsense", headers=buyer_a).status_code == 404
+    for inspector in (ia, ib, company):
+        assert (
+            client.get("/api/erp-monitor/sap/purchase-orders", headers=inspector).status_code == 403
+        )
     assert client.get("/api/erp-monitor/sap/purchase-orders", headers=sup).status_code in (401, 403)
     assert client.get("/api/erp-monitor/sap/purchase-orders").status_code == 401

@@ -35,7 +35,6 @@ const inspectorNav = [
   { href: "/purchase-orders", label: "Purchase Orders", icon: ClipboardList },
   { href: "/inventory", label: "Inventory", icon: Boxes },
   { href: "/suppliers", label: "Suppliers", icon: Truck },
-  { href: "/erp-monitor", label: "ERP Monitor", icon: Radar },
   { href: "/emails", label: "Emails", icon: Mail },
 ];
 const supplierNav = [
