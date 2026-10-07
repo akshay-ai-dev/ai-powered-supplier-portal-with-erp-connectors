@@ -4,12 +4,15 @@ Run standalone (`python -m app.seed`) by the database container to initialise th
 """
 
 import sqlite3
+from datetime import date, timedelta
 
 from .config import settings
 from .connectors import get_connector
 from .db import connect, init_db, now
 from .security import hash_password
 from .services import purchase_orders as po_svc
+from .services import requirements as req_svc
+from .services.notifications import audit
 
 DEMO_PASSWORD = "Password123!"
 SERVICE_USER_EMAIL = "mcp-service@erp.local"
@@ -24,6 +27,46 @@ def _ensure_user(conn: sqlite3.Connection, name, email, role, supplier_id=None) 
         (name, email, hash_password(DEMO_PASSWORD), role, supplier_id, now()),
     )
     return dict(conn.execute("SELECT * FROM users WHERE id = ?", (cur.lastrowid,)).fetchone())
+
+
+def _supplier_id(conn: sqlite3.Connection, name_prefix: str) -> int:
+    return conn.execute("SELECT id FROM suppliers WHERE supplier_name LIKE ?", (f"{name_prefix}%",)).fetchone()["id"]
+
+
+def _seed_requests(conn: sqlite3.Connection, buyer: dict) -> None:
+    """Demo requests for the AI Assistant: one with three quotes to compare and award (REQ2001 on a fresh
+    database) and one still waiting for quotes. Skipped per title, so existing databases get no duplicates."""
+
+    def exists(title: str) -> bool:
+        return bool(conn.execute("SELECT 1 FROM requirements WHERE title = ?", (title,)).fetchone())
+
+    if not exists("Hydraulic pump assembly"):
+        req = req_svc.create_requirement(
+            conn,
+            buyer,
+            {
+                "title": "Hydraulic pump assembly",
+                "item_code": "ITEM003",
+                "quantity": 20,
+                "needed_by": (date.today() + timedelta(days=10)).isoformat(),
+                "erp": "sap",
+                "open_to_all": True,
+            },
+        )
+        # Inserted directly: only ABC has a supplier login, and the quote service needs one.
+        # Expected ranking: Globex (on time, cheapest), Northwind (on time), ABC (cheapest but late).
+        for prefix, price, lead_days in (("Globex", 12.0, 3), ("ABC", 11.5, 20), ("Northwind", 13.0, 2)):
+            sid = _supplier_id(conn, prefix)
+            conn.execute(
+                "INSERT INTO quotes (requirement_id, supplier_id, unit_price, lead_time_days, message, created_at) VALUES (?,?,?,?,?,?)",
+                (req["id"], sid, price, lead_days, "", now()),
+            )
+            audit(conn, buyer["id"], "quote", "requirement", req["req_number"], f"supplier={sid}")
+
+    if not exists("Gearbox housing"):
+        req_svc.create_requirement(
+            conn, buyer, {"title": "Gearbox housing", "item_code": "ITEM005", "quantity": 5, "erp": "infor", "open_to_all": True}
+        )
 
 
 def seed(conn: sqlite3.Connection) -> None:
@@ -104,6 +147,12 @@ def seed(conn: sqlite3.Connection) -> None:
             )
         finally:
             settings.email_enabled = prev
+
+    prev, settings.email_enabled = settings.email_enabled, False
+    try:
+        _seed_requests(conn, buyer)
+    finally:
+        settings.email_enabled = prev
 
 
 def main() -> None:

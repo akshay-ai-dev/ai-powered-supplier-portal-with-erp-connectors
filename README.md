@@ -22,8 +22,8 @@ Next.js 15 frontend, FastAPI backend, SQLite, Mailpit, FastMCP, and mock SAP / I
    docker compose up --build -d
    docker compose ps    # all 5 services should be Up
    ```
-5. **Open** http://localhost:3000 and log in (logins below). The database starts with no requirements:
-   create one as the buyer to try quotes and the AI Assistant.
+5. **Open** http://localhost:3000 and log in (logins below). The database comes with two demo requests:
+   REQ2001 (3 supplier quotes, ready to compare and award) and REQ2002 (no quotes yet).
 
 **Later:** `git pull origin main && docker compose up --build -d` to update, `docker compose down` to stop.
 
