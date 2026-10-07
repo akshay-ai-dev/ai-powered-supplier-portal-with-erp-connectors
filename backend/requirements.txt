@@ -5,3 +5,15 @@ fastmcp>=2.0
 pydantic[email]>=2.7
 python-multipart>=0.0.9
 openai>=1.50
+
+# Supplier packing-list integration (backend/supplier_packing_list).
+# Image path (OpenAI) image validation / EXIF handling:
+pillow>=10.3
+# PDF path (Docling) — Linux wheels resolved by pip in the Docker image.
+# Pinned to the versions the PoC was validated with; needs a Docker build test.
+# The conversion runs in an isolated child process, so these are only imported
+# there; a missing/broken Docling degrades to a conversion-error draft, never a
+# crash of the API process.
+docling==2.132.0
+pypdfium2==5.13.0
+python-docx==1.2.0

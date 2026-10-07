@@ -26,6 +26,11 @@ from .seed import seed
 from .services import requirements as req_svc
 from .services.errors import DomainError
 
+# Buyer requirement draft extraction (PDF/image -> reviewable draft that pre-fills
+# the New requirement form). The supplier_packing_list package sits beside ``app``
+# under backend/ (and /srv in Docker), so it imports like any other top-level package.
+from supplier_packing_list.router import router as packing_list_router
+
 mcp_inner, mcp_asgi = build_mcp_app()
 
 
@@ -114,6 +119,7 @@ for r in (
     ai_tools.router,
     mock_erp.sap,
     mock_erp.infor,
+    packing_list_router,
 ):
     app.include_router(r)
 

@@ -136,13 +136,38 @@ class ResetIn(BaseModel):
     confirm: str = Field(description='Must be the literal string "RESET"')
 
 
+def _clean_identifier_list(values: list[str] | None) -> list[str]:
+    """Trim, drop blanks, dedupe (first-seen order). Used for lot/serial lists."""
+    if not values:
+        return []
+    return list(dict.fromkeys(v.strip() for v in values if v and v.strip()))[:500]
+
+
+IdentifierList = Annotated[
+    list[Annotated[str, Field(max_length=120)]],
+    AfterValidator(_clean_identifier_list),
+    Field(max_length=500),
+]
+
+
 class RequirementCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=2000)
     item_code: str | None = None
+    # The buyer's REQUESTED quantity. Kept distinct from any shipped quantity on an
+    # uploaded document (the supplier_packing_list draft returns that separately and it is never written here).
     quantity: int = Field(gt=0)
     target_price: float | None = Field(default=None, ge=0)
     needed_by: str | None = Field(default=None, description="ISO date, e.g. 2026-11-30")
+    # Optional shipping details, typically pre-filled from an uploaded document via the
+    # supplier_packing_list draft-extraction endpoint, then reviewed/edited by the buyer before posting.
+    ship_date: str | None = Field(
+        default=None, description="ISO date the goods shipped per an uploaded document, e.g. 2026-02-10"
+    )
+    carrier: str = Field(default="", max_length=120)
+    tracking_number: str = Field(default="", max_length=200)
+    lot_numbers: IdentifierList = Field(default_factory=list)
+    serial_numbers: IdentifierList = Field(default_factory=list)
     erp: Literal["sap", "infor"] = "sap"
     quote_deadline: str | None = Field(
         default=None, description="ISO 8601 date-time (UTC if no offset). Empty = no deadline."

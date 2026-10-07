@@ -1,6 +1,17 @@
 .venv
+venv
 __pycache__
 *.pyc
+*.pyo
 data
 .pytest_cache
+.ruff_cache
+*.egg-info
+# Tests are not needed in the runtime image
 tests
+supplier_packing_list/tests
+supplier_packing_list/**/__pycache__
+# Never copy secrets or logs into the image
+.env
+.env.*
+*.log

@@ -67,6 +67,13 @@ CREATE TABLE IF NOT EXISTS requirements (
     quantity INTEGER NOT NULL,
     target_price REAL,
     needed_by TEXT,
+    -- Optional shipping details the buyer can pre-fill from an uploaded document (supplier_packing_list draft extraction).
+    -- These are reference metadata on the requirement; `quantity` above stays the buyer's REQUESTED quantity.
+    ship_date TEXT,
+    carrier TEXT NOT NULL DEFAULT '',
+    tracking_number TEXT NOT NULL DEFAULT '',
+    lot_numbers TEXT NOT NULL DEFAULT '[]',
+    serial_numbers TEXT NOT NULL DEFAULT '[]',
     status TEXT NOT NULL DEFAULT 'Open' CHECK (status IN ('Open','Awarded','Cancelled')),
     po_id INTEGER REFERENCES purchase_orders(id),
     created_via TEXT NOT NULL DEFAULT 'web',
@@ -277,6 +284,12 @@ MIGRATIONS = [  # (table, column, DDL) applied to databases created before the c
     ("shipment_items", "quantity_accepted", "INTEGER"),
     ("shipment_files", "unit_id", "INTEGER REFERENCES shipment_units(id) ON DELETE CASCADE"),
     ("users", "owner_id", "INTEGER REFERENCES users(id)"),
+    # Requirement shipping details pre-filled from an uploaded document (supplier_packing_list draft extraction).
+    ("requirements", "ship_date", "TEXT"),
+    ("requirements", "carrier", "TEXT NOT NULL DEFAULT ''"),
+    ("requirements", "tracking_number", "TEXT NOT NULL DEFAULT ''"),
+    ("requirements", "lot_numbers", "TEXT NOT NULL DEFAULT '[]'"),
+    ("requirements", "serial_numbers", "TEXT NOT NULL DEFAULT '[]'"),
 ]
 
 
