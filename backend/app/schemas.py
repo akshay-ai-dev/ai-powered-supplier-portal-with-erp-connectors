@@ -136,20 +136,6 @@ class ResetIn(BaseModel):
     confirm: str = Field(description='Must be the literal string "RESET"')
 
 
-def _clean_identifier_list(values: list[str] | None) -> list[str]:
-    """Trim, drop blanks, dedupe (first-seen order). Used for lot/serial lists."""
-    if not values:
-        return []
-    return list(dict.fromkeys(v.strip() for v in values if v and v.strip()))[:500]
-
-
-IdentifierList = Annotated[
-    list[Annotated[str, Field(max_length=120)]],
-    AfterValidator(_clean_identifier_list),
-    Field(max_length=500),
-]
-
-
 class RequirementCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=2000)
@@ -166,9 +152,11 @@ class RequirementCreate(BaseModel):
         description="ISO date the goods shipped per an uploaded document, e.g. 2026-02-10",
     )
     carrier: str = Field(default="", max_length=120)
-    tracking_number: str = Field(default="", max_length=200)
-    lot_numbers: IdentifierList = Field(default_factory=list)
-    serial_numbers: IdentifierList = Field(default_factory=list)
+    # Identifier lists arrive as newline-separated text (one per line), matching the
+    # buyer form's multi-row inputs; stored and returned as-is.
+    tracking_number: str = Field(default="", max_length=2000)
+    lot_numbers: str = Field(default="", max_length=2000)
+    serial_numbers: str = Field(default="", max_length=2000)
     erp: Literal["sap", "infor"] = "sap"
     quote_deadline: str | None = Field(
         default=None, description="ISO 8601 date-time (UTC if no offset). Empty = no deadline."
