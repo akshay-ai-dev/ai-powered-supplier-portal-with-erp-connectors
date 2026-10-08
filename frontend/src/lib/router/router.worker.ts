@@ -32,7 +32,7 @@ function routesHash(r: Routes): string {
 export function stripRequestNumbers(text: string): string {
   return text
     .replace(/\bREQ[\s-]?#?\d+\b/gi, " ")
-    .replace(/\b(request)\s+#?\d{3,}\b/gi, "$1")
+    .replace(/\brequest\s+#?\d{3,}\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 }

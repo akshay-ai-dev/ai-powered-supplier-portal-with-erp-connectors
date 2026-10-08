@@ -30,7 +30,11 @@
     "show everything I'm sourcing",
     "requests with no bids yet",
     "requests without quotes",
-    "anything awaiting a decision"
+    "anything awaiting a decision",
+    "anything waiting on me",
+    "open RFQs",
+    "what do I need to look at",
+    "list my sourcing requests"
   ],
   "get_request_detail": [
     "Show REQ2001",
@@ -59,7 +63,14 @@
     "inspection result for the last shipment",
     "what happened with REQ2002",
     "status?",
-    "track REQ2001"
+    "track REQ2001",
+    "tell me more about REQ2002",
+    "tell me about this request",
+    "what is going on with REQ2003",
+    "give me the details of REQ2004",
+    "who did we invite on REQ2005",
+    "which suppliers declined REQ2003",
+    "did a supplier turn down REQ2004"
   ],
   "compare_responses": [
     "Compare the responses for REQ2001",
@@ -86,7 +97,15 @@
     "rank the offers",
     "rank bids for REQ2002",
     "compare",
-    "who offers the best deal"
+    "who offers the best deal",
+    "who has quoted on REQ2002",
+    "who sent quotes for REQ2003",
+    "list the quotes for REQ2004",
+    "show me the bids for REQ2005",
+    "which suppliers bid on REQ2001",
+    "what quotes came in for REQ2002",
+    "quotes received for REQ2003",
+    "what did the suppliers offer on REQ2004"
   ],
   "draft_award": [
     "Award REQ2001 to the top-ranked supplier",
@@ -112,7 +131,14 @@
     "award it",
     "award this one",
     "award to the top supplier",
-    "go ahead and award"
+    "go ahead and award",
+    "give the order for REQ2003 to the top supplier",
+    "give it to the best supplier",
+    "hand REQ2004 to the winning supplier",
+    "assign REQ2005 to the top-ranked supplier",
+    "award REQ2002 to the cheapest supplier",
+    "award it to the best supplier",
+    "give the PO to the winner of REQ2001"
   ],
   "none": [
     "hello",

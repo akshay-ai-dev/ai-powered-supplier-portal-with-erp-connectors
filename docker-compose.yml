@@ -33,8 +33,6 @@ services:
       INSPECTION_ACCEPT_THRESHOLD: ${INSPECTION_ACCEPT_THRESHOLD:-95}
       INSPECTION_MAX_UNITS: ${INSPECTION_MAX_UNITS:-2000}
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
     volumes:
       - erp_data:/data
     ports:

@@ -23,7 +23,7 @@ function routesHash(r) {
 
 // Same as stripRequestNumbers in router.worker.ts.
 const strip = (t) =>
-  t.replace(/\bREQ[\s-]?#?\d+\b/gi, " ").replace(/\b(request)\s+#?\d{3,}\b/gi, "$1").replace(/\s+/g, " ").trim();
+  t.replace(/\bREQ[\s-]?#?\d+\b/gi, " ").replace(/\brequest\s+#?\d{3,}\b/gi, " ").replace(/\s+/g, " ").trim();
 
 env.allowRemoteModels = false;
 env.localModelPath = join(root, "public", "models") + "/";

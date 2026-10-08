@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Radar, Sparkles, Truck, Users, UserCog, X } from "lucide-react";
+import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Radar, Truck, Users, UserCog, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { roleLabel } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import { ChatWidget } from "@/components/chat-widget";
 
 const baseNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/assistant", label: "AI Assistant", icon: Sparkles },
   { href: "/suppliers", label: "Suppliers", icon: Truck },
   { href: "/requirements", label: "Requirements", icon: FileSearch },
   { href: "/purchase-orders", label: "Purchase Orders", icon: ClipboardList },
@@ -22,7 +21,7 @@ const baseNav = [
   { href: "/emails", label: "Emails", icon: Mail },
 ];
 // A buyer creates and manages their own inspectors. /units/[code] and the QR label page are reached by link or scan, so they have no entry.
-const buyerNav = [...baseNav.slice(0, 7), { href: "/team", label: "My inspectors", icon: UserCog }, ...baseNav.slice(7)];
+const buyerNav = [...baseNav.slice(0, 6), { href: "/team", label: "My inspectors", icon: UserCog }, ...baseNav.slice(6)];
 const adminNav = [
   ...baseNav,
   { href: "/admin/users", label: "Users", icon: Users },
@@ -77,16 +76,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         const className = `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
           active ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
         }`;
-        // The assistant needs a full page load: its cross-origin isolation headers (next.config.ts) only apply to a
-        // freshly loaded document, and they give the speech model multi-threaded WASM.
-        if (href === "/assistant") {
-          return (
-            <a key={href} href={href} className={className}>
-              <Icon className="size-4" />
-              {label}
-            </a>
-          );
-        }
         return (
           <Link key={href} href={href} className={className}>
             <Icon className="size-4" />

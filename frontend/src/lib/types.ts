@@ -348,23 +348,6 @@ export interface AssistantResponse {
   warning?: string;
   progress?: { done: number; total: number };
   result: AssistantResult | null;
-  ai?: boolean; // menu only: natural-language filling is available (an OpenAI key is configured)
 }
 
 /** One turn of natural-language form filling. It never saves anything: `fill` carries values for the user to review in the real form. */
-export interface FillResponse {
-  mode: "fill";
-  stage: "pick" | "describe" | "ask" | "ready" | "cancelled";
-  state: Record<string, unknown> | null;
-  message: string;
-  error: string | null;
-  form?: string | null;
-  title?: string;
-  options: AssistantOption[];
-  controls: Partial<AssistantControls>;
-  values: { label: string; value: string }[];
-  missing: { key: string; label: string }[];
-  notes: string[];
-  filter?: string;
-  fill: { form: string; route: string; target: number | null; values: Record<string, unknown> } | null;
-}

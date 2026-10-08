@@ -4,8 +4,6 @@ import { Truck } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { api, uploadFile } from "@/lib/api";
-import { AiBanner, useAiFill } from "@/lib/prefill";
-import { cn } from "@/lib/utils";
 import type { PurchaseOrder, Shipment, ToShip } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,27 +48,6 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
   const [busy, setBusy] = useState(false);
   const [qr, setQr] = useState(true);
   const router = useRouter();
-  const ai = useAiFill(
-    "ship_order",
-    (v) => {
-      const byCode = new Map(remaining.map((r) => [r.item_code.toUpperCase(), r.item_code]));
-      setQty((q) => {
-        const next = { ...q };
-        for (const [code, n] of Object.entries(v.quantities ?? {})) {
-          const key = byCode.get(code.toUpperCase());
-          if (key) next[key] = String(n);
-        }
-        return next;
-      });
-      setF((p) => ({
-        carrier: v.carrier ?? p.carrier,
-        tracking_no: v.tracking_no ?? p.tracking_no,
-        expected_arrival: v.expected_arrival ?? p.expected_arrival,
-        notes: v.notes ?? p.notes,
-      }));
-    },
-    po.id,
-  );
 
   if (remaining.every((r) => r.left === 0)) return null;
 
@@ -116,7 +93,6 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
-          <AiBanner show={ai.any} onDismiss={ai.clear} />
           {toShip.replace.length > 0 && (
             <div className="space-y-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
               <div>
@@ -168,7 +144,7 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
             {lines.map((r) => (
               <div key={r.item_code} className="flex items-center gap-3 text-sm">
                 <span className="w-32 font-mono text-xs">{r.item_code}</span>
-                <Input aria-label={`Quantity of ${r.item_code}`} className={cn("w-28", ai.ring("quantities"))} type="number" min={0} max={r.left} value={qty[r.item_code] ?? ""} onChange={(e) => setQty({ ...qty, [r.item_code]: e.target.value })} />
+                <Input aria-label={`Quantity of ${r.item_code}`} className="w-28" type="number" min={0} max={r.left} value={qty[r.item_code] ?? ""} onChange={(e) => setQty({ ...qty, [r.item_code]: e.target.value })} />
                 <span className="text-xs text-muted-foreground">{target ? `${r.left} to replace` : `${r.left} still to ship`}</span>
               </div>
             ))}
@@ -176,15 +152,15 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-1">
               <Label htmlFor="carrier">Carrier</Label>
-              <Input id="carrier" value={f.carrier} onChange={(e) => setF({ ...f, carrier: e.target.value })} className={ai.ring("carrier")} />
+              <Input id="carrier" value={f.carrier} onChange={(e) => setF({ ...f, carrier: e.target.value })} />
             </div>
             <div className="space-y-1">
               <Label htmlFor="track">Tracking number</Label>
-              <Input id="track" value={f.tracking_no} onChange={(e) => setF({ ...f, tracking_no: e.target.value })} className={ai.ring("tracking_no")} />
+              <Input id="track" value={f.tracking_no} onChange={(e) => setF({ ...f, tracking_no: e.target.value })} />
             </div>
             <div className="space-y-1">
               <Label htmlFor="eta">Expected arrival</Label>
-              <Input id="eta" type="date" value={f.expected_arrival} onChange={(e) => setF({ ...f, expected_arrival: e.target.value })} className={ai.ring("expected_arrival")} />
+              <Input id="eta" type="date" value={f.expected_arrival} onChange={(e) => setF({ ...f, expected_arrival: e.target.value })} />
             </div>
           </div>
           <div className="space-y-1">
@@ -193,7 +169,7 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
           </div>
           <div className="space-y-1">
             <Label htmlFor="sn">Notes for the warehouse</Label>
-            <Input id="sn" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} className={ai.ring("notes")} />
+            <Input id="sn" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} />
           </div>
           <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm">
             <input type="checkbox" className="mt-1" checked={qr} onChange={(e) => setQr(e.target.checked)} />

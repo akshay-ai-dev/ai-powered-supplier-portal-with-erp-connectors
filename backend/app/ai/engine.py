@@ -211,6 +211,10 @@ def _summary_response(
             {"label": s.label, "value": _label_for(s, ctx, ctx.values[s.key])}
             for s in steps
             if s.key in ctx.values
+        ]
+        + [
+            {"label": label, "value": value}
+            for label, value in (flow.details(ctx) if flow.details else [])
         ],
         "options": [],
         "controls": {

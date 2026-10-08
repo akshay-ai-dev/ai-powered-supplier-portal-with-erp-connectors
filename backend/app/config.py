@@ -52,9 +52,5 @@ class Settings:
     # Empty = the labels fall back to the address the supplier's browser is on.
     public_app_url: str = _public_url(os.getenv("PUBLIC_APP_URL", ""))
 
-    # In-app assistant: natural-language form filling uses OpenAI structured outputs. Without a key only the numbered menus work.
-    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
-    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o")
-
 
 settings = Settings()
