@@ -164,6 +164,7 @@ def reset_data(conn: sqlite3.Connection, admin: dict) -> None:
         "inspection_fields",
         "shipment_items",
         "shipments",
+        "message_attachments",
         "messages",
         "quotes",
         "attachments",

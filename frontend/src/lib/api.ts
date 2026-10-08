@@ -57,10 +57,12 @@ export const money = (n: number) => new Intl.NumberFormat("en-US", { style: "cur
 export const shortDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 export const dateTime = (iso: string) => new Date(iso).toLocaleString();
 
-export async function uploadFile<T>(path: string, file: File): Promise<T> {
+/** Uploads one file as multipart form data; `fields` adds plain form fields next to it (empty values are left out). */
+export async function uploadFile<T>(path: string, file: File, fields: Record<string, string | number | undefined> = {}): Promise<T> {
   const token = tokenStore.get();
   const form = new FormData();
   form.append("file", file);
+  for (const [k, v] of Object.entries(fields)) if (v !== undefined && v !== "") form.append(k, String(v));
   const res = await fetch(`${apiBase()}${path}`, { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {}, body: form });
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
