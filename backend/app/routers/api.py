@@ -364,7 +364,7 @@ def invite_suppliers(
 
 
 # ---- Attachments ----
-from fastapi import File, UploadFile  # noqa: E402
+from fastapi import File, Form, UploadFile  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
 
 from ..services import attachments as attachments_svc  # noqa: E402
@@ -412,3 +412,43 @@ def delete_attachment(
 ):
     req_svc.remove_attachment(conn, user, att_id)
     return {"deleted": att_id}
+
+
+# ---- Message attachments: a file sent inside a buyer <-> supplier conversation ----
+@files.post(
+    "/requirements/{req_id}/messages/attachments",
+    status_code=201,
+    summary="Send a message with a file (max 10 MB, whitelisted types; buyers pass supplier_id)",
+)
+def send_message_with_file(
+    req_id: int,
+    file: UploadFile = File(...),
+    body: str = Form(""),
+    supplier_id: int | None = Form(None),
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
+    user: dict = Depends(current_user),
+):
+    data = file.file.read(attachments_svc.MAX_BYTES + 1)  # never read more than the limit + 1 byte
+    return msg_svc.post_message(
+        conn,
+        user,
+        req_id,
+        body,
+        supplier_id,
+        file=(file.filename or "file", data, file.content_type),
+    )
+
+
+@files.get("/message-attachments/{att_id}/download")
+def download_message_attachment(
+    att_id: int,
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
+    user: dict = Depends(current_user),
+):
+    row, path = msg_svc.open_attachment(conn, user, att_id)
+    return FileResponse(
+        path,
+        filename=row["filename"],
+        media_type="application/octet-stream",  # never let the browser render an uploaded file
+        headers={"X-Content-Type-Options": "nosniff"},
+    )
