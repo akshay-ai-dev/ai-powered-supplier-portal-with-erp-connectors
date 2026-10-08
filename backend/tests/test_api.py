@@ -156,6 +156,7 @@ def test_po_lifecycle(client):
         ).status_code
         == 403
     )
+
     approved = client.put(
         f"/api/purchase-orders/{po['id']}", headers=buyer, json={"status": "Approved"}
     ).json()
@@ -195,6 +196,32 @@ def test_po_lifecycle(client):
     dash = client.get("/api/dashboard", headers=sup).json()
     assert dash["role"] == "supplier" and "pending_deliveries" in dash
     assert client.get("/api/dashboard", headers=buyer).json()["supplier_count"] >= 4
+
+
+def test_purchase_order_rejects_unit_price_below_one(client):
+    buyer = login(client, "buyer@demo.com")
+    supplier_id = client.get("/api/suppliers", headers=buyer).json()[0]["id"]
+
+    for unit_price in (0, 0.99):
+        response = client.post(
+            "/api/purchase-orders",
+            headers=buyer,
+            json={
+                "supplier_id": supplier_id,
+                "items": [{"item_code": "ITEM005", "quantity": 1, "unit_price": unit_price}],
+            },
+        )
+        assert response.status_code == 422
+
+    accepted = client.post(
+        "/api/purchase-orders",
+        headers=buyer,
+        json={
+            "supplier_id": supplier_id,
+            "items": [{"item_code": "ITEM005", "quantity": 1, "unit_price": 1}],
+        },
+    )
+    assert accepted.status_code == 201
 
 
 def test_mock_erp(client):

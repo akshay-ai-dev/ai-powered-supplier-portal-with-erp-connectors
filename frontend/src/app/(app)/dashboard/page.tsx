@@ -78,7 +78,7 @@ export default function DashboardPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Users" value={count(data.users_by_role)} hint={Object.entries(data.users_by_role).map(([r, n]) => `${n} ${r}`).join(" · ")} href="/admin/users" />
           <Stat label="Requirements" value={count(data.requirements_by_status)} hint={Object.entries(data.requirements_by_status).map(([s, n]) => `${n} ${s.toLowerCase()}`).join(" · ")} href="/requirements" />
-          <Stat label="Purchase orders" value={count(data.orders_by_status)} hint={Object.entries(data.orders_by_status).map(([s, n]) => `${n} ${s.toLowerCase()}`).join(" · ")} href="/purchase-orders" />
+          <Stat label="Purchase orders" value={count(data.orders_by_status)} hint={Object.entries(data.orders_by_status).map(([s, n]) => `${n} ${s.toLowerCase()}`).join(" · ")} />
           <Stat label="Suppliers / items" value={`${data.suppliers} / ${data.inventory_items}`} href="/admin/data" />
         </div>
         <Card className="mt-6">
@@ -111,8 +111,8 @@ export default function DashboardPage() {
         <InventoryDashboard
           stats={
             <>
-              <Stat label="Active orders" value={data.active_orders} href="/purchase-orders" />
-              <Stat label="Pending deliveries" value={data.pending_deliveries} href="/purchase-orders" />
+              <Stat label="Active orders" value={data.active_orders} />
+              <Stat label="Pending deliveries" value={data.pending_deliveries} />
             </>
           }
         />
@@ -140,7 +140,7 @@ export default function DashboardPage() {
     <>
       <PageHeader title="Dashboard" description="Procurement overview." />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Open orders" value={data.open_orders} hint="Draft, pending or approved" href="/purchase-orders" />
+        <Stat label="Open orders" value={data.open_orders} hint="Draft, pending or approved" />
         <Stat label="Inventory items" value={data.inventory_count} hint={`${data.low_stock_count} low on stock`} href="/inventory" />
         <Stat label="Suppliers" value={data.supplier_count} href="/suppliers" />
         <Stat label="Low stock" value={data.low_stock_count} hint="Fewer than 20 units" href="/inventory" />

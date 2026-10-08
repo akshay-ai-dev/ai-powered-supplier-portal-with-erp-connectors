@@ -24,7 +24,7 @@ export default function NewPurchaseOrderPage() {
   const inventory = useFetch<InventoryItem[]>(user?.role === "supplier" ? null : "/api/inventory");
   const [supplierId, setSupplierId] = useState("");
   const [items, setItems] = useState<{ item_code: string; quantity: string; unit_price: string }[]>([
-    { item_code: "", quantity: "1", unit_price: "0" },
+    { item_code: "", quantity: "1", unit_price: "1" },
   ]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -35,7 +35,7 @@ export default function NewPurchaseOrderPage() {
         v.items.map((l: { item_code: string | null; quantity: number | null; unit_price: number | null }) => ({
           item_code: l.item_code ?? "",
           quantity: String(l.quantity ?? 1),
-          unit_price: String(l.unit_price ?? 0),
+          unit_price: String(l.unit_price ?? 1),
         })),
       );
     }
@@ -50,7 +50,9 @@ export default function NewPurchaseOrderPage() {
     setError(null);
     if (!supplierId) return setError("Choose a supplier.");
     const payload: POItem[] = items.map((it) => ({ item_code: it.item_code, quantity: Number(it.quantity), unit_price: Number(it.unit_price) }));
-    if (payload.some((p) => !p.item_code || !(p.quantity > 0) || p.unit_price < 0)) return setError("Every line needs an item, a quantity above 0 and a valid price.");
+    if (payload.some((p) => !p.item_code || !(p.quantity > 0) || !Number.isFinite(p.unit_price) || p.unit_price < 1)) {
+      return setError("Every line needs an item, a quantity above 0 and a unit price of at least $1.");
+    }
     setBusy(true);
     try {
       const po = await api<PurchaseOrder>("/api/purchase-orders", { body: { supplier_id: Number(supplierId), items: payload, submit } });
@@ -95,13 +97,13 @@ export default function NewPurchaseOrderPage() {
                   ))}
                 </select>
                 <Input aria-label="Quantity" type="number" min={1} value={it.quantity} onChange={(e) => update(i, { quantity: e.target.value })} />
-                <Input aria-label="Unit price" type="number" min={0} step="0.01" value={it.unit_price} onChange={(e) => update(i, { unit_price: e.target.value })} />
+                <Input aria-label="Unit price" type="number" min={1} step="0.01" value={it.unit_price} onChange={(e) => update(i, { unit_price: e.target.value })} />
                 <Button variant="ghost" size="icon" aria-label="Remove line" disabled={items.length === 1} onClick={() => setItems(items.filter((_, idx) => idx !== i))}>
                   <Trash2 className="size-4" />
                 </Button>
               </div>
             ))}
-            <Button variant="outline" size="sm" onClick={() => setItems([...items, { item_code: "", quantity: "1", unit_price: "0" }])}>
+            <Button variant="outline" size="sm" onClick={() => setItems([...items, { item_code: "", quantity: "1", unit_price: "1" }])}>
               <Plus className="mr-1 size-4" />
               Add line
             </Button>

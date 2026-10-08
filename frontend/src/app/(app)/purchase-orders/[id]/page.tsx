@@ -91,9 +91,12 @@ export default function PurchaseOrderDetail({ params }: { params: Promise<{ id: 
 
   return (
     <>
-      <Link href="/purchase-orders" className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href={po.requirement_id ? `/requirements/${po.requirement_id}` : "/dashboard"}
+        className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="mr-1 size-4" />
-        All orders
+        {po.requirement_id ? "Back to requirement" : "Back to dashboard"}
       </Link>
       <PageHeader title={po.po_number} description={`${po.supplier_name} · created ${dateTime(po.created_at)}`}>
         <AgentBadge channel={po.created_via} />

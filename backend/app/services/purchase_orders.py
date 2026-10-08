@@ -142,6 +142,8 @@ def create_po(
 ) -> dict:
     if user["role"] not in ("buyer", "admin"):
         raise Forbidden("Only buyers can create purchase orders")
+    if any(item["unit_price"] < 1 for item in items):
+        raise DomainError("Unit price must be at least $1")
     suppliers_svc.get_supplier(conn, supplier_id)
     total = sum(i["quantity"] * i["unit_price"] for i in items)
     status = "Pending" if submit else "Draft"
@@ -182,6 +184,8 @@ def update_po(conn: sqlite3.Connection, user: dict, po_id: int, changes: dict) -
             raise Forbidden("Only buyers can edit items")
         if po["status"] not in ("Draft", "Pending"):
             raise DomainError("Items can only be edited while the order is Draft or Pending")
+        if any(item["unit_price"] < 1 for item in changes["items"]):
+            raise DomainError("Unit price must be at least $1")
         conn.execute("DELETE FROM purchase_order_items WHERE po_id = ?", (po_id,))
         conn.executemany(
             "INSERT INTO purchase_order_items (po_id, item_code, quantity, unit_price) VALUES (?,?,?,?)",

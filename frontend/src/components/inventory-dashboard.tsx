@@ -77,13 +77,14 @@ export function InventoryDashboard({ stats }: { stats?: React.ReactNode }) {
       </Card>
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Needs reorder</CardTitle>
+          <CardTitle>Needs manufacturing</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Description</TableHead>
+                <TableHead>Item Code</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Warehouse</TableHead>
               </TableRow>
@@ -91,7 +92,7 @@ export function InventoryDashboard({ stats }: { stats?: React.ReactNode }) {
             <TableBody>
               {reorder.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
                     No inventory items.
                   </TableCell>
                 </TableRow>
@@ -99,6 +100,7 @@ export function InventoryDashboard({ stats }: { stats?: React.ReactNode }) {
               {reorder.map((i) => (
                 <TableRow key={i.id}>
                   <TableCell>{i.description}</TableCell>
+                  <TableCell>{i.item_code}</TableCell>
                   <TableCell>
                     <Stock qty={i.stock_quantity} />
                   </TableCell>

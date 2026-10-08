@@ -75,7 +75,7 @@ class SupplierUpdate(BaseModel):
 class POItemIn(BaseModel):
     item_code: str = Field(min_length=1)
     quantity: int = Field(gt=0)
-    unit_price: float = Field(ge=0)
+    unit_price: float = Field(ge=1)
 
 
 class POCreate(BaseModel):

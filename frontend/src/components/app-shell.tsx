@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Radar, Sparkles, Truck, Users, UserCog, X } from "lucide-react";
+import { Boxes, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Sparkles, Truck, Users, UserCog, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { roleLabel } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
@@ -14,15 +14,13 @@ const baseNav = [
   { href: "/assistant", label: "AI Assistant", icon: Sparkles },
   { href: "/suppliers", label: "Suppliers", icon: Truck },
   { href: "/requirements", label: "Requirements", icon: FileSearch },
-  { href: "/purchase-orders", label: "Purchase Orders", icon: ClipboardList },
   { href: "/inventory", label: "Inventory", icon: Boxes },
   { href: "/shipments", label: "Shipments", icon: PackageCheck },
-  { href: "/erp-monitor", label: "ERP Monitor", icon: Radar },
   { href: "/api-access", label: "API access", icon: KeyRound },
   { href: "/emails", label: "Emails", icon: Mail },
 ];
 // A buyer creates and manages their own inspectors. /units/[code] and the QR label page are reached by link or scan, so they have no entry.
-const buyerNav = [...baseNav.slice(0, 7), { href: "/team", label: "My inspectors", icon: UserCog }, ...baseNav.slice(7)];
+const buyerNav = [...baseNav.slice(0, 6), { href: "/team", label: "My inspectors", icon: UserCog }, ...baseNav.slice(6)];
 const adminNav = [
   ...baseNav,
   { href: "/admin/users", label: "Users", icon: Users },
@@ -32,17 +30,14 @@ const inspectorNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/shipments", label: "Receiving", icon: PackageCheck },
   { href: "/requirements", label: "Requirements", icon: FileSearch },
-  { href: "/purchase-orders", label: "Purchase Orders", icon: ClipboardList },
   { href: "/inventory", label: "Inventory", icon: Boxes },
   { href: "/suppliers", label: "Suppliers", icon: Truck },
-  { href: "/erp-monitor", label: "ERP Monitor", icon: Radar },
   { href: "/emails", label: "Emails", icon: Mail },
 ];
 const supplierNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/supplier-inventory", label: "Inventory", icon: Boxes },
   { href: "/requirements", label: "Requirements", icon: FileSearch },
-  { href: "/purchase-orders", label: "My Orders", icon: ClipboardList },
   { href: "/shipments", label: "Shipments", icon: PackageCheck },
   { href: "/emails", label: "Emails", icon: Mail },
   { href: "/profile", label: "Profile", icon: UserCog },
