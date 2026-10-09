@@ -150,6 +150,18 @@ export default function ShipmentDetail({ params }: { params: Promise<{ id: strin
             {s.erp_movement_ref && <div className="col-span-2"><div className="text-muted-foreground">ERP stock document</div>{s.erp_movement_ref}</div>}
             {s.notes && <p className="col-span-2 whitespace-pre-wrap"><span className="text-muted-foreground">Supplier notes: </span>{s.notes}</p>}
             {s.inspection_notes && <p className="col-span-2 whitespace-pre-wrap"><span className="text-muted-foreground">Inspector notes: </span>{s.inspection_notes}</p>}
+            {s.packing_list_review && (
+              <div className="col-span-2 space-y-1 rounded-md border p-3">
+                <div className="text-xs font-medium uppercase text-muted-foreground">Packing-list details (reviewed by the supplier)</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><div className="text-muted-foreground">Ship date</div>{s.packing_list_review.ship_date ? shortDate(s.packing_list_review.ship_date) : "—"}</div>
+                  <div><div className="text-muted-foreground">Shipped quantity</div>{s.packing_list_review.shipped_quantity != null ? `${s.packing_list_review.shipped_quantity}${s.packing_list_review.unit_of_measure ? ` ${s.packing_list_review.unit_of_measure}` : ""}` : "—"}</div>
+                  <div><div className="text-muted-foreground">Tracking numbers</div>{s.packing_list_review.tracking_numbers.length ? <ul className="list-inside list-disc">{s.packing_list_review.tracking_numbers.map((t) => <li key={t} className="font-mono text-xs">{t}</li>)}</ul> : "—"}</div>
+                  <div><div className="text-muted-foreground">Lot numbers</div>{s.packing_list_review.lot_numbers.length ? <ul className="list-inside list-disc">{s.packing_list_review.lot_numbers.map((t) => <li key={t} className="font-mono text-xs">{t}</li>)}</ul> : "—"}</div>
+                  <div className="col-span-2"><div className="text-muted-foreground">Serial numbers</div>{s.packing_list_review.serial_numbers.length ? <ul className="list-inside list-disc">{s.packing_list_review.serial_numbers.map((t) => <li key={t} className="font-mono text-xs">{t}</li>)}</ul> : "—"}</div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -192,11 +192,28 @@ class ShipmentItemIn(BaseModel):
     quantity: int = Field(gt=0)
 
 
+class PackingListReview(BaseModel):
+    """The supplier's reviewed packing-list values, stored in full (no notes length cap) so ship
+    date, every tracking/lot/serial number and the shipped quantity are preserved and read back."""
+
+    ship_date: str | None = Field(default=None, max_length=40)
+    carrier: str | None = Field(default=None, max_length=200)
+    shipped_quantity: float | None = Field(default=None, ge=0)
+    unit_of_measure: str | None = Field(default=None, max_length=40)
+    tracking_numbers: list[str] = Field(default_factory=list, max_length=500)
+    lot_numbers: list[str] = Field(default_factory=list, max_length=2000)
+    serial_numbers: list[str] = Field(default_factory=list, max_length=20000)
+
+
 class ShipmentCreate(BaseModel):
     carrier: str = Field(default="", max_length=80)
     tracking_no: str = Field(default="", max_length=80)
     expected_arrival: str | None = Field(default=None, description="ISO date")
     notes: str = Field(default="", max_length=1000)
+    packing_list_review: PackingListReview | None = Field(
+        default=None,
+        description="The supplier's reviewed packing-list draft; stored in full and read back on the shipment",
+    )
     items: list[ShipmentItemIn] = Field(min_length=1)
     unit_inspection: bool = Field(
         default=False,

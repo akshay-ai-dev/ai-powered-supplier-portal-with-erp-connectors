@@ -101,6 +101,12 @@ def _hydrate(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
             )
         }
     s.pop("lot_report", None)  # the report has its own endpoint
+    try:  # the supplier's reviewed packing-list draft; None for shipments created without one
+        s["packing_list_review"] = (
+            json.loads(s["packing_list_review"]) if s.get("packing_list_review") else None
+        )
+    except (ValueError, TypeError):
+        s["packing_list_review"] = None
     s["packing_list"] = next((f for f in files if f["kind"] == "packing_list"), None)
     s["photos"] = [f for f in files if f["kind"] == "photo"]
     po = conn.execute(
@@ -519,9 +525,10 @@ def create_shipment(conn: sqlite3.Connection, user: dict, po_id: int, data: dict
                 f"{code}: shipping {qty} would exceed the ordered {ordered[code]} (already shipped {committed[code]})"
             )
 
+    review = data.get("packing_list_review")
     cur = conn.execute(
-        "INSERT INTO shipments (shipment_no, po_id, supplier_id, carrier, tracking_no, expected_arrival, notes, replaces_shipment_id, created_by, created_at) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO shipments (shipment_no, po_id, supplier_id, carrier, tracking_no, expected_arrival, notes, packing_list_review, replaces_shipment_id, created_by, created_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
         (
             f"TMP-{now()}-{user['id']}",
             po_id,
@@ -530,6 +537,7 @@ def create_shipment(conn: sqlite3.Connection, user: dict, po_id: int, data: dict
             data.get("tracking_no", ""),
             data.get("expected_arrival"),
             data.get("notes", ""),
+            json.dumps(review) if review else None,
             replaces["id"] if replaces else None,
             user["id"],
             now(),
