@@ -23,6 +23,8 @@ def _resolve(
     conn: sqlite3.Connection, user: dict, req_id: int, supplier_id: int | None
 ) -> tuple[sqlite3.Row, int]:
     """Returns (requirement row, supplier id of the thread) after checking the user may see this thread."""
+    if user["role"] not in ("buyer", "supplier"):
+        raise Forbidden("Only buyers and suppliers can access private conversations")
     if _role(user) == "supplier":
         if not user.get("supplier_id"):
             raise Forbidden("No supplier profile")

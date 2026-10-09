@@ -18,12 +18,10 @@ def usage_count(conn: sqlite3.Connection, item_code: str) -> int:
 
 
 def can_manage(user: dict | None, item: dict) -> bool:
-    """Creators may edit/delete their own items; admins may manage any. ERP-synced items have no creator."""
-    if user is None:
+    """Creators may edit/delete their own items. ERP-synced items have no creator."""
+    if user is None or user["role"] == "admin":
         return False
-    return user["role"] == "admin" or (
-        item.get("created_by") is not None and item["created_by"] == user["id"]
-    )
+    return item.get("created_by") is not None and item["created_by"] == user["id"]
 
 
 def list_items(
@@ -32,6 +30,8 @@ def list_items(
     warehouse: str | None = None,
     user: dict | None = None,
 ) -> list[dict]:
+    if user is not None and user["role"] == "admin":
+        raise Forbidden("Administrators cannot access inventory")
     sql, args = "SELECT * FROM inventory WHERE 1=1", []
     if q:
         sql += " AND (item_code LIKE ? OR description LIKE ?)"
@@ -54,6 +54,8 @@ def list_items(
 
 
 def get_item(conn: sqlite3.Connection, item_code: str, user: dict | None = None) -> dict:
+    if user is not None and user["role"] == "admin":
+        raise Forbidden("Administrators cannot access inventory")
     row = conn.execute(
         "SELECT * FROM inventory WHERE item_code = ? COLLATE NOCASE", (item_code,)
     ).fetchone()
@@ -79,6 +81,8 @@ def receive_stock(conn: sqlite3.Connection, item_code: str, quantity: int) -> No
 
 
 def create_item(conn: sqlite3.Connection, user: dict, data: dict) -> dict:
+    if user["role"] == "admin":
+        raise Forbidden("Administrators cannot access inventory")
     code = data["item_code"].strip().upper()
     if conn.execute("SELECT 1 FROM inventory WHERE item_code = ?", (code,)).fetchone():
         raise DomainError(f"Item {code} already exists", 409)

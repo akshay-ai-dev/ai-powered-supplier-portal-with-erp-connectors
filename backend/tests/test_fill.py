@@ -286,14 +286,17 @@ def test_ship_form_quantities_follow_what_is_left(client, fake):
     r = choose(client, sup, r, po_number)
     assert r["stage"] == "ask"  # "ship PO with DHL" was read but says nothing about quantities
     assert "ITEM002 x 10" in fake.calls[-1]["system"]
-    fake.answers = [{"quantities": {"ITEM002": 25}, "carrier": "DHL"}]
+    fake.answers = [{"quantities": {"ITEM002": 25}}]
     r = fill(client, sup, r["state"], "all 25 with DHL")
     assert r["stage"] == "ask" and any("choose between 0 and 10" in n for n in r["notes"])
     assert "Still to ship: ITEM002 x 10" in r["message"]
     fake.answers = [
-        {"quantities": {"ITEM002": 10}, "tracking_no": "TRK1", "expected_arrival": "2099-05-05"}
+        {"quantities": {"ITEM002": 10}, "expected_arrival": "2099-05-05"}
     ]
-    r = fill(client, sup, r["state"], "everything, tracking TRK1, arriving 5 May 2099")
+    r = fill(client, sup, r["state"], "everything, arriving 5 May 2099")
+    assert r["stage"] == "ask" and {m["key"] for m in r["missing"]} == {"carrier", "tracking_no"}
+    fake.answers = [{"carrier": "DHL", "tracking_no": "TRK1"}]
+    r = fill(client, sup, r["state"], "DHL, tracking TRK1")
     assert r["stage"] == "ready"
     assert r["fill"]["route"] == f"/purchase-orders/{po_id}"
     assert r["fill"]["values"] == {

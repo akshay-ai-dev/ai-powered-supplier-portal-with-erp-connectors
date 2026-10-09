@@ -106,6 +106,7 @@ export default function ApiAccessPage() {
   if (!allowed) return <ErrorNote message="API tokens are available to buyers and administrators." />;
 
   const mcpUrl = `${apiBase()}/mcp/`;
+  const adminAtLimit = user?.role === "admin" && !!mine.data?.some((t) => t.status === "active");
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -226,7 +227,7 @@ export default function ApiAccessPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Create a token</CardTitle>
-          <CardDescription>Use a separate token per device or agent, so you can revoke one without affecting the others.</CardDescription>
+          <CardDescription>{user?.role === "admin" ? "Administrators can have one active token at a time. Revoke your current token before creating another." : "Use a separate token per device or agent, so you can revoke one without affecting the others."}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={create} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
@@ -251,7 +252,7 @@ export default function ApiAccessPage() {
                 <option value="never">Never</option>
               </select>
             </div>
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" disabled={busy || mine.loading || adminAtLimit}>
               Create token
             </Button>
           </form>

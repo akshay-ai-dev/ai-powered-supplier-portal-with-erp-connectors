@@ -139,8 +139,8 @@ def seed(conn: sqlite3.Connection) -> None:
                 buyer,
                 abc,
                 [
-                    {"item_code": "ITEM001", "quantity": 500, "unit_price": 0.12},
-                    {"item_code": "ITEM004", "quantity": 200, "unit_price": 2.4},
+                    {"item_code": "ITEM001", "quantity": 500, "unit_price": 1},
+                    {"item_code": "ITEM004", "quantity": 200, "unit_price": 1},
                 ],
                 submit=True,
             )

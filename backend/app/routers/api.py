@@ -26,7 +26,11 @@ from ..services import suppliers as suppliers_svc
 auth = APIRouter(prefix="/api/auth", tags=["Auth"])
 suppliers = APIRouter(prefix="/api/suppliers", tags=["Suppliers"])
 purchase_orders = APIRouter(prefix="/api/purchase-orders", tags=["Purchase Orders"])
-inventory = APIRouter(prefix="/api/inventory", tags=["Inventory"])
+inventory = APIRouter(
+    prefix="/api/inventory",
+    tags=["Inventory"],
+    dependencies=[Depends(require_roles("buyer", "supplier", "inspector"))],
+)
 misc = APIRouter(prefix="/api", tags=["Dashboard & Notifications"])
 
 
@@ -144,8 +148,8 @@ def list_inventory(
     q: str | None = None,
     warehouse: str | None = None,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    # Suppliers may read stock levels (Inventory Dashboard); writes stay buyer/admin-only.
-    user: dict = Depends(require_roles("buyer", "admin", "inspector", "supplier")),
+    # Suppliers may read stock levels (Inventory Dashboard); writes stay buyer-only.
+    user: dict = Depends(require_roles("buyer", "inspector", "supplier")),
 ):
     return inventory_svc.list_items(conn, q, warehouse, user)
 

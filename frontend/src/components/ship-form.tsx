@@ -64,7 +64,7 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
       });
       setF((p) => ({
         carrier: v.carrier ?? p.carrier,
-        tracking_no: v.tracking_no ?? p.tracking_no,
+        tracking_no: v.tracking_no?.toUpperCase() ?? p.tracking_no,
         expected_arrival: v.expected_arrival ?? p.expected_arrival,
         notes: v.notes ?? p.notes,
       }));
@@ -180,7 +180,15 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
             </div>
             <div className="space-y-1">
               <Label htmlFor="track">Tracking number</Label>
-              <Input id="track" value={f.tracking_no} onChange={(e) => setF({ ...f, tracking_no: e.target.value })} className={ai.ring("tracking_no")} />
+              <Input
+                id="track"
+                value={f.tracking_no}
+                onChange={(e) => setF({ ...f, tracking_no: e.target.value.toUpperCase() })}
+                className={ai.ring("tracking_no")}
+                pattern="[A-Z0-9_-]*"
+                title="Use only letters, numbers, hyphens, and underscores."
+              />
+              <p className="text-xs text-muted-foreground">Use letters, numbers, hyphens, or underscores. Letters are converted to uppercase.</p>
             </div>
             <div className="space-y-1">
               <Label htmlFor="eta">Expected arrival</Label>

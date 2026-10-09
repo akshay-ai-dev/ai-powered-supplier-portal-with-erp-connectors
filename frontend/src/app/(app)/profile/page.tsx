@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { phoneError } from "@/lib/validation";
 import { useAuth } from "@/lib/auth";
 import { useFetch } from "@/lib/use-fetch";
 import type { Supplier } from "@/lib/types";
@@ -17,7 +16,6 @@ export default function ProfilePage() {
   const { data, error, loading } = useFetch<Supplier>(user?.supplier_id ? `/api/suppliers/${user.supplier_id}` : null);
   const [form, setForm] = useState({ supplier_name: "", email: "", phone: "", address: "" });
   const [busy, setBusy] = useState(false);
-  const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     if (data) setForm({ supplier_name: data.supplier_name, email: data.email, phone: data.phone, address: data.address });
@@ -29,12 +27,8 @@ export default function ProfilePage() {
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
 
-  const phoneMsg = phoneError(form.phone);
-
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    setTouched(true);
-    if (phoneMsg) return;
     setBusy(true);
     try {
       await api(`/api/suppliers/${user!.supplier_id}`, { method: "PUT", body: form });
@@ -61,7 +55,7 @@ export default function ProfilePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="e">Order email</Label>
-              <Input id="e" type="email" required value={form.email} onChange={set("email")} />
+              <Input id="e" type="email" required value={form.email} readOnly />
             </div>
             <div className="space-y-2">
               <Label htmlFor="p">Phone</Label>
@@ -72,16 +66,9 @@ export default function ProfilePage() {
                 autoComplete="tel"
                 maxLength={25}
                 placeholder="+1 555 010 1234"
-                aria-invalid={touched && !!phoneMsg}
-                aria-describedby="p-err"
                 value={form.phone}
-                onChange={(e) => {
-                  // drop letters and other stray characters as the user types
-                  setForm({ ...form, phone: e.target.value.replace(/[^0-9 ()./+-]/g, "") });
-                }}
-                onBlur={() => setTouched(true)}
+                readOnly
               />
-              <p id="p-err" className="min-h-4 text-xs text-destructive">{touched && phoneMsg ? phoneMsg : ""}</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="a">Address</Label>

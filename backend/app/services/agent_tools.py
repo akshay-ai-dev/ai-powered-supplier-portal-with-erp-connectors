@@ -12,8 +12,8 @@ from . import suppliers as suppliers_svc
 from .errors import DomainError, NotFound
 
 
-def get_inventory(conn: sqlite3.Connection, item_code: str) -> dict:
-    item = inventory_svc.get_item(conn, item_code)
+def get_inventory(conn: sqlite3.Connection, item_code: str, user: dict | None = None) -> dict:
+    item = inventory_svc.get_item(conn, item_code, user)
     return {
         "item_code": item["item_code"],
         "stock": item["stock_quantity"],
@@ -118,7 +118,11 @@ def list_requests(conn: sqlite3.Connection, user: dict, status: str | None = Non
 def get_request_detail(conn: sqlite3.Connection, user: dict, req_number: str) -> dict:
     """One request's full record: invitations, responses, threads, history, shipments and inspection results."""
     r = _requirement(conn, user, req_number)
-    shipments = shipments_svc.list_shipments(conn, user, po_id=r["po_id"]) if r.get("po_id") else []
+    shipments = (
+        shipments_svc.list_shipments(conn, user, po_id=r["po_id"])
+        if r.get("po_id") and user["role"] != "admin"
+        else []
+    )
     keep = (
         "req_number",
         "title",

@@ -78,8 +78,8 @@ export default function DashboardPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Users" value={count(data.users_by_role)} hint={Object.entries(data.users_by_role).map(([r, n]) => `${n} ${r}`).join(" · ")} href="/admin/users" />
           <Stat label="Requirements" value={count(data.requirements_by_status)} hint={Object.entries(data.requirements_by_status).map(([s, n]) => `${n} ${s.toLowerCase()}`).join(" · ")} href="/requirements" />
-          <Stat label="Purchase orders" value={count(data.orders_by_status)} hint={Object.entries(data.orders_by_status).map(([s, n]) => `${n} ${s.toLowerCase()}`).join(" · ")} />
-          <Stat label="Suppliers / items" value={`${data.suppliers} / ${data.inventory_items}`} href="/admin/data" />
+          <Stat label="Purchase orders" value={count(data.orders_by_status)} hint={Object.entries(data.orders_by_status).map(([s, n]) => `${n} ${s.toLowerCase()}`).join(" · ")} href="/purchase-orders" />
+          <Stat label="Suppliers" value={data.suppliers} href="/suppliers" />
         </div>
         <Card className="mt-6">
           <CardHeader>

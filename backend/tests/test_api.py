@@ -102,6 +102,48 @@ def test_supplier_registration_creates_profile(client):
     assert r.json()["user"]["supplier_id"]
 
 
+def test_supplier_cannot_change_profile_email_or_phone(client):
+    supplier = login(client, "supplier@demo.com")
+    supplier_id = client.get("/api/auth/me", headers=supplier).json()["supplier_id"]
+    profile = client.get(f"/api/suppliers/{supplier_id}", headers=supplier).json()
+
+    changed = client.put(
+        f"/api/suppliers/{supplier_id}",
+        headers=supplier,
+        json={
+            "supplier_name": profile["supplier_name"],
+            "email": "changed@example.com",
+            "phone": "+1 555 010 9999",
+            "address": profile["address"],
+        },
+    )
+    assert changed.status_code == 400
+
+    unchanged = client.get(f"/api/suppliers/{supplier_id}", headers=supplier).json()
+    assert unchanged["email"] == profile["email"]
+    assert unchanged["phone"] == profile["phone"]
+
+
+def test_shipment_tracking_number_is_uppercased_and_rejects_special_characters():
+    from pydantic import ValidationError
+
+    from app.schemas import ShipmentCreate
+
+    shipment = ShipmentCreate(
+        carrier="DHL",
+        tracking_no=" ab-12_cd ",
+        items=[{"item_code": "ITEM001", "quantity": 1}],
+    )
+    assert shipment.tracking_no == "AB-12_CD"
+
+    with pytest.raises(ValidationError, match="tracking_no"):
+        ShipmentCreate(
+            carrier="DHL",
+            tracking_no="AB.12",
+            items=[{"item_code": "ITEM001", "quantity": 1}],
+        )
+
+
 def test_rbac(client):
     assert client.get("/api/suppliers").status_code == 401
     sup = login(client, "supplier@demo.com")
@@ -406,7 +448,19 @@ def test_buyers_are_isolated_from_each_other(client):
     # owner and every supplier still see the open requirement
     assert client.get(f"/api/requirements/{req['id']}", headers=b1).status_code == 200
     sup = login(client, "supplier@demo.com")
-    assert any(x["id"] == req["id"] for x in client.get("/api/requirements", headers=sup).json())
+    supplier_requirements = client.get("/api/requirements", headers=sup).json()
+    visible_req = next(x for x in supplier_requirements if x["id"] == req["id"])
+    from app.db import connect
+
+    conn = connect()
+    try:
+        buyer_name = conn.execute(
+            "SELECT u.name FROM users u JOIN requirements r ON r.created_by = u.id WHERE r.id = ?",
+            (req["id"],),
+        ).fetchone()["name"]
+    finally:
+        conn.close()
+    assert visible_req["buyer_name"] == buyer_name
 
 
 def test_emails_only_show_own_mail(client, monkeypatch):
@@ -654,9 +708,7 @@ def test_inventory_delete_rules(client):
         and not rows["DEL-B"]["can_delete"]
         and not rows["ITEM001"]["can_delete"]
     )
-    assert client.get("/api/inventory", headers=admin).json()[0][
-        "can_delete"
-    ]  # admin may delete any
+    assert client.get("/api/inventory", headers=admin).status_code == 403
 
     # someone else's item, an ERP item and a supplier are all refused
     assert client.delete("/api/inventory/DEL-B", headers=b1).status_code == 403
@@ -681,10 +733,11 @@ def test_inventory_delete_rules(client):
     )
     assert client.delete("/api/inventory/DEL-REQ", headers=b1).status_code == 409
 
-    # creator deletes an unused item; admin deletes someone else's
+    # creator deletes an unused item; admin cannot delete someone else's
     assert client.delete("/api/inventory/del-a", headers=b1).json() == {"deleted": "DEL-A"}
     assert client.get("/api/inventory/DEL-A", headers=b1).status_code == 404
-    assert client.delete("/api/inventory/DEL-B", headers=admin).status_code == 200
+    assert client.delete("/api/inventory/DEL-B", headers=admin).status_code == 403
+    assert client.get("/api/inventory/DEL-B", headers=b2).status_code == 200
 
 
 def test_inventory_edit_is_restricted_to_creator(client):
@@ -726,12 +779,10 @@ def test_inventory_edit_is_restricted_to_creator(client):
         == 9
     )
     assert (
-        client.put("/api/inventory/EDIT-1", headers=admin, json={"stock_quantity": 10}).json()[
-            "stock_quantity"
-        ]
-        == 10
+        client.put("/api/inventory/EDIT-1", headers=admin, json={"stock_quantity": 10}).status_code
+        == 403
     )
-    assert client.get("/api/inventory/EDIT-1", headers=b1).json()["stock_quantity"] == 10
+    assert client.get("/api/inventory/EDIT-1", headers=b1).json()["stock_quantity"] == 9
 
 
 def _register_supplier(client, email):

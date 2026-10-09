@@ -40,6 +40,7 @@ export interface POItem {
 export interface PurchaseOrder {
   id: number;
   po_number: string;
+  buyer_name?: string | null;
   supplier_id: number;
   supplier_name: string;
   status: POStatus;
@@ -75,7 +76,6 @@ export interface AdminDashboard {
   role: "admin";
   users_by_role: Record<string, number>;
   suppliers: number;
-  inventory_items: number;
   requirements_by_status: Record<string, number>;
   orders_by_status: Record<string, number>;
   recent_audit: { action: string; entity: string; entity_id: string; detail: string; channel: string; created_at: string; user_name: string | null }[];
@@ -101,6 +101,8 @@ export interface Quote {
 export interface Requirement {
   id: number;
   req_number: string;
+  buyer_name?: string | null;
+  supplier_name?: string | null;
   title: string;
   description: string;
   item_code: string | null;

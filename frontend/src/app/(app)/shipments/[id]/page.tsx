@@ -90,7 +90,7 @@ export default function ShipmentDetail({ params }: { params: Promise<{ id: strin
       </Link>
       <PageHeader title={s.shipment_no} description={`${s.supplier_name} · order ${s.po_number} · submitted ${dateTime(s.created_at)}`}>
         <StatusBadge status={s.status} />
-        {unitLevel && (isSupplier || inspector) && (
+        {unitLevel && isSupplier && (
           <Link href={`/shipments/${s.id}/labels`}>
             <Button variant="outline">Print QR labels</Button>
           </Link>

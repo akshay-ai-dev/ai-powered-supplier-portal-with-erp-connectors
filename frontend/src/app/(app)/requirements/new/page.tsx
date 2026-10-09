@@ -21,7 +21,7 @@ export default function NewRequirementPage() {
   const { user } = useAuth();
   const router = useRouter();
   const isSupplier = user?.role === "supplier";
-  const inventory = useFetch<InventoryItem[]>(isSupplier ? null : "/api/inventory");
+  const inventory = useFetch<InventoryItem[]>(user?.role === "buyer" ? "/api/inventory" : null);
   const suppliers = useFetch<Supplier[]>(isSupplier ? null : "/api/suppliers");
   const [f, setF] = useState({ title: "", description: "", item_code: "", quantity: "1", ship_date: "", carrier: "" });
   const [numbers, setNumbers] = useState({ tracking_number: [""], lot_numbers: [""], serial_numbers: [""] });
@@ -83,7 +83,7 @@ export default function NewRequirementPage() {
     }
     // The requirement exists now; upload files one by one and report any that fail instead of losing the requirement.
     const failed: string[] = [];
-    for (const file of files) {
+    for (const file of user?.role === "buyer" ? files : []) {
       try {
         await uploadFile(`/api/requirements/${created.id}/attachments`, file);
       } catch (err) {
@@ -102,7 +102,7 @@ export default function NewRequirementPage() {
         <CardContent className="pt-6">
           <form onSubmit={submit}>
             <fieldset disabled={busy} className="space-y-4">
-              <RequirementUpload files={files} onChange={setFiles} disabled={busy} />
+              {user?.role === "buyer" && <RequirementUpload files={files} onChange={setFiles} disabled={busy} />}
 
               <fieldset className="space-y-3 rounded-lg border p-4">
                 <legend className="px-1 text-sm font-semibold">Shipping details</legend>

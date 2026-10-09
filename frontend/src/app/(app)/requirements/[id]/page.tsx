@@ -28,7 +28,6 @@ export default function RequirementDetail({ params }: { params: Promise<{ id: st
   const suppliers = useFetch<Supplier[]>(user?.role === "supplier" ? null : "/api/suppliers");
   const [inviteId, setInviteId] = useState("");
   const [chatWith, setChatWith] = useState<number | null>(null);
-  const [declineReason, setDeclineReason] = useState("");
   const [newDeadline, setNewDeadline] = useState("");
   const [quote, setQuote] = useState({ unit_price: "", lead_time_days: "7", message: "" });
 
@@ -67,6 +66,7 @@ export default function RequirementDetail({ params }: { params: Promise<{ id: st
   if (error || !r) return <ErrorNote message={error ?? "Not found"} />;
   const isSupplier = user?.role === "supplier";
   const canWrite = user?.role === "buyer" || user?.role === "admin";
+  const isBuyer = user?.role === "buyer";
   const open = r.status === "Open";
 
   return (
@@ -75,7 +75,12 @@ export default function RequirementDetail({ params }: { params: Promise<{ id: st
         <ArrowLeft className="mr-1 size-4" />
         All requirements
       </Link>
-      <PageHeader title={r.title} description={`${r.req_number} · posted ${shortDate(r.created_at)}`}>
+      <PageHeader title={r.title} description={
+        <>
+          {r.req_number} · posted {shortDate(r.created_at)}
+          {r.buyer_name && <span className="mt-1 block">{r.buyer_name}</span>}
+        </>
+      }>
         <AgentBadge channel={r.created_via} />
         <StatusBadge status={r.stage} />
         {canWrite && open && (
@@ -99,7 +104,7 @@ export default function RequirementDetail({ params }: { params: Promise<{ id: st
             ) : (
               "None"
             )}
-            {canWrite && open && (
+            {isBuyer && open && (
               <div className="mt-2 flex flex-wrap gap-2">
                 <Input aria-label="New quote deadline" type="datetime-local" className="w-56" value={newDeadline} onChange={(e) => setNewDeadline(e.target.value)} />
                 <Button
@@ -184,7 +189,7 @@ export default function RequirementDetail({ params }: { params: Promise<{ id: st
         </Card>
       )}
 
-      {(canWrite || isSupplier) && (
+      {(isBuyer || isSupplier) && (
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -229,28 +234,6 @@ export default function RequirementDetail({ params }: { params: Promise<{ id: st
       </Card>
       )}
 
-      {isSupplier && open && !r.quotes_closed && (
-        <Card className="mt-6 max-w-xl">
-          <CardHeader>
-            <CardTitle>Not interested?</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {r.my_decline ? (
-              <p className="text-sm">
-                You declined this requirement{r.my_decline.reason ? `: ${r.my_decline.reason}` : ""}. Submitting a quote above reverses that.
-              </p>
-            ) : (
-              <>
-                <Input aria-label="Reason (optional)" placeholder="Reason (optional)" value={declineReason} onChange={(e) => setDeclineReason(e.target.value)} maxLength={500} />
-                <Button variant="outline" disabled={busy} onClick={() => run(() => api(`/api/requirements/${id}/decline`, { body: { reason: declineReason } }), "Declined. The buyer has been told.")}>
-                  Decline to quote
-                </Button>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -277,7 +260,7 @@ export default function RequirementDetail({ params }: { params: Promise<{ id: st
               </span>
             </div>
           ))}
-          {canWrite && open && (
+          {isBuyer && open && (
             <div>
               <Label htmlFor="upload" className="mb-1 block text-xs text-muted-foreground">
                 Add a file (PDF, image, DWG/DXF/STEP, Office, CSV, ZIP; max 10 MB)

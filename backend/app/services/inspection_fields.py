@@ -23,7 +23,7 @@ EDITABLE_STATUSES = ("Shipped", "Arrived")  # fields can change until the lot is
 
 
 def _is_inspector(user: dict) -> bool:
-    return user["role"] in ("inspector", "admin")
+    return user["role"] == "inspector"
 
 
 def _dict(row: sqlite3.Row) -> dict:

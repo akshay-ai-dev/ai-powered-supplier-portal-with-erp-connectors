@@ -28,6 +28,8 @@ def _hydrate(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
         "SELECT supplier_name FROM suppliers WHERE id = ?", (po["supplier_id"],)
     ).fetchone()
     po["supplier_name"] = supplier["supplier_name"] if supplier else None
+    buyer = conn.execute("SELECT name FROM users WHERE id = ?", (po["created_by"],)).fetchone()
+    po["buyer_name"] = buyer["name"] if buyer else None
     src = conn.execute("SELECT id FROM requirements WHERE po_id = ?", (po["id"],)).fetchone()
     po["requirement_id"] = src["id"] if src else None
     return po

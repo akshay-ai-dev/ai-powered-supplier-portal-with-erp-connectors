@@ -377,6 +377,10 @@ def _answer_free(step: Step, ctx: Ctx, text: str, lowered: str) -> Any:
     if step.kind == "text":
         if step.max and len(text) > step.max:
             raise ValueError(f"Please keep it under {int(step.max)} characters.")
+        if step.key == "tracking_no":
+            if re.fullmatch(r"[A-Za-z0-9_-]+", text) is None:
+                raise ValueError("Use only letters, numbers, hyphens, and underscores.")
+            return text.upper()
         return text
     if step.kind in ("int", "number"):
         return _parse_number(text, step.kind == "int", step)

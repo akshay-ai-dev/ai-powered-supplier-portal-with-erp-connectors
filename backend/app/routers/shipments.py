@@ -4,18 +4,22 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import FileResponse
 
 from ..db import db_dep
-from ..deps import current_user
+from ..deps import current_user, require_roles
 from ..schemas import ArrivalIn, InspectionIn, ShipmentCreate
 from ..services import attachments as attachments_svc
 from ..services import purchase_orders as po_svc
 from ..services import shipments as ship_svc
 
-router = APIRouter(prefix="/api", tags=["Shipments & Receiving"])
+router = APIRouter(
+    prefix="/api",
+    tags=["Shipments & Receiving"],
+    dependencies=[Depends(require_roles("buyer", "supplier", "inspector"))],
+)
 
 
 @router.get(
     "/shipments",
-    summary="Shipments you may see (supplier: own, buyer: own POs, inspector/admin: all)",
+    summary="Shipments you may see (supplier: own, buyer: own POs, inspector: assigned scope)",
 )
 def list_shipments(
     status: str | None = None,

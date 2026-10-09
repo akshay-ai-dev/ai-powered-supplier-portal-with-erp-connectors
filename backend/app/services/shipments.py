@@ -34,7 +34,7 @@ QUALITY_CHECKS = {
 
 
 def _is_inspector(user: dict) -> bool:
-    return user["role"] in ("inspector", "admin")
+    return user["role"] == "inspector"
 
 
 def _row(conn: sqlite3.Connection, shipment_id: int) -> sqlite3.Row:
@@ -45,6 +45,8 @@ def _row(conn: sqlite3.Connection, shipment_id: int) -> sqlite3.Row:
 
 
 def _check_visible(conn: sqlite3.Connection, user: dict, row: sqlite3.Row) -> None:
+    if user["role"] == "admin":
+        raise Forbidden("Administrators cannot access shipments")
     if _is_inspector(user):
         if user["role"] == "inspector" and user.get(
             "owner_id"
@@ -210,6 +212,8 @@ def list_shipments(
     view: str | None = None,
     tz_minutes: int = 0,
 ) -> list[dict]:
+    if user["role"] == "admin":
+        raise Forbidden("Administrators cannot access shipments")
     sql, args = (
         "SELECT s.* FROM shipments s JOIN purchase_orders po ON po.id = s.po_id WHERE 1=1",
         [],

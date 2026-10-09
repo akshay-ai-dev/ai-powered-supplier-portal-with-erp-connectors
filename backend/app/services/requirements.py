@@ -103,6 +103,9 @@ def _hydrate(
     conn: sqlite3.Connection, row: sqlite3.Row, user: dict, with_quotes: bool = False
 ) -> dict:
     req = dict(row)
+    if "buyer_name" not in req:
+        buyer = conn.execute("SELECT name FROM users WHERE id = ?", (req["created_by"],)).fetchone()
+        req["buyer_name"] = buyer["name"] if buyer else None
     po = (
         conn.execute("SELECT * FROM purchase_orders WHERE id = ?", (req["po_id"],)).fetchone()
         if req["po_id"]
@@ -123,7 +126,7 @@ def _hydrate(
             "SELECT COUNT(*) FROM messages WHERE requirement_id = ? AND supplier_id = ? AND sender_role = 'buyer' AND read_at IS NULL",
             (req["id"], user.get("supplier_id") or -1),
         ).fetchone()[0]
-    elif user["role"] == "inspector":
+    elif user["role"] in ("admin", "inspector"):
         req["unread_messages"] = 0  # the buyer-supplier conversation is private
     else:
         req["unread_messages"] = conn.execute(
@@ -131,6 +134,13 @@ def _hydrate(
             (req["id"],),
         ).fetchone()[0]
     req["stage"] = _stage(req, po, len(quotes))
+    if user["role"] == "admin":
+        req["supplier_name"] = None
+        if po and req["stage"] in ("Closed", "Awarded", "In Transit"):
+            supplier = conn.execute(
+                "SELECT supplier_name FROM suppliers WHERE id = ?", (po["supplier_id"],)
+            ).fetchone()
+            req["supplier_name"] = supplier["supplier_name"] if supplier else None
     req["po_number"] = po["po_number"] if po else None
     req["delivery_status"] = po["delivery_status"] if po else None
     if user["role"] == "supplier":
@@ -166,7 +176,7 @@ def _hydrate(
             )
         ]
         req["attachments"] = attachments_svc.list_for(conn, req["id"])
-        req["threads"] = [] if user["role"] == "inspector" else _threads(conn, req["id"])
+        req["threads"] = _threads(conn, req["id"]) if user["role"] == "buyer" else []
         req["history"] = po_svc.history(conn, "requirement", req["req_number"])
     return req
 
@@ -360,7 +370,8 @@ def list_requirements(
     if user["role"] == "supplier":
         sid = user.get("supplier_id") or -1
         rows = conn.execute(
-            "SELECT DISTINCT r.* FROM requirements r "
+            "SELECT DISTINCT r.*, u.name AS buyer_name FROM requirements r "
+            "LEFT JOIN users u ON u.id = r.created_by "
             "LEFT JOIN quotes q ON q.requirement_id = r.id AND q.supplier_id = ? "
             "LEFT JOIN requirement_invites i ON i.requirement_id = r.id AND i.supplier_id = ? "
             "WHERE (r.status = 'Open' AND (i.id IS NOT NULL OR r.open_to_all = 1) AND ? = 0) OR q.id IS NOT NULL ORDER BY r.id DESC",
@@ -483,6 +494,8 @@ def _has_active_quote(conn: sqlite3.Connection, req_id: int, supplier_id: int) -
 
 def set_deadline(conn: sqlite3.Connection, user: dict, req_id: int, value: str | None) -> dict:
     """Owner sets, extends or clears the quote deadline while the requirement is Open. Extending reopens a closed RFQ."""
+    if user["role"] != "buyer":
+        raise Forbidden("Only buyers can change quote deadlines")
     req = _get_owned(conn, user, req_id)
     if req["status"] != "Open":
         raise DomainError("The deadline can only be changed while the requirement is open")
@@ -625,6 +638,8 @@ def add_attachment(
     data: bytes,
     content_type: str | None,
 ) -> dict:
+    if user["role"] != "buyer":
+        raise Forbidden("Only buyers can attach requirement files")
     req = _get_owned(conn, user, req_id)
     if req["status"] != "Open":
         raise DomainError("Files can only be added while the requirement is open")

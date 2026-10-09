@@ -17,6 +17,7 @@ from .notifications import audit
 PREFIX = "erp_"
 SCOPES = ("read", "write")  # read = look things up; write = read + create Drafts
 MAX_ACTIVE_PER_USER = 10
+MAX_ACTIVE_PER_ADMIN = 1
 AGENT_ROLES = ("buyer", "admin")
 
 
@@ -66,14 +67,20 @@ def create_token(
         raise DomainError("Give the token a name, for example the device or agent that will use it")
     if scope not in SCOPES:
         raise DomainError(f"scope must be one of {SCOPES}")
+    # Serialize the count and insert so simultaneous requests cannot exceed the admin limit.
+    if user["role"] == "admin" and not conn.in_transaction:
+        conn.execute("BEGIN IMMEDIATE")
     active = sum(
         1
         for r in conn.execute("SELECT * FROM api_tokens WHERE user_id = ?", (user["id"],))
         if _status(r) == "active"
     )
-    if active >= MAX_ACTIVE_PER_USER:
+    limit = MAX_ACTIVE_PER_ADMIN if user["role"] == "admin" else MAX_ACTIVE_PER_USER
+    if active >= limit:
         raise DomainError(
-            f"You already have {MAX_ACTIVE_PER_USER} active tokens. Revoke one first."
+            "Administrators can have only one active token. Revoke it before creating another."
+            if user["role"] == "admin"
+            else f"You already have {limit} active tokens. Revoke one first."
         )
     raw = PREFIX + secrets.token_urlsafe(32)
     expires_at = (

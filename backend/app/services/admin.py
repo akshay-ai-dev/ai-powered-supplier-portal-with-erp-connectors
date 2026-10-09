@@ -5,7 +5,7 @@ from ..db import now
 from ..security import hash_password
 from . import attachments as attachments_svc
 from . import mailbox
-from .errors import DomainError, NotFound
+from .errors import DomainError, Forbidden, NotFound
 from .notifications import audit
 
 PUBLIC_COLS = "id, name, email, role, supplier_id, active, owner_id, created_at"
@@ -46,6 +46,8 @@ def update_user(conn: sqlite3.Connection, admin: dict, user_id: int, changes: di
     row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     if row is None:
         raise NotFound("User not found")
+    if changes.get("password") and row["role"] == "inspector" and row["owner_id"] is not None:
+        raise Forbidden("Only the owning buyer can reset this inspector's password")
     if user_id == admin["id"] and changes.get("active") is False:
         raise DomainError("You cannot disable your own account")
     if changes.get("name"):
@@ -81,7 +83,6 @@ def stats(conn: sqlite3.Connection) -> dict:
             )
         },
         "suppliers": one("SELECT COUNT(*) FROM suppliers"),
-        "inventory_items": one("SELECT COUNT(*) FROM inventory"),
         "requirements_by_status": {
             r["status"]: r["n"]
             for r in conn.execute("SELECT status, COUNT(*) n FROM requirements GROUP BY status")
@@ -94,7 +95,9 @@ def stats(conn: sqlite3.Connection) -> dict:
             dict(r)
             for r in conn.execute(
                 "SELECT a.action, a.entity, a.entity_id, a.detail, a.created_at, a.channel, u.name AS user_name FROM audit_logs a "
-                "LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT 10"
+                "LEFT JOIN users u ON u.id = a.user_id "
+                "WHERE a.entity NOT IN ('inventory', 'shipment', 'unit', 'inspection') "
+                "ORDER BY a.id DESC LIMIT 10"
             )
         ],
     }

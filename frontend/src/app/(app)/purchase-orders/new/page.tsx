@@ -21,7 +21,7 @@ export default function NewPurchaseOrderPage() {
   const { user } = useAuth();
   const router = useRouter();
   const suppliers = useFetch<Supplier[]>(user?.role === "supplier" ? null : "/api/suppliers");
-  const inventory = useFetch<InventoryItem[]>(user?.role === "supplier" ? null : "/api/inventory");
+  const inventory = useFetch<InventoryItem[]>(user?.role === "buyer" ? "/api/inventory" : null);
   const [supplierId, setSupplierId] = useState("");
   const [items, setItems] = useState<{ item_code: string; quantity: string; unit_price: string }[]>([
     { item_code: "", quantity: "1", unit_price: "1" },
@@ -87,17 +87,25 @@ export default function NewPurchaseOrderPage() {
           <div className="space-y-3">
             <Label>Items</Label>
             {items.map((it, i) => (
-              <div key={i} className={cn("grid grid-cols-[1fr_90px_110px_auto] items-center gap-2 rounded-md", ai.ring("items"))}>
-                <select aria-label="Item" className={selectCls} value={it.item_code} onChange={(e) => update(i, { item_code: e.target.value })}>
+              <div key={i} className={cn("grid grid-cols-[1fr_90px_110px_auto] items-end gap-2 rounded-md", ai.ring("items"))}>
+                {user?.role === "admin" ? (
+                  <Input aria-label="Item code" placeholder="Item code" value={it.item_code} onChange={(e) => update(i, { item_code: e.target.value })} />
+                ) : <select aria-label="Item" className={selectCls} value={it.item_code} onChange={(e) => update(i, { item_code: e.target.value })}>
                   <option value="">Select item…</option>
                   {inventory.data?.map((inv) => (
                     <option key={inv.id} value={inv.item_code}>
                       {inv.item_code} · {inv.description}
                     </option>
                   ))}
-                </select>
-                <Input aria-label="Quantity" type="number" min={1} value={it.quantity} onChange={(e) => update(i, { quantity: e.target.value })} />
-                <Input aria-label="Unit price" type="number" min={1} step="0.01" value={it.unit_price} onChange={(e) => update(i, { unit_price: e.target.value })} />
+                </select>}
+                <div className="space-y-1">
+                  <Label htmlFor={`quantity-${i}`} className="text-xs">Quantity</Label>
+                  <Input id={`quantity-${i}`} aria-label="Quantity" type="number" min={1} value={it.quantity} onChange={(e) => update(i, { quantity: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor={`unit-price-${i}`} className="text-xs">Unit price</Label>
+                  <Input id={`unit-price-${i}`} aria-label="Unit price" type="number" min={1} step="0.01" value={it.unit_price} onChange={(e) => update(i, { unit_price: e.target.value })} />
+                </div>
                 <Button variant="ghost" size="icon" aria-label="Remove line" disabled={items.length === 1} onClick={() => setItems(items.filter((_, idx) => idx !== i))}>
                   <Trash2 className="size-4" />
                 </Button>

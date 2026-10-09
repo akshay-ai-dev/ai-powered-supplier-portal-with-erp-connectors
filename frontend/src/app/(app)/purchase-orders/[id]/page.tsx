@@ -56,8 +56,8 @@ export default function PurchaseOrderDetail({ params }: { params: Promise<{ id: 
   const { user } = useAuth();
   const { data: po, error, loading, reload } = useFetch<PurchaseOrder>(`/api/purchase-orders/${id}`);
   const [busy, setBusy] = useState(false);
-  const shipments = useFetch<Shipment[]>(`/api/purchase-orders/${id}/shipments`);
-  const toShip = useFetch<ToShip>(`/api/purchase-orders/${id}/to-ship`);
+  const shipments = useFetch<Shipment[]>(user && user.role !== "admin" ? `/api/purchase-orders/${id}/shipments` : null);
+  const toShip = useFetch<ToShip>(user && user.role !== "admin" ? `/api/purchase-orders/${id}/to-ship` : null);
 
   async function change(body: { status?: POStatus }, okMsg: string) {
     setBusy(true);
@@ -165,7 +165,7 @@ export default function PurchaseOrderDetail({ params }: { params: Promise<{ id: 
           {po.erp_reference && <p className="mt-4 text-xs text-muted-foreground">ERP reference: {po.erp_reference}</p>}
         </CardContent>
       </Card>
-      <Card className="mt-6">
+      {user?.role !== "admin" && <Card className="mt-6">
         <CardHeader>
           <CardTitle>Shipments</CardTitle>
         </CardHeader>
@@ -177,9 +177,9 @@ export default function PurchaseOrderDetail({ params }: { params: Promise<{ id: 
               <ShipmentLine key={s.id} s={s} all={allShipments} depth={0} />
             ))}
         </CardContent>
-      </Card>
+      </Card>}
       {canShip && toShip.data && <ShipForm key={`${shipments.data?.length ?? 0}-${toShip.data.replace.length}`} po={po} toShip={toShip.data} onDone={refresh} initialReplace={searchParams?.get("replace")} />}
-      {po.requirement_id && (canWrite || isSupplier) && (
+      {po.requirement_id && (user?.role === "buyer" || isSupplier) && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>

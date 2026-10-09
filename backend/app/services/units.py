@@ -47,7 +47,7 @@ CSV_MAX_BYTES = 1_000_000
 
 
 def _is_inspector(user: dict) -> bool:
-    return user["role"] in ("inspector", "admin")
+    return user["role"] == "inspector"
 
 
 def normalize_code(text: str) -> str:

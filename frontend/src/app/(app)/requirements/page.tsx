@@ -15,6 +15,7 @@ const STAGES = ["", "Open", "Quoted", "Quotes closed", "Awarded", "In Transit", 
 export default function RequirementsPage() {
   const { user } = useAuth();
   const isSupplier = user?.role === "supplier";
+  const isAdmin = user?.role === "admin";
   const canWrite = user?.role === "buyer" || user?.role === "admin";
   const [stage, setStage] = useState("");
   const [tab, setTab] = useState<"all" | "mine">("all");
@@ -55,6 +56,8 @@ export default function RequirementsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Requirement</TableHead>
+              {isAdmin && <TableHead>Buyer name</TableHead>}
+              {isAdmin && <TableHead>Supplier name</TableHead>}
               <TableHead>Quantity</TableHead>
               <TableHead>Ship date</TableHead>
               <TableHead>Carrier</TableHead>
@@ -66,14 +69,14 @@ export default function RequirementsPage() {
           <TableBody>
             {loading && !data && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                <TableCell colSpan={isAdmin ? 9 : 7} className="text-center text-muted-foreground">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {data?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                <TableCell colSpan={isAdmin ? 9 : 7} className="text-center text-muted-foreground">
                   Nothing here yet.
                 </TableCell>
               </TableRow>
@@ -85,11 +88,14 @@ export default function RequirementsPage() {
                     {r.title}
                   </Link>
                   <div className="text-xs text-muted-foreground">{r.req_number}</div>
+                  {isSupplier && r.buyer_name && <div className="text-xs text-muted-foreground">{r.buyer_name}</div>}
                   <span className="mt-1 inline-block"><AgentBadge channel={r.created_via} compact /></span>
                   {r.unread_messages > 0 && (
                     <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">{r.unread_messages} new</span>
                   )}
                 </TableCell>
+                {isAdmin && <TableCell className="align-top">{r.buyer_name || "—"}</TableCell>}
+                {isAdmin && <TableCell className="align-top">{["Closed", "Awarded", "In Transit"].includes(r.stage) ? r.supplier_name || "—" : "—"}</TableCell>}
                 <TableCell className="align-top">{r.quantity}</TableCell>
                 <TableCell className="align-top">{r.ship_date || "—"}</TableCell>
                 <TableCell className="align-top">{r.carrier || "—"}</TableCell>

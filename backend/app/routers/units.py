@@ -4,14 +4,18 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import Response
 
 from ..db import db_dep
-from ..deps import current_user
+from ..deps import current_user, require_roles
 from ..schemas import ScanIn, TestFieldIn, TestFieldUpdate, UnitBulkIn, UnitResultIn
 from ..services import attachments as attachments_svc
 from ..services import inspection_fields as fields_svc
 from ..services import shipments as ship_svc
 from ..services import units as units_svc
 
-router = APIRouter(prefix="/api", tags=["Unit inspection"])
+router = APIRouter(
+    prefix="/api",
+    tags=["Unit inspection"],
+    dependencies=[Depends(require_roles("buyer", "supplier", "inspector"))],
+)
 
 
 @router.post(

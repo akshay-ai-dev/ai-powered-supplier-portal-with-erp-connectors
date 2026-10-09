@@ -2,7 +2,7 @@ import sqlite3
 
 from ..db import now
 from . import scope
-from .errors import Forbidden, NotFound
+from .errors import DomainError, Forbidden, NotFound
 
 
 def list_suppliers(
@@ -45,6 +45,11 @@ def update_supplier(conn: sqlite3.Connection, user: dict, supplier_id: int, chan
     if user["role"] == "supplier" and user.get("supplier_id") != supplier_id:
         raise Forbidden("You can only edit your own supplier profile")
     current = get_supplier(conn, supplier_id)
+    if user["role"] == "supplier" and any(
+        key in changes and changes[key] is not None and changes[key] != current[key]
+        for key in ("email", "phone")
+    ):
+        raise DomainError("Order email and phone cannot be changed from the supplier profile")
     merged = {
         k: (changes[k] if changes.get(k) is not None else current[k])
         for k in ("supplier_name", "email", "phone", "address")

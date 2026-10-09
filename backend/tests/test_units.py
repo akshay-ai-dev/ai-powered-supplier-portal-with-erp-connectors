@@ -330,7 +330,9 @@ def test_lookup_by_code_respects_visibility(client):
     code = unit_codes(client, insp, sh)[0]
     tag(client, insp, sh, code, "OK")
 
-    for headers in (insp, admin, sup, buyer):
+    assert client.get(f"/api/units/{code}", headers=admin).status_code == 403
+    assert client.post("/api/units/scan", headers=admin, json={"code": code}).status_code == 403
+    for headers in (insp, sup, buyer):
         r = client.get(
             f"/api/units/{code.lower()}", headers=headers
         )  # the code resolves in any letter case

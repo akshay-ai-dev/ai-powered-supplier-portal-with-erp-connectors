@@ -1,7 +1,7 @@
 import re
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, EmailStr, Field
+from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
 
 _PHONE_CHARS = re.compile(r"^\+?[0-9 ()./-]+$")
 
@@ -194,7 +194,7 @@ class ShipmentItemIn(BaseModel):
 
 class ShipmentCreate(BaseModel):
     carrier: str = Field(default="", max_length=80)
-    tracking_no: str = Field(default="", max_length=80)
+    tracking_no: str = Field(default="", max_length=80, pattern=r"^[A-Z0-9_-]*$")
     expected_arrival: str | None = Field(default=None, description="ISO date")
     notes: str = Field(default="", max_length=1000)
     items: list[ShipmentItemIn] = Field(min_length=1)
@@ -206,6 +206,11 @@ class ShipmentCreate(BaseModel):
         default=None,
         description="Id of an inspected shipment on this order whose faulty, missing or rejected units this one replaces (see GET /api/purchase-orders/{id}/to-ship)",
     )
+
+    @field_validator("tracking_no", mode="before")
+    @classmethod
+    def normalize_tracking_no(cls, value: object) -> object:
+        return value.strip().upper() if isinstance(value, str) else value
 
 
 class ArrivalLine(BaseModel):

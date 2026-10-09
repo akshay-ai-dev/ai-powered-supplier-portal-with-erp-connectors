@@ -19,6 +19,7 @@ interface AdminUser {
   name: string;
   email: string;
   role: string;
+  owner_id: number | null;
   owner_name?: string | null;
   active: number;
   created_at: string;
@@ -129,17 +130,19 @@ export default function AdminUsersPage() {
                 </TableCell>
                 <TableCell className="hidden md:table-cell">{shortDate(u.created_at)}</TableCell>
                 <TableCell className="space-x-2 text-right">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy}
-                    onClick={() => {
-                      const password = window.prompt(`New password for ${u.email} (min 8 characters):`);
-                      if (password) run(() => api(`/api/admin/users/${u.id}`, { method: "PATCH", body: { password } }), "Password updated");
-                    }}
-                  >
-                    Reset password
-                  </Button>
+                  {!(u.role === "inspector" && u.owner_id != null) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() => {
+                        const password = window.prompt(`New password for ${u.email} (min 8 characters):`);
+                        if (password) run(() => api(`/api/admin/users/${u.id}`, { method: "PATCH", body: { password } }), "Password updated");
+                      }}
+                    >
+                      Reset password
+                    </Button>
+                  )}
                   {u.id !== user.id && (
                     <Button
                       size="sm"

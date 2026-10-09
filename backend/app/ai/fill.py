@@ -74,12 +74,14 @@ class FillForm:
 
 # ------------------------------------------------------------------ option sources
 def _inventory(c: FCtx) -> list[Option]:
+    if c.user["role"] == "admin":
+        return []
     return [
         Option(
             i["item_code"],
             f"{i['item_code']} - {i['description']} ({i['stock_quantity']} in stock)",
         )
-        for i in inventory_svc.list_items(c.conn)
+        for i in inventory_svc.list_items(c.conn, user=c.user)
     ]
 
 
@@ -213,8 +215,8 @@ def _ship_fields(c: FCtx) -> list[FField]:
             "Units of each item in this shipment. If the user says everything / the full order / all of it, use the remaining quantity.",
             required=True,
         ),
-        FField("carrier", "Carrier", "text", "", "Carrier or courier name.", max=80),
-        FField("tracking_no", "Tracking number", "text", "", "Tracking number.", max=80),
+        FField("carrier", "Carrier", "text", "Which carrier or courier are you using?", "Carrier or courier name.", required=True, max=80),
+        FField("tracking_no", "Tracking number", "text", "What is the shipment tracking number?", "Tracking number.", required=True, max=80),
         FField(
             "expected_arrival",
             "Expected arrival",
@@ -755,6 +757,8 @@ def _clean(user: dict, state: dict | None) -> dict:
 
 def _setup_options(form: FillForm, c: FCtx) -> list[Option]:
     if form.setup == "item_mode":
+        if c.user["role"] == "admin":
+            return [Option("new", "New item (not in inventory)")]
         return [
             Option("existing", "Pick an existing inventory item"),
             Option("new", "New item (not in inventory)"),

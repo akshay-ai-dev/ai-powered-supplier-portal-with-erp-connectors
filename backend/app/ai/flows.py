@@ -77,7 +77,7 @@ def _iso(dt: datetime) -> str:
 
 # ------------------------------------------------------------------ new requirement (buyer, admin)
 def _item_options(ctx: Ctx) -> list[Option]:
-    items = inventory_svc.list_items(ctx.conn)
+    items = inventory_svc.list_items(ctx.conn, user=ctx.user) if ctx.user["role"] != "admin" else []
     return [Option(None, "Something else (I will describe it)")] + [
         Option(
             i["item_code"],
@@ -348,20 +348,18 @@ def _ship_steps(ctx: Ctx) -> list[Step]:
         Step(
             "carrier",
             "Carrier",
-            "Which carrier? (optional)",
+            "Which carrier?",
             "text",
-            optional=True,
             max=80,
-            hint="Type # to skip.",
+            hint="Enter the carrier or courier name.",
         ),
         Step(
             "tracking_no",
             "Tracking number",
-            "Tracking number? (optional)",
+            "What is the tracking number?",
             "text",
-            optional=True,
             max=80,
-            hint="Type # to skip.",
+            hint="Enter the shipment tracking number.",
         ),
         Step(
             "expected_arrival",

@@ -311,21 +311,23 @@ def test_ship_order_conversation(client):
     assert r["step"] == "qty:ITEM002" and r["controls"]["skip"] and "10 still" in r["message"]
     assert turn(client, sup, r["state"], "11")["error"]  # more than ordered
     r = turn(client, sup, r["state"], "3")
-    r = say(
-        client, sup, r, "DHL", "#", "2031-02-01", "Fragile", "#"
-    )  # carrier, tracking skipped, date, notes, no packing list
+    r = say(client, sup, r, "DHL", "#")
+    assert r["step"] == "tracking_no" and r["error"]
+    invalid_tracking = turn(client, sup, r["state"], "TRK.1")
+    assert invalid_tracking["step"] == "tracking_no" and invalid_tracking["error"]
+    r = say(client, sup, r, "trk-1_a", "2031-02-01", "Fragile", "#")
     assert r["stage"] == "summary"
     shown = {s["label"]: s["value"] for s in r["summary"]}
     assert (
         shown["Qty ITEM002"] == "3"
-        and shown["Tracking number"] == "(skipped)"
+        and shown["Tracking number"] == "TRK-1_A"
         and shown["Packing list"] == "(none)"
     )
     done = turn(client, sup, r["state"], "#")
     assert "upload" not in done["result"]
     ship_id = int(done["result"]["href"].rsplit("/", 1)[1])
     ship = client.get(f"/api/shipments/{ship_id}", headers=sup).json()
-    assert ship["carrier"] == "DHL" and ship["items"][0]["quantity_shipped"] == 3
+    assert ship["carrier"] == "DHL" and ship["tracking_no"] == "TRK-1_A" and ship["items"][0]["quantity_shipped"] == 3
     assert not ship.get("unit_level")  # the assistant ships at lot level: no per-unit QR codes
     assert (
         next(
@@ -340,7 +342,7 @@ def test_ship_order_conversation(client):
     r = start(client, sup, 2)
     r = say(client, sup, r, po_number, "1")
     assert "7 still" in r["message"]
-    r = say(client, sup, r, "#", "#", "#", "#", "#", "attached")
+    r = say(client, sup, r, "#", "DHL", "TRK2", "#", "#", "attached")
     assert r["stage"] == "summary"
     done = turn(client, sup, r["state"], "#")
     assert done["result"]["upload"].endswith("/files?kind=packing_list")
