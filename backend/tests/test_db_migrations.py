@@ -59,9 +59,13 @@ def test_a_database_from_before_unit_inspection_is_upgraded_in_place(tmp_path, m
     conn = core.connect()
     try:
         assert {"owner_id"} <= columns(conn, "users")
-        assert {"unit_level", "lot_report", "override_reason", "replaces_shipment_id"} <= columns(
-            conn, "shipments"
-        )
+        assert {
+            "unit_level",
+            "lot_report",
+            "override_reason",
+            "replaces_shipment_id",
+            "packing_list_review",
+        } <= columns(conn, "shipments")
         assert "quantity_accepted" in columns(conn, "shipment_items") and "unit_id" in columns(
             conn, "shipment_files"
         )

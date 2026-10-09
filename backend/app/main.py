@@ -6,6 +6,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+# Draft extraction package (OpenAI PDF/image -> reviewable requirement draft). Lives beside `app/`
+# as backend/extraction_prefill/ and is wired in here; it creates no requirement, attachment or ERP record.
+from extraction_prefill.router import router as extraction_prefill_router
+
 from .config import settings
 from .db import get_conn, init_db
 from .mcp_server import build_mcp_app
@@ -112,6 +116,7 @@ for r in (
     tokens.router,
     assistant.router,
     ai_tools.router,
+    extraction_prefill_router,
     mock_erp.sap,
     mock_erp.infor,
 ):

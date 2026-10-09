@@ -176,6 +176,16 @@ export interface Shipment {
   photos: ShipmentFile[];
   quality: { key: string; label: string; passed: boolean | null }[];
   improvement_request: string;
+  // The supplier's reviewed packing-list draft, stored in full (null for shipments made without one).
+  packing_list_review?: {
+    ship_date: string | null;
+    carrier: string | null;
+    shipped_quantity: number | null;
+    unit_of_measure: string | null;
+    tracking_numbers: string[];
+    lot_numbers: string[];
+    serial_numbers: string[];
+  } | null;
 }
 export interface InspectorDashboard {
   role: "inspector";
@@ -367,4 +377,38 @@ export interface FillResponse {
   notes: string[];
   filter?: string;
   fill: { form: string; route: string; target: number | null; values: Record<string, unknown> } | null;
+}
+
+/** A field-level note on an extracted packing-list draft. A review aid from the model, not verified proof. */
+export interface FieldIssue {
+  field: string;
+  severity: "review" | "warning" | "info";
+  code: string;
+  message: string;
+}
+
+/** The reviewable draft returned by POST /api/extraction-prefill/shipments/{po_id}. Saves nothing. */
+export interface ExtractionDraft {
+  ship_date: string | null;
+  carrier: string | null;
+  tracking_numbers: string[];
+  shipped_quantity: number | null;
+  unit_of_measure: string | null;
+  lot_numbers: string[];
+  serial_numbers: string[];
+  items: { item_number: string | null; description: string | null; quantity_ordered: number | null; quantity_shipped: number | null; quantity_backordered: number | null; unit_of_measure: string | null }[];
+  references: { value: string; label: string | null; page: number | null; kind: string }[];
+  evidence: { field: string; page: number | null; text: string }[];
+  field_issues: FieldIssue[];
+}
+
+/** Result of comparing a reviewed shipped quantity against the PO (POST …/shipments/{po_id}/compare). */
+export interface QuantityComparison {
+  status: "match" | "over_shipped" | "under_shipped" | "cannot_compare";
+  reason: string;
+  item_code: string | null;
+  po_quantity: number | null;
+  shipped_quantity: number | null;
+  difference: number | null;
+  unit_note: string;
 }
