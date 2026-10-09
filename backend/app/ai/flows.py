@@ -80,7 +80,7 @@ def _iso(dt: datetime) -> str:
 
 # ------------------------------------------------------------------ new requirement (buyer, admin)
 def _item_options(ctx: Ctx) -> list[Option]:
-    items = inventory_svc.list_items(ctx.conn)
+    items = inventory_svc.list_items(ctx.conn, user=ctx.user)
     return [Option(None, "Something else (I will describe it)")] + [
         Option(
             i["item_code"],
@@ -200,7 +200,7 @@ def _submit_requirement(ctx: Ctx) -> dict:
     v = ctx.values
     title = v.get("title")
     if v.get("item"):
-        title = inventory_svc.get_item(ctx.conn, v["item"])["description"]
+        title = inventory_svc.get_item(ctx.conn, v["item"], ctx.user)["description"]
     deadline = {
         "7d": _iso(datetime.now(UTC) + timedelta(days=7)),
         "3d": _iso(datetime.now(UTC) + timedelta(days=3)),

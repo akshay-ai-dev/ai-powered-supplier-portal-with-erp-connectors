@@ -28,6 +28,9 @@ services:
       SMTP_FROM: erp-copilot@example.com
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       MCP_API_KEY: ${MCP_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      DEBUG: ${DEBUG:-false}
       ERP_BACKEND: ${ERP_BACKEND:-sap}
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
       INSPECTION_ACCEPT_THRESHOLD: ${INSPECTION_ACCEPT_THRESHOLD:-95}

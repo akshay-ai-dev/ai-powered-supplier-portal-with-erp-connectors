@@ -29,6 +29,13 @@ from .services.errors import DomainError
 mcp_inner, mcp_asgi = build_mcp_app()
 
 
+# App logs ("erp.*" loggers) go to the console, where Docker collects them (`docker compose logs -f backend`).
+# DEBUG=true adds the debug lines, such as each chat question and GPT-4o's raw output (logger "erp.llm").
+_console = logging.StreamHandler()
+_console.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+logging.getLogger("erp").addHandler(_console)
+logging.getLogger("erp").setLevel(logging.DEBUG if settings.debug else logging.INFO)
+
 log = logging.getLogger("erp.deadlines")
 
 

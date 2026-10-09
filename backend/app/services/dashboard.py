@@ -8,7 +8,7 @@ def _count(conn: sqlite3.Connection, sql: str, *args) -> int:
 
 
 def buyer_dashboard(conn: sqlite3.Connection, user: dict) -> dict:
-    # Order data is scoped to the buyer's own POs; inventory and supplier directory are shared.
+    # Order data and inventory are scoped to the buyer's own; the supplier directory is shared.
     uid = user["id"]
     by_status = {
         r["status"]: r["n"]
@@ -36,8 +36,10 @@ def buyer_dashboard(conn: sqlite3.Connection, user: dict) -> dict:
             "SELECT COUNT(*) FROM purchase_orders WHERE created_by = ? AND status IN ('Draft','Pending','Approved')",
             uid,
         ),
-        "inventory_count": _count(conn, "SELECT COUNT(*) FROM inventory"),
-        "low_stock_count": _count(conn, "SELECT COUNT(*) FROM inventory WHERE stock_quantity < 20"),
+        "inventory_count": _count(conn, "SELECT COUNT(*) FROM inventory WHERE created_by = ?", uid),
+        "low_stock_count": _count(
+            conn, "SELECT COUNT(*) FROM inventory WHERE created_by = ? AND stock_quantity < 20", uid
+        ),
         "supplier_count": _count(conn, "SELECT COUNT(*) FROM suppliers"),
         "orders_by_status": by_status,
         "spend_by_supplier": [dict(r) for r in spend],

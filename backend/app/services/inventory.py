@@ -1,24 +1,36 @@
 import sqlite3
 
 from ..db import now
-from . import scope
 from .errors import DomainError, Forbidden, NotFound
 from .notifications import audit
 
 
-def usage_count(conn: sqlite3.Connection, item_code: str) -> int:
-    """How many purchase-order lines and requirements reference this item."""
+def owner_of(user: dict | None) -> int | None:
+    """Whose inventory this user works with: buyers and suppliers their own, a buyer's own inspector that buyer's.
+    None means every owner (admins, company-wide inspectors, and internal callers without a user)."""
+    if user is None or user["role"] == "admin":
+        return None
+    if user["role"] == "inspector":
+        return user.get("owner_id")
+    return user["id"]
+
+
+def usage_count(conn: sqlite3.Connection, item: dict) -> int:
+    """How many of the owner's purchase-order lines and requirements reference this item."""
     pos = conn.execute(
-        "SELECT COUNT(*) FROM purchase_order_items WHERE item_code = ? COLLATE NOCASE", (item_code,)
+        "SELECT COUNT(*) FROM purchase_order_items poi JOIN purchase_orders po ON po.id = poi.po_id "
+        "WHERE poi.item_code = ? COLLATE NOCASE AND po.created_by IS ?",
+        (item["item_code"], item["created_by"]),
     ).fetchone()[0]
     reqs = conn.execute(
-        "SELECT COUNT(*) FROM requirements WHERE item_code = ? COLLATE NOCASE", (item_code,)
+        "SELECT COUNT(*) FROM requirements WHERE item_code = ? COLLATE NOCASE AND created_by IS ?",
+        (item["item_code"], item["created_by"]),
     ).fetchone()[0]
     return pos + reqs
 
 
 def can_manage(user: dict | None, item: dict) -> bool:
-    """Creators may edit/delete their own items; admins may manage any. ERP-synced items have no creator."""
+    """Owners may edit/delete their own items; admins may manage any."""
     if user is None:
         return False
     return user["role"] == "admin" or (
@@ -33,6 +45,10 @@ def list_items(
     user: dict | None = None,
 ) -> list[dict]:
     sql, args = "SELECT * FROM inventory WHERE 1=1", []
+    owner = owner_of(user)
+    if owner is not None:
+        sql += " AND created_by = ?"
+        args.append(owner)
     if q:
         sql += " AND (item_code LIKE ? OR description LIKE ?)"
         args += [f"%{q}%", f"%{q}%"]
@@ -40,49 +56,45 @@ def list_items(
         sql += " AND warehouse = ?"
         args.append(warehouse)
     items = [dict(r) for r in conn.execute(sql + " ORDER BY item_code", args).fetchall()]
-    buyer = scope.own_buyer(user)
-    if (
-        buyer is not None
-    ):  # a buyer's own inspector sees only the items that buyer's orders, requirements and stock use
-        mine = scope.item_codes(conn, buyer)
-        items = [it for it in items if it["item_code"].upper() in mine]
     if user is not None:
         for it in items:
             it["can_edit"] = it["can_delete"] = can_manage(user, it)
-            it["in_use"] = usage_count(conn, it["item_code"])
+            it["in_use"] = usage_count(conn, it)
     return items
 
 
 def get_item(conn: sqlite3.Connection, item_code: str, user: dict | None = None) -> dict:
-    row = conn.execute(
-        "SELECT * FROM inventory WHERE item_code = ? COLLATE NOCASE", (item_code,)
-    ).fetchone()
+    sql, args = "SELECT * FROM inventory WHERE item_code = ? COLLATE NOCASE", [item_code]
+    owner = owner_of(user)
+    if owner is not None:
+        sql += " AND created_by = ?"
+        args.append(owner)
+    row = conn.execute(sql + " ORDER BY id", args).fetchone()
     if row is None:
-        raise NotFound(f"Item {item_code} not found")
-    buyer = scope.own_buyer(user)
-    if buyer is not None and row["item_code"].upper() not in scope.item_codes(conn, buyer):
         raise NotFound(f"Item {item_code} not found")
     return dict(row)
 
 
-def receive_stock(conn: sqlite3.Connection, item_code: str, quantity: int) -> None:
-    """Add received goods to stock (creates the item if it is new)."""
+def receive_stock(conn: sqlite3.Connection, owner_id: int, item_code: str, quantity: int) -> None:
+    """Add received goods to the owner's stock (creates the item if it is new)."""
     cur = conn.execute(
-        "UPDATE inventory SET stock_quantity = stock_quantity + ?, updated_at = ? WHERE item_code = ?",
-        (quantity, now(), item_code),
+        "UPDATE inventory SET stock_quantity = stock_quantity + ?, updated_at = ? WHERE item_code = ? AND created_by = ?",
+        (quantity, now(), item_code, owner_id),
     )
     if cur.rowcount == 0:
         conn.execute(
-            "INSERT INTO inventory (item_code, description, stock_quantity, warehouse, updated_at) VALUES (?,?,?,?,?)",
-            (item_code, item_code, quantity, "MAIN", now()),
+            "INSERT INTO inventory (item_code, description, stock_quantity, warehouse, created_by, updated_at) VALUES (?,?,?,?,?,?)",
+            (item_code, item_code, quantity, "MAIN", owner_id, now()),
         )
 
 
 def create_item(conn: sqlite3.Connection, user: dict, data: dict) -> dict:
     code = data["item_code"].strip().upper()
-    if conn.execute("SELECT 1 FROM inventory WHERE item_code = ?", (code,)).fetchone():
+    if conn.execute(
+        "SELECT 1 FROM inventory WHERE item_code = ? AND created_by = ?", (code, user["id"])
+    ).fetchone():
         raise DomainError(f"Item {code} already exists", 409)
-    conn.execute(
+    cur = conn.execute(
         "INSERT INTO inventory (item_code, description, stock_quantity, warehouse, source, created_by, updated_at) VALUES (?,?,?,?,?,?,?)",
         (
             code,
@@ -95,11 +107,15 @@ def create_item(conn: sqlite3.Connection, user: dict, data: dict) -> dict:
         ),
     )
     audit(conn, user["id"], "create", "inventory", code, f"stock={data['stock_quantity']}")
-    return get_item(conn, code)
+    return _by_id(conn, cur.lastrowid)
+
+
+def _by_id(conn: sqlite3.Connection, item_id: int) -> dict:
+    return dict(conn.execute("SELECT * FROM inventory WHERE id = ?", (item_id,)).fetchone())
 
 
 def update_item(conn: sqlite3.Connection, user: dict, item_code: str, changes: dict) -> dict:
-    current = get_item(conn, item_code)
+    current = get_item(conn, item_code, user)
     if not can_manage(user, current):
         raise Forbidden("You can only edit items you created")
     merged = {
@@ -122,14 +138,14 @@ def update_item(conn: sqlite3.Connection, user: dict, item_code: str, changes: d
         else "details"
     )
     audit(conn, user["id"], "update", "inventory", current["item_code"], detail)
-    return get_item(conn, current["item_code"])
+    return _by_id(conn, current["id"])
 
 
 def delete_item(conn: sqlite3.Connection, user: dict, item_code: str) -> None:
-    item = get_item(conn, item_code)
+    item = get_item(conn, item_code, user)
     if not can_manage(user, item):
         raise Forbidden("You can only delete items you created")
-    used = usage_count(conn, item["item_code"])
+    used = usage_count(conn, item)
     if used:
         raise DomainError(
             f"{item['item_code']} is used by {used} purchase order line(s) or requirement(s) and cannot be deleted",

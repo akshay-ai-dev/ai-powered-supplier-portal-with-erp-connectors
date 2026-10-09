@@ -139,12 +139,17 @@ def update_po(
 
 
 # ---- Inventory ----
+_inventory_owner = require_roles(
+    "buyer", "admin", "supplier"
+)  # may add, edit and delete their own items
+
+
 @inventory.get("")
 def list_inventory(
     q: str | None = None,
     warehouse: str | None = None,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    # Suppliers may read stock levels (Inventory Dashboard); writes stay buyer/admin-only.
+    # Each buyer and supplier sees only their own items (see services/inventory.py).
     user: dict = Depends(require_roles("buyer", "admin", "inspector", "supplier")),
 ):
     return inventory_svc.list_items(conn, q, warehouse, user)
@@ -154,7 +159,7 @@ def list_inventory(
 def create_inventory_item(
     body: InventoryCreate,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    user: dict = Depends(require_buyer),
+    user: dict = Depends(_inventory_owner),
 ):
     return inventory_svc.create_item(conn, user, body.model_dump())
 
@@ -164,7 +169,7 @@ def update_inventory_item(
     item_code: str,
     body: InventoryUpdate,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    user: dict = Depends(require_buyer),
+    user: dict = Depends(_inventory_owner),
 ):
     return inventory_svc.update_item(conn, user, item_code, body.model_dump(exclude_unset=True))
 
@@ -175,7 +180,7 @@ def update_inventory_item(
 def delete_inventory_item(
     item_code: str,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    user: dict = Depends(require_buyer),
+    user: dict = Depends(_inventory_owner),
 ):
     inventory_svc.delete_item(conn, user, item_code)
     return {"deleted": item_code.upper()}

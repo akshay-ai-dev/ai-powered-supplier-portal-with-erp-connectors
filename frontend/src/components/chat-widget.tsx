@@ -1,28 +1,38 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Bot, Check, ChevronLeft, Loader2, MessageCircle, Mic, Send, SkipForward, Square, X } from "lucide-react";
+import { Bot, Check, ChevronLeft, Loader2, MessageCircle, Send, SkipForward, X } from "lucide-react";
 import { toast } from "sonner";
 import { api, uploadFile } from "@/lib/api";
-import type { AssistantResponse } from "@/lib/types";
+import type { AssistantResponse, ChatReply } from "@/lib/types";
 import { useAuth } from "@/lib/auth";
-import { SemanticRouter, type Route } from "@/lib/router/classify";
-import { useVoiceInput } from "@/lib/stt/use-voice-input";
-import { AnswerView, answerFor, type Answer } from "@/components/assistant/answer-templates";
-import { VoiceWaveform } from "@/components/assistant/voice-waveform";
+import { AnswerView } from "@/components/assistant/answer-templates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type Line =
-  | { from: "bot" | "me"; text: string; error?: boolean; link?: { href: string; label: string } }
-  | { from: "answer"; tool: Route; answer: Answer };
+  | { from: "bot" | "me"; text: string; error?: boolean; link?: { href: string; label: string }; asked?: boolean }
+  | { from: "answer"; reply: ChatReply };
 interface Saved {
   resp: AssistantResponse | null;
   lines: Line[];
 }
 
 const SHOWN = 30; // chat lines kept on screen
-const storeKey = (id: number) => `erp_chat_assistant_v2_${id}`;
+const HISTORY = 10; // earlier ask-box turns sent with a question
+const storeKey = (id: number) => `erp_chat_assistant_v3_${id}`;
+
+/** The conversation GPT-4o sees: earlier questions and the tools called with their arguments. Tool results are never
+ *  sent back to the model (SRS §6.3: they are data, never instructions), and the numbered-menu turns are left out. */
+type Turn = { role: "user"; content: string } | { role: "assistant"; tool: string; args: Record<string, unknown> };
+function chatHistory(lines: Line[]): Turn[] {
+  const turns = lines.flatMap((l): Turn[] => {
+    if (l.from === "me" && l.asked) return [{ role: "user", content: l.text }];
+    if (l.from === "answer" && l.reply.tool) return [{ role: "assistant", tool: l.reply.tool, args: l.reply.args ?? {} }];
+    return [];
+  });
+  return turns.slice(-HISTORY);
+}
 const loadSaved = (id: number): Saved => {
   try {
     const raw = sessionStorage.getItem(storeKey(id));
@@ -35,9 +45,8 @@ const loadSaved = (id: number): Saved => {
 
 /**
  * Floating assistant, for every role: numbered menus that ask one question at a time and save only after you confirm.
- * Buyers also get the buyer assistant on the menu screen: typed or spoken questions go to a semantic router in the
- * browser (no LLM), which picks one of four MCP tools (list, detail, compare, draft award); the answer is shown in a
- * fixed template. Speech is transcribed in the browser (Moonshine); the model loads on the first mic press.
+ * On the menu screen every role can also ask in its own words: GPT-4o picks one of that role's MCP tools on the
+ * backend and the tool's result is shown as it is. Drafts are saved only when the user confirms them in the card.
  */
 export function ChatWidget() {
   const { user } = useAuth();
@@ -49,12 +58,7 @@ export function ChatWidget() {
   const [busy, setBusy] = useState(false);
   const file = useRef<File | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
-  const router = useRef<SemanticRouter | null>(null);
-  const [routerState, setRouterState] = useState<"idle" | "loading" | "ready" | "error">("idle");
-  const [routerError, setRouterError] = useState("");
-  const voice = useVoiceInput((t) => setText(t));
   const userId = user?.id;
-  const isBuyer = user?.role === "buyer";
 
   useEffect(() => {
     if (userId == null) return;
@@ -73,24 +77,8 @@ export function ChatWidget() {
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: "end" });
   }, [lines, resp, open]);
-  useEffect(() => () => router.current?.dispose(), []);
 
   if (!user) return null;
-
-  /** The router model (~23 MB, cached by the browser) loads the first time a buyer opens the panel, never for other roles. */
-  function ensureRouter() {
-    if (!isBuyer || router.current) return;
-    const r = new SemanticRouter();
-    router.current = r;
-    setRouterState("loading");
-    r.ready.then(
-      () => setRouterState("ready"),
-      (e: Error) => {
-        setRouterError(e.message);
-        setRouterState("error");
-      },
-    );
-  }
 
   const fail = (err: unknown, echo?: string) => {
     const message = err instanceof Error ? err.message : "Something went wrong";
@@ -132,22 +120,15 @@ export function ChatWidget() {
     }
   }
 
-  /** A buyer's question on the menu screen: the router picks the tool, the answer is a fixed template. */
+  /** A question on the menu screen: the backend asks GPT-4o for one tool, runs it, and returns its result. */
   async function ask(question: string) {
-    if (!router.current) return;
     setBusy(true);
     setText("");
-    setLines((l) => [...l, { from: "me", text: question }]);
+    const history = chatHistory(lines);
+    setLines((l) => [...l, { from: "me", text: question, asked: true }]);
     try {
-      const { tool, scores } = await router.current.classify(question);
-      if (process.env.NODE_ENV !== "production") console.debug("router", { question, tool, scores });
-      let answer: Answer;
-      try {
-        answer = await answerFor(question, tool);
-      } catch (err) {
-        answer = { kind: "error", message: err instanceof Error ? err.message : "Something went wrong" };
-      }
-      setLines((l) => [...l, { from: "answer", tool, answer }]);
+      const reply = await api<ChatReply>("/api/assistant/chat", { body: { message: question, history, tz_offset: new Date().getTimezoneOffset() } });
+      setLines((l) => [...l, { from: "answer", reply }]);
     } catch (err) {
       fail(err);
     } finally {
@@ -163,13 +144,12 @@ export function ChatWidget() {
   };
   const toggle = () => {
     setOpen((o) => !o);
-    if (!open) ensureRouter();
     if (!open && !resp && !busy) void send(null, undefined, true);
   };
 
   const menuMode = resp?.stage === "menu";
   const freeText = resp?.stage === "step" && resp.kind !== "choice" && resp.kind !== "multichoice" && resp.kind !== "file";
-  const asking = menuMode && isBuyer; // buyers ask on the menu screen; the numbered options stay above the box
+  const asking = menuMode; // every role can ask on the menu screen; the numbered options stay above the box
   const isNumber = /^\d+$/.test(text.trim());
 
   function submitText(e: React.FormEvent) {
@@ -180,9 +160,6 @@ export function ChatWidget() {
     else void send(value, value); // a menu number, or the answer to the current question
   }
 
-  const voiceLabel = { idle: "Speak", loading: "Loading voice model…", recording: "Stop and transcribe", transcribing: "Transcribing…" }[voice.state];
-  const voiceStatus =
-    voice.state === "recording" ? "Listening… click ■ to stop" : voice.state === "loading" ? "Loading voice model… (first time only, ~385 MB)" : voice.state === "transcribing" ? "Transcribing…" : "";
   const offset = Math.max(0, lines.length - SHOWN);
 
   const optionButtons = (opts: { key: string; label: string }[], more: boolean | undefined, onPick: (key: string, label: string) => void, onMore: () => void) => (
@@ -223,8 +200,8 @@ export function ChatWidget() {
             {lines.slice(offset).map((l, i) =>
               l.from === "answer" ? (
                 <div key={offset + i} className="space-y-1">
-                  {l.tool !== "none" && <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">used: {l.tool}</span>}
-                  <AnswerView answer={l.answer} onNavigate={() => setOpen(false)} />
+                  {l.reply.tool && <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">used: {l.reply.tool}</span>}
+                  <AnswerView reply={l.reply} onNavigate={() => setOpen(false)} />
                 </div>
               ) : (
                 <div key={offset + i} className={l.from === "me" ? "flex justify-end" : "flex"}>
@@ -348,45 +325,22 @@ export function ChatWidget() {
               </div>
             )}
 
-            {/* ---- buyer assistant: ask by typing or speaking (menu screen, buyers only) */}
+            {/* ---- ask in your own words (menu screen, every role) */}
             {asking && (
-              <div className="space-y-1">
-                <form onSubmit={submitText} className="flex items-center gap-2">
-                  <div className="min-w-0 flex-1">
-                    {voice.state === "recording" && voice.analyser ? (
-                      <VoiceWaveform analyser={voice.analyser} />
-                    ) : (
-                      <Input
-                        aria-label="Ask the assistant"
-                        value={text}
-                        disabled={busy}
-                        onChange={(e) => setText(e.target.value)}
-                        maxLength={500}
-                        placeholder={routerState === "error" ? "Type a menu number" : routerState === "ready" ? "Ask about requests, quotes or awards…" : "Loading assistant…"}
-                      />
-                    )}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    aria-label={voiceLabel}
-                    title={voiceLabel}
-                    onClick={voice.toggle}
-                    disabled={busy || voice.state === "loading" || voice.state === "transcribing"}
-                  >
-                    {voice.state === "recording" ? <Square className="size-4" /> : voice.state === "idle" ? <Mic className="size-4" /> : <Loader2 className="size-4 animate-spin" />}
-                  </Button>
-                  <Button type="submit" size="icon" aria-label="Send" disabled={busy || !text.trim() || (routerState !== "ready" && !isNumber)}>
-                    <Send className="size-4" />
-                  </Button>
-                </form>
-                {(voiceStatus || voice.error || routerState === "error") && (
-                  <p className={`text-xs ${voice.error || routerState === "error" ? "text-destructive" : "text-muted-foreground"}`}>
-                    {routerState === "error" ? `The assistant model failed to load: ${routerError}` : voice.error ?? voiceStatus}
-                  </p>
-                )}
-              </div>
+              <form onSubmit={submitText} className="flex items-center gap-2">
+                <Input
+                  aria-label="Ask the assistant"
+                  className="min-w-0 flex-1"
+                  value={text}
+                  disabled={busy}
+                  onChange={(e) => setText(e.target.value)}
+                  maxLength={500}
+                  placeholder="Ask a question, or type a menu number…"
+                />
+                <Button type="submit" size="icon" aria-label="Send" disabled={busy || !text.trim()}>
+                  <Send className="size-4" />
+                </Button>
+              </form>
             )}
           </div>
         </div>

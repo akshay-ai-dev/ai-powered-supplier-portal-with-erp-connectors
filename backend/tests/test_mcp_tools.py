@@ -1,4 +1,5 @@
-"""Buyer-assistant tools (SRS §6.1): list_requests, get_request_detail, compare_responses, draft_award."""
+"""Buyer-assistant tools (SRS §6.1): list_requests, get_request_detail, compare_responses, draft_award.
+The other tools and their drafts are tested through the chat endpoint in test_assistant_chat.py."""
 
 import os
 import tempfile
@@ -185,4 +186,13 @@ def test_list_requests_and_detail_are_scoped(client, quoted):
 
 def test_tools_are_registered_on_the_mcp_server(client):
     names = {t["name"] for t in client.get("/api/mcp/tools").json()}
-    assert {"list_requests", "get_request_detail", "compare_responses", "draft_award"} <= names
+    assert {
+        "list_requests",
+        "get_request_detail",
+        "compare_responses",
+        "draft_award",
+        "get_erp_documents",
+        "search_suppliers",
+        "draft_request",
+    } <= names
+    assert not {"list_requirements", "get_requirement", "search_supplier"} & names

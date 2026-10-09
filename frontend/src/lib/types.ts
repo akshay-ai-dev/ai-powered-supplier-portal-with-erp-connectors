@@ -350,4 +350,17 @@ export interface AssistantResponse {
   result: AssistantResult | null;
 }
 
-/** One turn of natural-language form filling. It never saves anything: `fill` carries values for the user to review in the real form. */
+/** A draft tool's result: what would be saved and the REST call that saves it. Nothing is saved until the user confirms. */
+export interface ChatDraft {
+  saved: false;
+  summary: Record<string, string | number>;
+  confirm: { method: string; path: string; body: unknown; label: string };
+}
+/** One answer from the ask box (POST /api/assistant/chat): the one MCP tool GPT-4o picked, its arguments and its result as is. */
+export interface ChatReply {
+  tool: string | null;
+  args?: Record<string, unknown>;
+  result?: unknown;
+  error?: string;
+  help?: string[];
+}

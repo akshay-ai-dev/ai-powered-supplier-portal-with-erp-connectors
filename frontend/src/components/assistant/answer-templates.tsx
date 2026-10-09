@@ -1,11 +1,12 @@
-// Fixed answer layouts for the buyer assistant, one per tool, sized for the 384 px chat panel. No text generation:
-// the same question always gets the same layout, so buyers learn where to look (see docs/decisions.md). Every value
-// shown comes from the tool result.
+// How the chat widget shows a tool's result, sized for the 384 px chat panel. No text generation: every value shown
+// comes from the tool result as is (SRS §6.3). Four tools have their own layout, drafts get a confirm card, and the
+// other tools a simple generic view.
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { api, money } from "@/lib/api";
-import { extractReqNumber, extractStages, type Route } from "@/lib/router/classify";
+import { money } from "@/lib/api";
+import type { ChatDraft, ChatReply } from "@/lib/types";
 import { StatusBadge } from "@/components/status-badge";
+import { ConfirmCard } from "./confirm-card";
 import { DraftAwardCard, type DraftAward } from "./draft-award-card";
 
 export interface RequestRow {
@@ -74,15 +75,6 @@ export interface RequestDetail {
   }[];
 }
 
-export type Answer =
-  | { kind: "list_requests"; data: RequestRow[]; stages: string[] }
-  | { kind: "get_request_detail"; data: RequestDetail }
-  | { kind: "compare_responses"; data: Comparison }
-  | { kind: "draft_award"; data: DraftAward }
-  | { kind: "help" }
-  | { kind: "missing" }
-  | { kind: "error"; message: string };
-
 export const erpName = (erp: string) => (erp === "infor" ? "Infor LN" : erp.toUpperCase());
 /** Dates like "2026-10-15" (need-by, delivery) are calendar days: read them as local dates, because new Date()
  *  treats them as UTC midnight and shows the previous day west of UTC. Timestamps are parsed as they are. */
@@ -94,33 +86,25 @@ const day = (d: string | null) => (d ? toDate(d).toLocaleDateString(undefined, {
 /** "Oct 7": compact date for the panel (the year is implied in a live procurement conversation). */
 const short = (d: string | null) => (d ? toDate(d).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—");
 
-/** Calls the tool the router picked (its REST copy, POST /api/mcp/<tool>, with the buyer's login) and returns the answer to render. */
-export async function answerFor(text: string, tool: Route): Promise<Answer> {
-  if (tool === "none") return { kind: "help" };
-  if (tool === "list_requests") return { kind: tool, data: await api<RequestRow[]>("/api/mcp/list_requests", { body: {} }), stages: extractStages(text) };
-  const req_number = extractReqNumber(text);
-  if (!req_number) return { kind: "missing" };
-  const data = await api(`/api/mcp/${tool}`, { body: { req_number } });
-  return { kind: tool, data } as Answer;
-}
-
-export function AnswerView({ answer, onNavigate }: { answer: Answer; onNavigate?: () => void }) {
-  switch (answer.kind) {
-    case "list_requests":
-      return <RequestsAnswer rows={answer.data} stages={answer.stages} onNavigate={onNavigate} />;
+/** One ask-box answer: the tool's own layout, a confirm card for drafts, or the generic view. */
+export function AnswerView({ reply, onNavigate }: { reply: ChatReply; onNavigate?: () => void }) {
+  if (reply.tool === null) return <HelpAnswer examples={reply.help ?? []} />;
+  if (reply.error) return <ErrorAnswer message={reply.error} />;
+  const result = reply.result;
+  switch (reply.tool) {
+    case "list_requests": {
+      const status = reply.args?.status;
+      return <RequestsAnswer rows={result as RequestRow[]} stages={typeof status === "string" && status ? [status] : []} onNavigate={onNavigate} />;
+    }
     case "get_request_detail":
-      return <RequestDetailAnswer data={answer.data} />;
+      return <RequestDetailAnswer data={result as RequestDetail} />;
     case "compare_responses":
-      return <ComparisonAnswer data={answer.data} />;
+      return <ComparisonAnswer data={result as Comparison} />;
     case "draft_award":
-      return <DraftAwardCard draft={answer.data} onNavigate={onNavigate} />;
-    case "help":
-      return <HelpAnswer />;
-    case "missing":
-      return <MissingRequestAnswer />;
-    case "error":
-      return <ErrorAnswer message={answer.message} />;
+      return <DraftAwardCard draft={result as DraftAward} onNavigate={onNavigate} />;
   }
+  if (result && typeof result === "object" && "confirm" in result) return <ConfirmCard tool={reply.tool} draft={result as ChatDraft} onNavigate={onNavigate} />;
+  return <GenericAnswer value={result} />;
 }
 
 /** A bordered list with one divider between rows, the building block of every answer. */
@@ -129,7 +113,7 @@ function Rows({ children }: { children: React.ReactNode }) {
 }
 
 export function RequestsAnswer({ rows, stages, onNavigate }: { rows: RequestRow[]; stages: string[]; onNavigate?: () => void }) {
-  const shown = stages.length ? rows.filter((r) => stages.includes(r.stage)) : rows;
+  const shown = rows; // list_requests already filtered by stage; `stages` only labels the answer
   return (
     <div className="space-y-2">
       <p>
@@ -285,24 +269,103 @@ export function RequestDetailAnswer({ data }: { data: RequestDetail }) {
   );
 }
 
-export function HelpAnswer() {
+export function HelpAnswer({ examples }: { examples: string[] }) {
   return (
     <div className="space-y-1">
-      <p>I can answer four kinds of questions, or pick an option below:</p>
+      <p>I could not match that to something I can look up or draft. Try for example, or pick an option below:</p>
       <ul className="list-disc space-y-0.5 pl-5 text-muted-foreground">
-        <li>Which requests are waiting for an award?</li>
-        <li>Show REQ2001</li>
-        <li>Compare the responses for REQ2001</li>
-        <li>Award REQ2001 to the top-ranked supplier</li>
+        {examples.map((e) => (
+          <li key={e}>{e}</li>
+        ))}
       </ul>
     </div>
   );
 }
 
-export function MissingRequestAnswer() {
-  return <p>Which request? Add its number, for example REQ2001.</p>;
-}
-
 export function ErrorAnswer({ message }: { message: string }) {
   return <p className="text-destructive">{message}</p>;
+}
+
+const label = (key: string) => (key.charAt(0).toUpperCase() + key.slice(1)).replace(/_/g, " ");
+type Rec = Record<string, unknown>;
+const isRec = (v: unknown): v is Rec => !!v && typeof v === "object" && !Array.isArray(v);
+
+/** A value on one line: item lines as "6 × ITEM004", other lists as a count, nested records as "key value" pairs. */
+function inline(v: unknown): string {
+  if (v === null || v === undefined || v === "") return "—";
+  if (Array.isArray(v)) {
+    if (v.every((x) => isRec(x) && ("item_code" in x || "MATNR" in x || "item" in x)))
+      return v
+        .map((x) => {
+          const r = x as Rec;
+          const qty = r.quantity ?? r.quantity_shipped ?? r.MENGE ?? r.LFIMG ?? r.qty ?? r.expected ?? "";
+          return `${qty} × ${r.item_code ?? r.MATNR ?? r.item}`;
+        })
+        .join(", ");
+    if (v.length === 0) return "None";
+    return v.every((x) => !isRec(x)) ? v.join(", ") : `${v.length} item${v.length === 1 ? "" : "s"}`;
+  }
+  if (isRec(v)) return Object.entries(v).map(([k, x]) => `${k} ${inline(x)}`).join(" · ");
+  if (typeof v === "boolean") return v ? "yes" : "no";
+  return String(v);
+}
+
+function Fields({ rec }: { rec: Rec }) {
+  return (
+    <div className="space-y-0.5">
+      {Object.entries(rec).map(([k, v]) => (
+        <div key={k} className="flex justify-between gap-3">
+          <span className="shrink-0 text-muted-foreground">{label(k)}</span>
+          <span className="min-w-0 break-words text-right">{inline(v)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Any other tool's result as it is: a list becomes one block per record (first 10), a record a list of fields with
+ *  its lists of records (like ERP documents) shown as blocks underneath. */
+export function GenericAnswer({ value }: { value: unknown }) {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <p className="text-muted-foreground">Nothing found.</p>;
+    return (
+      <div className="space-y-2">
+        <p>
+          <b>{value.length}</b> result{value.length === 1 ? "" : "s"}
+          {value.length > 10 && <span className="text-muted-foreground"> · first 10 shown</span>}
+        </p>
+        <Rows>
+          {value.slice(0, 10).map((v, i) => (
+            <div key={i} className="px-3 py-2">
+              {isRec(v) ? <Fields rec={v} /> : inline(v)}
+            </div>
+          ))}
+        </Rows>
+      </div>
+    );
+  }
+  if (!isRec(value)) return <p>{inline(value)}</p>;
+  const flat = Object.fromEntries(Object.entries(value).filter(([, v]) => !(Array.isArray(v) && v.some(isRec) && !inline(v).includes("×"))));
+  const lists = Object.entries(value).filter(([k]) => !(k in flat)) as [string, Rec[]][];
+  return (
+    <div className="space-y-2 rounded-md border p-3">
+      <Fields rec={flat} />
+      {lists.map(([k, rows]) => (
+        <div key={k}>
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {label(k)} ({rows.length})
+          </div>
+          {rows.length === 0 ? (
+            <div className="text-muted-foreground">None</div>
+          ) : (
+            rows.map((r, i) => (
+              <div key={i} className="mt-1 rounded-md bg-muted/50 px-2 py-1 text-xs">
+                <Fields rec={r} />
+              </div>
+            ))
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }

@@ -39,7 +39,7 @@ const inspectorNav = [
 ];
 const supplierNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/supplier-inventory", label: "Inventory", icon: Boxes },
+  { href: "/inventory", label: "Inventory", icon: Boxes },
   { href: "/requirements", label: "Requirements", icon: FileSearch },
   { href: "/purchase-orders", label: "My Orders", icon: ClipboardList },
   { href: "/shipments", label: "Shipments", icon: PackageCheck },

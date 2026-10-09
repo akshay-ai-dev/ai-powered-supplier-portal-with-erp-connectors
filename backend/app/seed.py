@@ -120,6 +120,10 @@ def seed(conn: sqlite3.Connection) -> None:
     _ensure_user(conn, "Warehouse Inspector", "inspector@demo.com", "inspector")
 
     buyer = _ensure_user(conn, "Vikas Buyer", "buyer@demo.com", "buyer")
+    # Inventory is per owner: items loaded from the ERP (no creator) belong to the demo buyer.
+    conn.execute(
+        "UPDATE OR IGNORE inventory SET created_by = ? WHERE created_by IS NULL", (buyer["id"],)
+    )
     abc = conn.execute("SELECT id FROM suppliers WHERE supplier_name LIKE 'ABC%'").fetchone()["id"]
     _ensure_user(conn, "ABC Industrial Supplies", "supplier@demo.com", "supplier", abc)
     conn.execute(
