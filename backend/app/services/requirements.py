@@ -134,9 +134,9 @@ def _hydrate(
             (req["id"],),
         ).fetchone()[0]
     req["stage"] = _stage(req, po, len(quotes))
-    if user["role"] == "admin":
+    if user["role"] in ("admin", "buyer"):
         req["supplier_name"] = None
-        if po and req["stage"] in ("Closed", "Awarded", "In Transit"):
+        if po and (user["role"] == "buyer" or req["stage"] in ("Closed", "Awarded", "In Transit")):
             supplier = conn.execute(
                 "SELECT supplier_name FROM suppliers WHERE id = ?", (po["supplier_id"],)
             ).fetchone()
@@ -144,6 +144,10 @@ def _hydrate(
     req["po_number"] = po["po_number"] if po else None
     req["delivery_status"] = po["delivery_status"] if po else None
     if user["role"] == "supplier":
+        supplier = conn.execute(
+            "SELECT supplier_name FROM suppliers WHERE id = ?", (user.get("supplier_id"),)
+        ).fetchone()
+        req["supplier_name"] = supplier["supplier_name"] if supplier else None
         req["my_quote"] = next(
             (q for q in quotes if q["supplier_id"] == user.get("supplier_id")), None
         )

@@ -461,6 +461,13 @@ def test_buyers_are_isolated_from_each_other(client):
     finally:
         conn.close()
     assert visible_req["buyer_name"] == buyer_name
+    supplier_id = client.get("/api/auth/me", headers=sup).json()["supplier_id"]
+    supplier_name = client.get(f"/api/suppliers/{supplier_id}", headers=b1).json()["supplier_name"]
+    assert visible_req["supplier_name"] == supplier_name
+    assert (
+        client.get(f"/api/requirements/{req['id']}", headers=sup).json()["supplier_name"]
+        == supplier_name
+    )
 
 
 def test_emails_only_show_own_mail(client, monkeypatch):

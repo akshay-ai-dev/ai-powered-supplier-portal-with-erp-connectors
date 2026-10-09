@@ -287,6 +287,8 @@ def test_admin_requirement_names_follow_stage(client):
         assert result["supplier_name"] == (
             supplier_name if stage in ("Awarded", "In Transit", "Closed") else None
         )
+        buyer_rows = client.get("/api/requirements", headers=buyer).json()
+        assert next(r for r in buyer_rows if r["id"] == req["id"])["supplier_name"] == supplier_name
 
 
 def test_admin_can_have_only_one_active_token(client):

@@ -16,7 +16,13 @@ export default function RequirementsPage() {
   const { user } = useAuth();
   const isSupplier = user?.role === "supplier";
   const isAdmin = user?.role === "admin";
+  const isBuyer = user?.role === "buyer";
+  const wrapNames = isSupplier || isBuyer;
   const canWrite = user?.role === "buyer" || user?.role === "admin";
+  const columnCount = isAdmin ? 9 : wrapNames ? 8 : 7;
+  const wrapText = (text: string) => wrapNames
+    ? text.split("\n").map((line) => line.match(/.{1,20}/gu)?.join("\n") ?? "").join("\n")
+    : text;
   const [stage, setStage] = useState("");
   const [tab, setTab] = useState<"all" | "mine">("all");
   const { data, error, loading } = useFetch<Requirement[]>(`/api/requirements?stage=${stage}&mine=${tab === "mine"}`);
@@ -52,12 +58,12 @@ export default function RequirementsPage() {
       </PageHeader>
       <ErrorNote message={error} />
       <div className="rounded-lg border">
-        <Table className="min-w-[1000px]">
+        <Table className={`min-w-[1000px] ${wrapNames ? "[&_td]:whitespace-pre-wrap" : ""}`}>
           <TableHeader>
             <TableRow>
               <TableHead>Requirement</TableHead>
               {isAdmin && <TableHead>Buyer name</TableHead>}
-              {isAdmin && <TableHead>Supplier name</TableHead>}
+              {(isAdmin || isSupplier || isBuyer) && <TableHead>Supplier name</TableHead>}
               <TableHead>Quantity</TableHead>
               <TableHead>Ship date</TableHead>
               <TableHead>Carrier</TableHead>
@@ -69,14 +75,14 @@ export default function RequirementsPage() {
           <TableBody>
             {loading && !data && (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 9 : 7} className="text-center text-muted-foreground">
+                <TableCell colSpan={columnCount} className="text-center text-muted-foreground">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {data?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 9 : 7} className="text-center text-muted-foreground">
+                <TableCell colSpan={columnCount} className="text-center text-muted-foreground">
                   Nothing here yet.
                 </TableCell>
               </TableRow>
@@ -85,10 +91,10 @@ export default function RequirementsPage() {
               <TableRow key={r.id}>
                 <TableCell className="align-top">
                   <Link href={`/requirements/${r.id}`} className="font-medium underline-offset-4 hover:underline">
-                    {r.title}
+                    {wrapText(r.title)}
                   </Link>
-                  <div className="text-xs text-muted-foreground">{r.req_number}</div>
-                  {isSupplier && r.buyer_name && <div className="text-xs text-muted-foreground">{r.buyer_name}</div>}
+                  <div className="text-xs text-muted-foreground">{wrapText(r.req_number)}</div>
+                  {isSupplier && r.buyer_name && <div className="text-xs text-muted-foreground">{wrapText(r.buyer_name)}</div>}
                   <span className="mt-1 inline-block"><AgentBadge channel={r.created_via} compact /></span>
                   {r.unread_messages > 0 && (
                     <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">{r.unread_messages} new</span>
@@ -96,12 +102,13 @@ export default function RequirementsPage() {
                 </TableCell>
                 {isAdmin && <TableCell className="align-top">{r.buyer_name || "—"}</TableCell>}
                 {isAdmin && <TableCell className="align-top">{["Closed", "Awarded", "In Transit"].includes(r.stage) ? r.supplier_name || "—" : "—"}</TableCell>}
+                {(isSupplier || isBuyer) && <TableCell className="align-top">{wrapText(r.supplier_name || "—")}</TableCell>}
                 <TableCell className="align-top">{r.quantity}</TableCell>
                 <TableCell className="align-top">{r.ship_date || "—"}</TableCell>
-                <TableCell className="align-top">{r.carrier || "—"}</TableCell>
-                <TableCell className="max-w-48 whitespace-pre-wrap break-all align-top">{r.tracking_number || "—"}</TableCell>
-                <TableCell className="max-w-48 whitespace-pre-wrap break-words align-top">{r.lot_numbers || "—"}</TableCell>
-                <TableCell className="max-w-48 whitespace-pre-wrap break-words align-top">{r.serial_numbers || "—"}</TableCell>
+                <TableCell className="align-top">{wrapText(r.carrier || "—")}</TableCell>
+                <TableCell className="max-w-48 whitespace-pre-wrap break-all align-top">{wrapText(r.tracking_number || "—")}</TableCell>
+                <TableCell className="max-w-48 whitespace-pre-wrap break-words align-top">{wrapText(r.lot_numbers || "—")}</TableCell>
+                <TableCell className="max-w-48 whitespace-pre-wrap break-words align-top">{wrapText(r.serial_numbers || "—")}</TableCell>
               </TableRow>
             ))}
           </TableBody>
