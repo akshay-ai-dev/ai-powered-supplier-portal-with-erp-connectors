@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Truck, Users, UserCog, X } from "lucide-react";
+import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Radar, Truck, Users, UserCog, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { roleLabel } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ const buyerNav = [
   ...baseNav.slice(0, 3),
   { href: "/purchase-orders", label: "Purchase Orders", icon: ClipboardList },
   ...baseNav.slice(3, 5),
+  { href: "/erp-monitor", label: "ERP Monitor", icon: Radar },
   { href: "/team", label: "My inspectors", icon: UserCog },
   ...baseNav.slice(5),
 ];
