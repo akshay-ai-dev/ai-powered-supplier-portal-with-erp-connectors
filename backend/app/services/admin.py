@@ -96,7 +96,7 @@ def stats(conn: sqlite3.Connection) -> dict:
             for r in conn.execute(
                 "SELECT a.action, a.entity, a.entity_id, a.detail, a.created_at, a.channel, u.name AS user_name FROM audit_logs a "
                 "LEFT JOIN users u ON u.id = a.user_id "
-                "WHERE a.entity NOT IN ('inventory', 'shipment', 'unit', 'inspection') "
+                "WHERE a.entity NOT IN ('inventory', 'shipment', 'unit', 'inspection', 'team_chat') "
                 "ORDER BY a.id DESC LIMIT 10"
             )
         ],
@@ -168,6 +168,7 @@ def reset_data(conn: sqlite3.Connection, admin: dict) -> None:
         "shipment_items",
         "shipments",
         "message_attachments",
+        "team_messages",
         "messages",
         "quotes",
         "attachments",

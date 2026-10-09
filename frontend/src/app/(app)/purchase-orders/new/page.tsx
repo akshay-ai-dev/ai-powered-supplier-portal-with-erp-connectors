@@ -89,7 +89,24 @@ export default function NewPurchaseOrderPage() {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor={`unit-price-${i}`} className="text-xs">Unit price</Label>
-                  <Input id={`unit-price-${i}`} aria-label="Unit price" type="number" min={1} step="0.01" value={it.unit_price} onChange={(e) => update(i, { unit_price: e.target.value })} />
+                  <Input
+                    id={`unit-price-${i}`}
+                    aria-label="Unit price"
+                    type="number"
+                    min={1}
+                    step="0.01"
+                    required
+                    value={it.unit_price}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      update(i, { unit_price: value !== "" && Number(value) < 1 ? "1" : value });
+                    }}
+                    onBlur={() => {
+                      if (!it.unit_price || !Number.isFinite(Number(it.unit_price)) || Number(it.unit_price) < 1) {
+                        update(i, { unit_price: "1" });
+                      }
+                    }}
+                  />
                 </div>
                 <Button variant="ghost" size="icon" aria-label="Remove line" disabled={items.length === 1} onClick={() => setItems(items.filter((_, idx) => idx !== i))}>
                   <Trash2 className="size-4" />

@@ -99,6 +99,17 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages (requirement_id, supplier_id);
+CREATE TABLE IF NOT EXISTS team_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    buyer_id INTEGER NOT NULL REFERENCES users(id),
+    inspector_id INTEGER NOT NULL REFERENCES users(id),
+    sender_id INTEGER NOT NULL REFERENCES users(id),
+    body TEXT NOT NULL,
+    read_at TEXT,
+    created_at TEXT NOT NULL,
+    CHECK (sender_id = buyer_id OR sender_id = inspector_id)
+);
+CREATE INDEX IF NOT EXISTS idx_team_messages_thread ON team_messages (buyer_id, inspector_id, id);
 CREATE TABLE IF NOT EXISTS message_attachments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,

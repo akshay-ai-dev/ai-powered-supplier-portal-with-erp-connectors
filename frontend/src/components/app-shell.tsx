@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Radar, Truck, Users, UserCog, X } from "lucide-react";
+import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, MessageSquare, PackageCheck, Radar, Truck, Users, UserCog, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { roleLabel } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const buyerNav = [
   ...baseNav.slice(3, 5),
   { href: "/erp-monitor", label: "ERP Monitor", icon: Radar },
   { href: "/team", label: "My inspectors", icon: UserCog },
+  { href: "/team-chat", label: "Inspector chat", icon: MessageSquare },
   ...baseNav.slice(5),
 ];
 const adminNav = [
@@ -39,6 +40,7 @@ const adminNav = [
 ];
 const inspectorNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/team-chat", label: "Buyer chat", icon: MessageSquare },
   { href: "/shipments", label: "Receiving", icon: PackageCheck },
   { href: "/requirements", label: "Requirements", icon: FileSearch },
   { href: "/inventory", label: "Inventory", icon: Boxes },

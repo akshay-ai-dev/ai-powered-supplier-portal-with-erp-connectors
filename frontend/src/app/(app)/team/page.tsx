@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { Copy, KeyRound } from "lucide-react";
 import { toast } from "sonner";
@@ -7,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { useFetch } from "@/lib/use-fetch";
 import type { TeamInspector } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -184,6 +185,7 @@ export default function TeamPage() {
                 <TableCell className="hidden md:table-cell">{u.inspected}</TableCell>
                 <TableCell className="hidden md:table-cell">{u.last_login ? dateTime(u.last_login) : "Never"}</TableCell>
                 <TableCell className="space-x-2 text-right">
+                  <Link href={`/team-chat?inspector=${u.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>Chat</Link>
                   <Button size="sm" variant="outline" disabled={busy} onClick={() => { setEditing(u); setEdit({ name: u.name, password: "" }); }}>
                     Edit
                   </Button>
