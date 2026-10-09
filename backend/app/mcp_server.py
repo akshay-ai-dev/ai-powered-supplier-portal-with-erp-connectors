@@ -87,9 +87,13 @@ def get_purchase_order(po_number: str) -> dict:
 
 
 @mcp.tool
-def list_purchase_orders(status: str | None = None) -> list[dict]:
-    """List the buyer's purchase orders. Optional status: Draft, Pending, Approved, Closed."""
-    return _run(lambda c: agent_tools.list_purchase_orders(c, _acting_user(c), status))
+def list_purchase_orders(
+    status: str | None = None, delivery_status: str | None = None
+) -> list[dict]:
+    """List your purchase orders. Optional status: Draft, Pending, Approved, Closed. Optional delivery_status: Not Shipped, In Transit, Delivered, Rejected."""
+    return _run(
+        lambda c: agent_tools.list_purchase_orders(c, _acting_user(c), status, delivery_status)
+    )
 
 
 @mcp.tool

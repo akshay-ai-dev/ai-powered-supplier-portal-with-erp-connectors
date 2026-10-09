@@ -251,3 +251,21 @@ def test_debug_logs_show_the_question_and_raw_llm_output(client, llm, caplog):
     assert lines[2].startswith("Invalid call, retrying")
     assert "attempt 2/3" in lines[3] and "REQ2001" in lines[3]
     assert lines[4].startswith("Chosen: {'tool': 'get_request_detail'")
+
+
+def test_purchase_orders_can_be_filtered_by_delivery_status(client, llm):
+    sup = login(client, "supplier@demo.com")
+    llm.will_call("list_purchase_orders")
+    every = ask(client, sup, "show my purchase orders")["result"]
+    for wanted in {p["delivery_status"] for p in every}:
+        llm.will_call(
+            "list_purchase_orders", delivery_status=wanted.lower()
+        )  # case does not matter
+        out = ask(client, sup, f"show my {wanted} orders")
+        assert out["args"] == {"delivery_status": wanted.lower()}
+        assert out["result"] == [p for p in every if p["delivery_status"] == wanted]
+    llm.will_call("list_purchase_orders", delivery_status="Rejected", status="Approved")
+    assert all(
+        p["delivery_status"] == "Rejected" and p["status"] == "Approved"
+        for p in ask(client, sup, "approved but rejected orders")["result"]
+    )

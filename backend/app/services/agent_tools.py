@@ -207,8 +207,12 @@ def draft_award(conn: sqlite3.Connection, user: dict, req_number: str) -> dict:
 
 
 def list_purchase_orders(
-    conn: sqlite3.Connection, user: dict, status: str | None = None
+    conn: sqlite3.Connection,
+    user: dict,
+    status: str | None = None,
+    delivery_status: str | None = None,
 ) -> list[dict]:
+    """POs the user may see, optionally filtered by status and by delivery status (case-insensitive)."""
     keys = (
         "po_number",
         "supplier_name",
@@ -219,7 +223,11 @@ def list_purchase_orders(
         "created_via",
         "items",
     )
-    return [{k: p.get(k) for k in keys} for p in po_svc.list_pos(conn, user, status)]
+    pos = po_svc.list_pos(conn, user, status)
+    if delivery_status:
+        wanted = delivery_status.strip().lower()
+        pos = [p for p in pos if (p.get("delivery_status") or "").lower() == wanted]
+    return [{k: p.get(k) for k in keys} for p in pos]
 
 
 # ---- ERP documents (SRS §6.1) ----
