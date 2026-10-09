@@ -17,10 +17,10 @@ export default function RequirementsPage() {
   const isSupplier = user?.role === "supplier";
   const isAdmin = user?.role === "admin";
   const isBuyer = user?.role === "buyer";
-  const wrapNames = isSupplier || isBuyer;
+  const shouldWrap = isSupplier || isBuyer || isAdmin;
   const canWrite = user?.role === "buyer" || user?.role === "admin";
-  const columnCount = isAdmin ? 9 : wrapNames ? 8 : 7;
-  const wrapText = (text: string) => wrapNames
+  const columnCount = isAdmin ? 9 : isSupplier || isBuyer ? 8 : 7;
+  const wrapText = (text: string) => shouldWrap
     ? text.split("\n").map((line) => line.match(/.{1,20}/gu)?.join("\n") ?? "").join("\n")
     : text;
   const [stage, setStage] = useState("");
@@ -58,7 +58,7 @@ export default function RequirementsPage() {
       </PageHeader>
       <ErrorNote message={error} />
       <div className="rounded-lg border">
-        <Table className={`min-w-[1000px] ${wrapNames ? "[&_td]:whitespace-pre-wrap" : ""}`}>
+        <Table className={`min-w-[1000px] ${shouldWrap ? "[&_td]:whitespace-pre-wrap" : ""}`}>
           <TableHeader>
             <TableRow>
               <TableHead>Requirement</TableHead>
@@ -100,8 +100,8 @@ export default function RequirementsPage() {
                     <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">{r.unread_messages} new</span>
                   )}
                 </TableCell>
-                {isAdmin && <TableCell className="align-top">{r.buyer_name || "—"}</TableCell>}
-                {isAdmin && <TableCell className="align-top">{["Closed", "Awarded", "In Transit"].includes(r.stage) ? r.supplier_name || "—" : "—"}</TableCell>}
+                {isAdmin && <TableCell className="align-top">{wrapText(r.buyer_name || "—")}</TableCell>}
+                {isAdmin && <TableCell className="align-top">{wrapText(["Closed", "Awarded", "In Transit"].includes(r.stage) ? r.supplier_name || "—" : "—")}</TableCell>}
                 {(isSupplier || isBuyer) && <TableCell className="align-top">{wrapText(r.supplier_name || "—")}</TableCell>}
                 <TableCell className="align-top">{r.quantity}</TableCell>
                 <TableCell className="align-top">{r.ship_date || "—"}</TableCell>
