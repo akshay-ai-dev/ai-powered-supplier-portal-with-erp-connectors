@@ -1,10 +1,15 @@
 """The OpenAI call: a PDF or image in, a reviewable draft out.
 
 PDFs go as a Chat Completions `file` content part (base64 data URL); images go as an `image_url`
-part. Both use the strict `json_schema` structured-output format against DRAFT_JSON_SCHEMA, on the
-configured vision-capable model (gpt-4o by default). The file is validated (type and size) before
-any network call, so a bad upload never reaches OpenAI. This mirrors the existing
+part. Both use the strict `json_schema` structured-output format against a caller-supplied schema,
+on the configured vision-capable model (gpt-4o by default). The file is validated (type and size)
+before any network call, so a bad upload never reaches OpenAI. This mirrors the existing
 `app.ai.llm.OpenAILLM` pattern rather than importing it (that one is text-only).
+
+`run()` is the shared upload-and-call core: it classifies and size-checks the file, builds the
+PDF/image content part, calls OpenAI with the given system prompt, user instruction and strict JSON
+schema, and returns the raw parsed dict. The supplier shipment `extract()` here and the buyer
+requirement extractor both go through it, so the OpenAI PDF/image handling lives in one place.
 """
 
 import base64
@@ -52,7 +57,9 @@ def build_client():
     return OpenAI(api_key=settings.openai_api_key, timeout=60, max_retries=1)
 
 
-def _content_parts(kind: str, mime: str, filename: str, data: bytes) -> list[dict]:
+def _content_parts(
+    kind: str, mime: str, filename: str, data: bytes, instruction: str
+) -> list[dict]:
     b64 = base64.b64encode(data).decode()
     if kind == "pdf":
         file_part = {
@@ -64,18 +71,27 @@ def _content_parts(kind: str, mime: str, filename: str, data: bytes) -> list[dic
         }
     else:
         file_part = {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}}
-    return [{"type": "text", "text": USER_INSTRUCTION}, file_part]
+    return [{"type": "text", "text": instruction}, file_part]
 
 
-def extract(
+def run(
     filename: str,
     data: bytes,
     content_type: str | None,
     *,
+    system_prompt: str,
+    user_instruction: str,
+    json_schema: dict,
+    schema_name: str,
     client=None,
     model: str | None = None,
 ) -> dict:
-    """Validate the upload, ask OpenAI for a structured draft, tidy it, and return a plain dict."""
+    """Validate the upload and ask OpenAI for a structured draft against `json_schema`.
+
+    Returns the raw parsed dict (no domain shaping). The file type and size are checked before any
+    network call, so a bad upload never reaches OpenAI. Shared by the shipment and buyer extractors
+    so the PDF/image upload handling is not duplicated.
+    """
     kind, mime = _classify(filename, content_type)  # 415 before any network call
     if not data:
         raise DomainError("The file is empty.")
@@ -90,19 +106,22 @@ def extract(
             temperature=0,
             max_tokens=2000,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": _content_parts(kind, mime, filename, data)},
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": _content_parts(kind, mime, filename, data, user_instruction),
+                },
             ],
             response_format={
                 "type": "json_schema",
                 "json_schema": {
-                    "name": "shipment_draft",
+                    "name": schema_name,
                     "strict": True,
-                    "schema": DRAFT_JSON_SCHEMA,
+                    "schema": json_schema,
                 },
             },
         )
-        raw = json.loads(resp.choices[0].message.content or "{}")
+        return json.loads(resp.choices[0].message.content or "{}")
     except DomainError:
         raise
     except Exception as exc:  # noqa: BLE001  network, auth, quota or bad JSON -> one clear message
@@ -111,5 +130,26 @@ def extract(
             "Could not read the document right now. You can still fill the form yourself.", 503
         ) from None
 
+
+def extract(
+    filename: str,
+    data: bytes,
+    content_type: str | None,
+    *,
+    client=None,
+    model: str | None = None,
+) -> dict:
+    """Validate the upload, ask OpenAI for a structured shipment draft, tidy it, return a dict."""
+    raw = run(
+        filename,
+        data,
+        content_type,
+        system_prompt=SYSTEM_PROMPT,
+        user_instruction=USER_INSTRUCTION,
+        json_schema=DRAFT_JSON_SCHEMA,
+        schema_name="shipment_draft",
+        client=client,
+        model=model,
+    )
     draft = rules.finalize(ExtractionDraft.model_validate(raw))
     return draft.model_dump()

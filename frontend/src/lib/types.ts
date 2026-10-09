@@ -400,6 +400,32 @@ export interface ExtractionDraft {
   field_issues: FieldIssue[];
 }
 
+/** One requested item in a buyer requirement draft. Used to let the buyer choose when a document
+ * lists several items; quantities of different items are never combined. */
+export interface RequirementDraftItem {
+  item_name: string | null;
+  specs: string | null;
+  quantity: number | null;
+  unit_of_measure: string | null;
+  target_price: number | null;
+}
+
+/** The reviewable buyer draft returned by POST /api/extraction-prefill/requirements. Saves nothing:
+ * no requirement, attachment or ERP call. The ERP system is not extracted; the buyer selects it. */
+export interface RequirementDraft {
+  title: string | null;
+  description: string | null;
+  quantity: number | null;
+  target_price: number | null;
+  needed_by: string | null;
+  quote_deadline: string | null;
+  quote_deadline_tz?: string | null;
+  items: RequirementDraftItem[];
+  references: { value: string; label: string | null; page: number | null; kind: string }[];
+  evidence: { field: string; page: number | null; text: string }[];
+  field_issues: FieldIssue[];
+}
+
 /** Result of comparing a reviewed shipped quantity against the PO (POST …/shipments/{po_id}/compare). */
 export interface QuantityComparison {
   status: "match" | "over_shipped" | "under_shipped" | "cannot_compare";
