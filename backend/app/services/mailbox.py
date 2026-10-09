@@ -77,6 +77,7 @@ def list_inbox(conn: sqlite3.Connection, user: dict, limit: int = 50) -> list[di
     newest_first = sorted(found.values(), key=lambda m: m.get("Created") or "", reverse=True)
     return [_summary(m) for m in newest_first[:limit]]
 
+
 def unread_count(conn: sqlite3.Connection, user: dict) -> int:
     """How many of the user's emails are still unread. Mailpit marks an email read once it is opened."""
     return sum(1 for m in list_inbox(conn, user, limit=200) if not m["read"])
