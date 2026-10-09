@@ -58,6 +58,8 @@ export interface Notification {
   id: number;
   title: string;
   message: string;
+  /** Portal path the bell opens on click, e.g. "/requirements/7". Null for older notifications. */
+  link: string | null;
   is_read: number;
   created_at: string;
 }
