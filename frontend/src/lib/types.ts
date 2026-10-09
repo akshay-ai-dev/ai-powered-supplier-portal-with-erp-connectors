@@ -360,25 +360,21 @@ export interface AssistantResponse {
   warning?: string;
   progress?: { done: number; total: number };
   result: AssistantResult | null;
-  ai?: boolean; // menu only: natural-language filling is available (an OpenAI key is configured)
 }
 
-/** One turn of natural-language form filling. It never saves anything: `fill` carries values for the user to review in the real form. */
-export interface FillResponse {
-  mode: "fill";
-  stage: "pick" | "describe" | "ask" | "ready" | "cancelled";
-  state: Record<string, unknown> | null;
-  message: string;
-  error: string | null;
-  form?: string | null;
-  title?: string;
-  options: AssistantOption[];
-  controls: Partial<AssistantControls>;
-  values: { label: string; value: string }[];
-  missing: { key: string; label: string }[];
-  notes: string[];
-  filter?: string;
-  fill: { form: string; route: string; target: number | null; values: Record<string, unknown> } | null;
+/** A draft tool's result: what would be saved and the REST call that saves it. Nothing is saved until the user confirms. */
+export interface ChatDraft {
+  saved: false;
+  summary: Record<string, string | number>;
+  confirm: { method: string; path: string; body: unknown; label: string };
+}
+/** One answer from the ask box (POST /api/assistant/chat): the one MCP tool GPT-4o picked, its arguments and its result as is. */
+export interface ChatReply {
+  tool: string | null;
+  args?: Record<string, unknown>;
+  result?: unknown;
+  error?: string;
+  help?: string[];
 }
 
 /** A field-level note on an extracted packing-list draft. A review aid from the model, not verified proof. */

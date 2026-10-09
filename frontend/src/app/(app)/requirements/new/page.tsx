@@ -4,8 +4,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { api, fileSize, localInputToIso, toLocalInput, uploadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { AiBanner, useAiFill } from "@/lib/prefill";
-import { cn } from "@/lib/utils";
 import { useFetch } from "@/lib/use-fetch";
 import type { InventoryItem, Requirement, Supplier } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -30,21 +28,6 @@ export default function NewRequirementPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const ai = useAiFill("new_requirement", (v) => {
-    setF((p) => ({
-      ...p,
-      ...(v.item_code !== undefined ? { item_code: v.item_code } : {}),
-      ...(v.title ? { title: v.title } : {}),
-      ...(v.description ? { description: v.description } : {}),
-      ...(v.quantity != null ? { quantity: String(v.quantity) } : {}),
-      ...(v.target_price != null ? { target_price: String(v.target_price) } : {}),
-      ...(v.needed_by ? { needed_by: v.needed_by } : {}),
-      ...(v.erp ? { erp: v.erp } : {}),
-    }));
-    if (v.audience) setAudience(v.audience === "selected" ? "selected" : "all");
-    if (Array.isArray(v.supplier_ids)) setInvited(v.supplier_ids);
-    if (v.quote_deadline !== undefined) setDeadline(v.quote_deadline === "none" ? "" : v.quote_deadline);
-  });
 
   if (user && user.role !== "buyer" && user.role !== "admin") return <ErrorNote message="Only buyers can post requirements." />;
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
@@ -99,14 +82,13 @@ export default function NewRequirementPage() {
     <>
       <PageHeader title="New requirement" description="Open it to every supplier, or invite specific ones. Only they can see it and respond with a quote." />
       <div className="max-w-2xl">
-        <AiBanner show={ai.any} onDismiss={ai.clear} />
       </div>
       <Card className="max-w-2xl">
         <CardContent className="pt-6">
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="item">Item</Label>
-              <select id="item" value={f.item_code} onChange={set("item_code")} className={cn(selectCls, ai.ring("item_code"))}>
+              <select id="item" value={f.item_code} onChange={set("item_code")} className={selectCls}>
                 <option value="">New item (not in inventory)</option>
                 {inventory.data?.map((i) => (
                   <option key={i.id} value={i.item_code}>
@@ -125,37 +107,37 @@ export default function NewRequirementPage() {
             {!chosen && (
               <div className="space-y-2">
                 <Label htmlFor="title">New item name</Label>
-                <Input id="title" required value={f.title} onChange={set("title")} placeholder="e.g. Hydraulic pump assembly" className={ai.ring("title")} />
+                <Input id="title" required value={f.title} onChange={set("title")} placeholder="e.g. Hydraulic pump assembly" />
               </div>
             )}
             <div className="space-y-2">
               <Label htmlFor="desc">Specs and notes (optional)</Label>
-              <Textarea id="desc" value={f.description} onChange={set("description")} placeholder="Specs, quality, delivery location…" className={ai.ring("description")} />
+              <Textarea id="desc" value={f.description} onChange={set("description")} placeholder="Specs, quality, delivery location…" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="qty">Quantity</Label>
-                <Input id="qty" type="number" min={1} required value={f.quantity} onChange={set("quantity")} className={ai.ring("quantity")} />
+                <Input id="qty" type="number" min={1} required value={f.quantity} onChange={set("quantity")} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="erp">ERP system</Label>
-                <select id="erp" value={f.erp} onChange={set("erp")} className={cn(selectCls, ai.ring("erp"))}>
+                <select id="erp" value={f.erp} onChange={set("erp")} className={selectCls}>
                   <option value="sap">SAP</option>
                   <option value="infor">Infor LN</option>
                 </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tp">Target unit price (optional)</Label>
-                <Input id="tp" type="number" min={0} step="0.01" value={f.target_price} onChange={set("target_price")} className={ai.ring("target_price")} />
+                <Input id="tp" type="number" min={0} step="0.01" value={f.target_price} onChange={set("target_price")} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="nb">Needed by (optional)</Label>
-                <Input id="nb" type="date" value={f.needed_by} onChange={set("needed_by")} className={ai.ring("needed_by")} />
+                <Input id="nb" type="date" value={f.needed_by} onChange={set("needed_by")} />
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="dl">Quote deadline</Label>
                 <div className="flex gap-2">
-                  <Input id="dl" type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={ai.ring("quote_deadline")} />
+                  <Input id="dl" type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
                   <Button type="button" variant="outline" onClick={() => setDeadline("")} disabled={!deadline}>
                     No deadline
                   </Button>
@@ -166,7 +148,7 @@ export default function NewRequirementPage() {
               </div>
             </div>
 
-            <fieldset className={cn("space-y-2 rounded-md", ai.ring("audience"))}>
+            <fieldset className="space-y-2 rounded-md">
               <legend className="text-sm font-medium">Who can respond?</legend>
               <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm">
                 <input type="radio" name="audience" className="mt-1" checked={audience === "all"} onChange={() => setAudience("all")} />

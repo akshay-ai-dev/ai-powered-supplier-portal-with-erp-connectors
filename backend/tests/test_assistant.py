@@ -447,20 +447,21 @@ def test_award_supplier_conversation(client):
     assert r["step"] == "requirement"
     labels = [o["label"] for o in r["options"]]
     assert any(
-        f"REQ{2000 + mine['id']}" in lb and "2 quote(s)" in lb and "best 9.00" in lb
+        f"REQ{2000 + mine['id']}" in lb and "2 quote(s)" in lb and "top " in lb and "90.00" in lb
         for lb in labels
     )
     assert not any(f"REQ{2000 + no_quotes['id']}" in lb for lb in labels)  # nothing to award
     r = turn(client, buyer, r["state"], f"REQ{2000 + mine['id']}")
     r = turn(client, buyer, r["state"], "1")
     assert r["step"] == "quote" and len(r["options"]) == 2
-    assert (
-        "lowest price" in r["options"][0]["label"]
-        and "90.00 total" in r["options"][0]["label"]
-        and "fastest" in r["options"][1]["label"]
-    )
+    # SRS ranking (no need-by date, so both are on time): lowest total first
+    first, second = r["options"][0]["label"], r["options"][1]["label"]
+    assert first.startswith("#1 ") and "90.00 total" in first and "(on time)" in first
+    assert second.startswith("#2 rival-award") and "120.00 total" in second
     r = turn(client, buyer, r["state"], "2")  # the faster, dearer one wins
     assert r["stage"] == "summary" and "cannot be undone" in r["warning"]
+    erp_call = next(s["value"] for s in r["summary"] if s["label"] == "ERP call")
+    assert erp_call == "SAP · Create purchase order · rival-award · ITEM002 · 10 × 12.00 = 120.00"
     assert (
         client.get(f"/api/requirements/{mine['id']}", headers=buyer).json()["status"] == "Open"
     )  # not yet
@@ -588,3 +589,36 @@ def test_approve_purchase_order_conversation(client):
         client.get(f"/api/purchase-orders/{other['id']}", headers=buyer).json()["status"]
         == "Pending"
     )
+
+
+def test_award_menu_ranks_on_time_suppliers_before_cheaper_late_ones(client):
+    """The award menu uses the SRS ranking (ranking.rank_quotes), the same order the AI Assistant shows."""
+    from datetime import date, timedelta
+
+    buyer, sup = login(client, "buyer@demo.com"), login(client, "supplier@demo.com")
+    punctual, _ = _register_supplier(client, "punctual-award@x.com")
+    need_by = (date.today() + timedelta(days=10)).isoformat()
+    req = client.post(
+        "/api/requirements",
+        headers=buyer,
+        json={"title": "Ranked award", "quantity": 4, "needed_by": need_by, "open_to_all": True},
+    ).json()
+    # cheapest, but delivers after the need-by date
+    client.put(
+        f"/api/requirements/{req['id']}/quote",
+        headers=sup,
+        json={"unit_price": 5, "lead_time_days": 30},
+    )
+    # dearer, but on time
+    client.put(
+        f"/api/requirements/{req['id']}/quote",
+        headers=punctual,
+        json={"unit_price": 7, "lead_time_days": 2},
+    )
+
+    r = start(client, buyer, 2)
+    r = turn(client, buyer, r["state"], f"REQ{2000 + req['id']}")
+    r = turn(client, buyer, r["state"], "1")
+    first, second = r["options"][0]["label"], r["options"][1]["label"]
+    assert first.startswith("#1 punctual-award") and "28.00 total" in first and "(on time)" in first
+    assert second.startswith("#2 ") and "20.00 total" in second and "(late)" in second

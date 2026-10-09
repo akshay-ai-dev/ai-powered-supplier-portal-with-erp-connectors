@@ -176,9 +176,9 @@ def reset_data(conn: sqlite3.Connection, admin: dict) -> None:
         "audit_logs",
     ):
         conn.execute(f"DELETE FROM {table}")
+    conn.execute("DELETE FROM inventory")  # before users: every item has an owner
     conn.execute("UPDATE users SET supplier_id = NULL WHERE id = ?", (admin["id"],))
     conn.execute("DELETE FROM users WHERE id != ?", (admin["id"],))
-    conn.execute("DELETE FROM inventory")
     conn.execute("DELETE FROM suppliers")
     conn.execute("DELETE FROM sqlite_sequence WHERE name NOT IN ('users')")
     for c in all_connectors().values():

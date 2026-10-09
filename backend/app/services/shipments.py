@@ -838,7 +838,7 @@ def inspect(
             )
         movement = erp.release_stock(po, ship, lines)["movement_ref"] if lines else None
         for ln in lines:
-            inventory_svc.receive_stock(conn, ln["item_code"], ln["quantity"])
+            inventory_svc.receive_stock(conn, po["created_by"], ln["item_code"], ln["quantity"])
         conn.execute(
             "UPDATE shipments SET status = 'Approved', inspected_at = ?, inspected_by = ?, inspection_notes = ?, quality_checks = ?, erp_movement_ref = ? WHERE id = ?",
             (now(), user["id"], notes, checks_json, movement, shipment_id),

@@ -41,6 +41,12 @@ class Settings:
     seed_demo_data: bool = os.getenv("SEED_DEMO_DATA", "true").lower() == "true"
     # Which ERP connector backs inventory/vendors: "sap" or "infor"
     erp_backend: str = os.getenv("ERP_BACKEND", "sap")
+    # Chat widget ask box: GPT-4o picks one MCP tool per question (app/ai/chat.py). Empty key = ask box unavailable.
+    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o")
+    # DEBUG=true: the backend also prints debug logs (for now: each chat question and GPT-4o's raw output) to its
+    # console, which `docker compose logs -f backend` shows. Off by default.
+    debug: bool = os.getenv("DEBUG", "false").lower() == "true"
     # How often the background job checks quote deadlines (reminders / "quotes closed"). 0 disables it.
     deadline_check_seconds: int = int(os.getenv("DEADLINE_CHECK_SECONDS", "60"))
 
@@ -53,10 +59,6 @@ class Settings:
     # (https://erp.example.com) or, on a local network, to this computer's address (http://192.168.1.44:3000).
     # Empty = the labels fall back to the address the supplier's browser is on.
     public_app_url: str = _public_url(os.getenv("PUBLIC_APP_URL", ""))
-
-    # In-app assistant: natural-language form filling uses OpenAI structured outputs. Without a key only the numbered menus work.
-    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
-    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o")
 
 
 settings = Settings()

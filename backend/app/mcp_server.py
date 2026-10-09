@@ -26,9 +26,9 @@ _current_user_id: contextvars.ContextVar[int | None] = contextvars.ContextVar(
 mcp = FastMCP(
     "ERP Copilot",
     instructions=(
-        "Tools for procurement: inventory lookup, supplier search, requirements with supplier quotes, and purchase orders. "
-        "Write tools only create Drafts; approving, awarding and closing stay with a human buyer. "
-        "draft_award only proposes an award and saves nothing; the buyer confirms it in the app."
+        "Tools for procurement: inventory lookup, supplier search, requests with supplier quotes, ERP documents, "
+        "purchase orders and shipments. create_purchase_order only creates Draft orders. The draft_* tools save "
+        "nothing: they return what would be saved and the REST call that saves it, which a person confirms in the app."
     ),
 )
 
@@ -58,20 +58,20 @@ def _run(fn, write: bool = False):
 @mcp.tool
 def get_inventory(item_code: str) -> dict:
     """Get current stock for an item code, e.g. ITEM001."""
-    return _run(lambda c: agent_tools.get_inventory(c, item_code))
+    return _run(lambda c: agent_tools.get_inventory(c, _acting_user(c), item_code))
 
 
 @mcp.tool
-def search_supplier(supplier_name: str) -> list[dict]:
+def search_suppliers(supplier_name: str) -> list[dict]:
     """Search suppliers by (partial) name, email or address."""
-    return _run(lambda c: agent_tools.search_supplier(c, supplier_name))
+    return _run(lambda c: agent_tools.search_suppliers(c, supplier_name))
 
 
 @mcp.tool
 def create_purchase_order(
     supplier_id: int, item_code: str, quantity: int, unit_price: float | None = None
 ) -> dict:
-    """Create a Draft purchase order for one item. Unit price defaults to the item's last known price. Needs a write-scope token."""
+    """Create a purchase order (status Draft) for one item from one supplier: supplier_id is the supplier's number, e.g. 2. Unit price defaults to the item's last known price. The order still has to be approved before it goes to the ERP. MCP clients need a write-scope token."""
     return _run(
         lambda c: agent_tools.create_purchase_order(
             c, _acting_user(c), supplier_id, item_code, quantity, unit_price
@@ -87,18 +87,6 @@ def get_purchase_order(po_number: str) -> dict:
 
 
 @mcp.tool
-def list_requirements(stage: str | None = None) -> list[dict]:
-    """List the buyer's requirements (RFQs). Optional stage: Open, Quoted, Awarded, In Transit, Delivered, Closed, Cancelled."""
-    return _run(lambda c: agent_tools.list_requirements(c, _acting_user(c), stage))
-
-
-@mcp.tool
-def get_requirement(req_number: str) -> dict:
-    """Get one requirement (e.g. REQ2001) with all supplier quotes, for comparing offers."""
-    return _run(lambda c: agent_tools.get_requirement(c, _acting_user(c), req_number))
-
-
-@mcp.tool
 def list_purchase_orders(status: str | None = None) -> list[dict]:
     """List the buyer's purchase orders. Optional status: Draft, Pending, Approved, Closed."""
     return _run(lambda c: agent_tools.list_purchase_orders(c, _acting_user(c), status))
@@ -106,7 +94,7 @@ def list_purchase_orders(status: str | None = None) -> list[dict]:
 
 @mcp.tool
 def list_requests(status: str | None = None) -> list[dict]:
-    """List the buyer's requests across both ERPs. Optional status (stage): Open, Quoted, Quotes closed, Awarded, In Transit, Delivered, Rejected, Closed, Cancelled."""
+    """List the buyer's requests across both ERPs. Optional status: one stage or several separated by commas, from Open, Quoted, Quotes closed, Awarded, In Transit, Delivered, Rejected, Closed, Cancelled. Requests waiting for an award are "Quoted,Quotes closed"; open ones still taking quotes are "Open,Quoted"."""
     return _run(lambda c: agent_tools.list_requests(c, _acting_user(c), status))
 
 
@@ -126,6 +114,78 @@ def compare_responses(req_number: str) -> dict:
 def draft_award(req_number: str) -> dict:
     """Propose awarding a request to its top-ranked supplier: returns the comparison table and the exact ERP call. Saves nothing."""
     return _run(lambda c: agent_tools.draft_award(c, _acting_user(c), req_number))
+
+
+@mcp.tool
+def get_erp_documents(req_number: str) -> dict:
+    """The ERP's own documents for a request's purchase order (e.g. REQ2001): the order, inbound deliveries or receipts, stock movements and invoice holds, from SAP or Infor LN."""
+    return _run(lambda c: agent_tools.get_erp_documents(c, _acting_user(c), req_number))
+
+
+@mcp.tool
+def check_shipments(view: str = "incoming") -> list[dict]:
+    """Shipments for the warehouse. view: incoming, arriving_today, overdue, awaiting_inspection or inspected."""
+    return _run(lambda c: agent_tools.check_shipments(c, _acting_user(c), view))
+
+
+@mcp.tool
+def draft_request(
+    quantity: int,
+    item_code: str | None = None,
+    title: str | None = None,
+    needed_by: str | None = None,
+    erp: str = "sap",
+    target_price: float | None = None,
+    description: str = "",
+) -> dict:
+    """Draft a new request for quotes: an item code from the buyer's inventory (or a title for something new), quantity, optional need-by date (YYYY-MM-DD), ERP (sap or infor) and target price. Saves nothing."""
+    return _run(
+        lambda c: agent_tools.draft_request(
+            c,
+            _acting_user(c),
+            quantity,
+            item_code,
+            title,
+            needed_by,
+            erp,
+            target_price,
+            description,
+        )
+    )
+
+
+@mcp.tool
+def draft_po_approval(po_number: str) -> dict:
+    """Draft approving a Pending purchase order (e.g. PO1004), which sends it to the ERP and the supplier. Saves nothing."""
+    return _run(lambda c: agent_tools.draft_po_approval(c, _acting_user(c), po_number))
+
+
+@mcp.tool
+def draft_quote(req_number: str, unit_price: float, lead_time_days: int, message: str = "") -> dict:
+    """Draft a supplier's quote on an open request (e.g. REQ2002): unit price, lead time in days and an optional message. Saves nothing."""
+    return _run(
+        lambda c: agent_tools.draft_quote(
+            c, _acting_user(c), req_number, unit_price, lead_time_days, message
+        )
+    )
+
+
+@mcp.tool
+def draft_arrival(
+    shipment_no: str, received: dict[str, int] | None = None, notes: str = ""
+) -> dict:
+    """Draft recording that a shipment (e.g. SHP3001) arrived. received maps item code to the quantity counted; items left out count as fully received. Saves nothing."""
+    return _run(
+        lambda c: agent_tools.draft_arrival(c, _acting_user(c), shipment_no, received, notes)
+    )
+
+
+@mcp.tool
+def draft_delivery_approval(shipment_no: str, notes: str = "") -> dict:
+    """Draft approving an arrived shipment (e.g. SHP3001) after all four quality checks passed; approving releases the stock. Saves nothing."""
+    return _run(
+        lambda c: agent_tools.draft_delivery_approval(c, _acting_user(c), shipment_no, notes)
+    )
 
 
 class MCPAuthMiddleware:

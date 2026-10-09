@@ -918,7 +918,7 @@ def decide(
                 )["movement_ref"]
             )
         for ln in lines_ok:
-            inventory_svc.receive_stock(conn, ln["item_code"], ln["quantity"])
+            inventory_svc.receive_stock(conn, po["created_by"], ln["item_code"], ln["quantity"])
         for it in ship["items"]:
             conn.execute(
                 "UPDATE shipment_items SET quantity_accepted = ? WHERE shipment_id = ? AND item_code = ? COLLATE NOCASE",

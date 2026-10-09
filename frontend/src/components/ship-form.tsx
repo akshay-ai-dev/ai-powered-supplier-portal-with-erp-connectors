@@ -4,7 +4,6 @@ import { FileSearch, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { api, uploadFile } from "@/lib/api";
-import { AiBanner, useAiFill } from "@/lib/prefill";
 import { cn } from "@/lib/utils";
 import type { ExtractionDraft, FieldIssue, PurchaseOrder, QuantityComparison, Shipment, ToShip } from "@/lib/types";
 import { Textarea } from "@/components/ui/textarea";
@@ -162,25 +161,7 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
     setQty((p) => ({ ...p, [applyItem]: pl.shipped_quantity }));
   }
 
-  const ai = useAiFill(
-    "ship_order",
-    (v) => {
-      const byCode = new Map(remaining.map((r) => [r.item_code.toUpperCase(), r.item_code]));
-      setQty((q) => {
-        const next = { ...q };
-        for (const [code, n] of Object.entries(v.quantities ?? {})) {
-          const key = byCode.get(code.toUpperCase());
-          if (key) next[key] = String(n);
-        }
-        return next;
-      });
-      if (v.carrier != null) setF((p) => ({ ...p, carrier: v.carrier }));
-      if (v.tracking_no != null) setTracking(String(v.tracking_no));
-      if (v.expected_arrival != null) setF((p) => ({ ...p, expected_arrival: v.expected_arrival }));
-      if (v.notes != null) setF((p) => ({ ...p, notes: v.notes }));
-    },
-    po.id,
-  );
+
 
   if (remaining.every((r) => r.left === 0)) return null;
 
@@ -290,7 +271,6 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
-          <AiBanner show={ai.any} onDismiss={ai.clear} />
 
           {/* A. Upload */}
           <fieldset className="space-y-2 rounded-md border p-3">
@@ -322,7 +302,7 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
             <legend className="px-1 text-sm font-medium">B. Review the extracted fields</legend>
             <div className="grid gap-4 sm:grid-cols-2">
               {field("ship_date", "Ship date", <Input type="date" value={pl.ship_date} onChange={(e) => setPl({ ...pl, ship_date: e.target.value })} />)}
-              {field("carrier", "Carrier", <Input value={f.carrier} onChange={(e) => setF({ ...f, carrier: e.target.value })} className={ai.ring("carrier")} placeholder="FedEx, UPS, Maersk…" />)}
+              {field("carrier", "Carrier", <Input value={f.carrier} onChange={(e) => setF({ ...f, carrier: e.target.value })} placeholder="FedEx, UPS, Maersk…" />)}
             </div>
             {field("tracking_numbers", "Tracking numbers", <Textarea rows={2} value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="One per line" />)}
             {field(
@@ -445,7 +425,7 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
             {lines.map((r) => (
               <div key={r.item_code} className="flex items-center gap-3 text-sm">
                 <span className="w-32 font-mono text-xs">{r.item_code}</span>
-                <Input aria-label={`Quantity of ${r.item_code}`} className={cn("w-28", ai.ring("quantities"))} type="number" min={0} max={r.left} value={qty[r.item_code] ?? ""} onChange={(e) => setQty({ ...qty, [r.item_code]: e.target.value })} />
+                <Input aria-label={`Quantity of ${r.item_code}`} className="w-28" type="number" min={0} max={r.left} value={qty[r.item_code] ?? ""} onChange={(e) => setQty({ ...qty, [r.item_code]: e.target.value })} />
                 <span className="text-xs text-muted-foreground">{target ? `${r.left} to replace` : `${r.left} still to ship`}</span>
               </div>
             ))}
@@ -453,7 +433,7 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="eta">Expected arrival</Label>
-              <Input id="eta" type="date" value={f.expected_arrival} onChange={(e) => setF({ ...f, expected_arrival: e.target.value })} className={ai.ring("expected_arrival")} />
+              <Input id="eta" type="date" value={f.expected_arrival} onChange={(e) => setF({ ...f, expected_arrival: e.target.value })} />
             </div>
             <div className="space-y-1">
               <Label htmlFor="pl-file">Replace the attached document (optional)</Label>
@@ -462,7 +442,7 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
           </div>
           <div className="space-y-1">
             <Label htmlFor="sn">Notes for the warehouse</Label>
-            <Input id="sn" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} className={ai.ring("notes")} />
+            <Input id="sn" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} />
           </div>
           <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm">
             <input type="checkbox" className="mt-1" checked={qr} onChange={(e) => setQr(e.target.checked)} />

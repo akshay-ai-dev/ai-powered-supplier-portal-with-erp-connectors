@@ -28,13 +28,14 @@ CREATE TABLE IF NOT EXISTS users (
 );
 CREATE TABLE IF NOT EXISTS inventory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_code TEXT NOT NULL UNIQUE,
+    item_code TEXT NOT NULL,
     description TEXT NOT NULL,
     stock_quantity INTEGER NOT NULL DEFAULT 0,
     warehouse TEXT NOT NULL DEFAULT 'MAIN',
     source TEXT NOT NULL DEFAULT 'sap',
-    created_by INTEGER REFERENCES users(id),
-    updated_at TEXT NOT NULL
+    created_by INTEGER REFERENCES users(id), -- the owner: each buyer and supplier has their own inventory
+    updated_at TEXT NOT NULL,
+    UNIQUE (created_by, item_code)
 );
 CREATE TABLE IF NOT EXISTS purchase_orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -343,12 +344,47 @@ def _migrate_users_role(conn: sqlite3.Connection) -> None:
     conn.execute("PRAGMA foreign_keys = ON")
 
 
+def _migrate_inventory_owner(conn: sqlite3.Connection) -> None:
+    """Item codes used to be unique across everyone; now each owner (created_by) has their own inventory.
+    SQLite cannot drop a UNIQUE constraint, so older databases get the table rebuilt."""
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'inventory'"
+    ).fetchone()
+    if not row or "UNIQUE (created_by, item_code)" in row["sql"]:
+        return
+    conn.commit()
+    conn.execute("PRAGMA foreign_keys = OFF")
+    conn.executescript(
+        """
+        BEGIN;
+        CREATE TABLE inventory_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_code TEXT NOT NULL,
+            description TEXT NOT NULL,
+            stock_quantity INTEGER NOT NULL DEFAULT 0,
+            warehouse TEXT NOT NULL DEFAULT 'MAIN',
+            source TEXT NOT NULL DEFAULT 'sap',
+            created_by INTEGER REFERENCES users(id),
+            updated_at TEXT NOT NULL,
+            UNIQUE (created_by, item_code)
+        );
+        INSERT INTO inventory_new (id, item_code, description, stock_quantity, warehouse, source, created_by, updated_at)
+            SELECT id, item_code, description, stock_quantity, warehouse, source, created_by, updated_at FROM inventory;
+        DROP TABLE inventory;
+        ALTER TABLE inventory_new RENAME TO inventory;
+        COMMIT;
+        """
+    )
+    conn.execute("PRAGMA foreign_keys = ON")
+
+
 def init_db() -> None:
     conn = connect()
     try:
         conn.executescript(SCHEMA)
         _migrate(conn)
         _migrate_users_role(conn)
+        _migrate_inventory_owner(conn)
         # Requirements created before invitations existed stay visible to every supplier.
         conn.execute(
             "INSERT OR IGNORE INTO requirement_invites (requirement_id, supplier_id, created_at) "

@@ -4,18 +4,15 @@ Next.js 15 frontend, FastAPI backend, SQLite, Mailpit, FastMCP, and mock SAP / I
 
 ## First-time setup
 
-**Prerequisites:** Git, Docker Desktop (running; on Windows use the WSL 2 backend), Node.js 22+, and `uv`
-(only needed if the voice model has to be downloaded rather than copied). About 2 GB free disk.
+**Prerequisites:** Git, Docker Desktop (running; on Windows use the WSL 2 backend), Node.js 22+. About 2 GB free disk.
 
 1. **Clone**
    ```bash
    git clone https://github.com/akshay-ai-dev/ai-powered-supplier-portal-with-erp-connectors.git
    cd ai-powered-supplier-portal-with-erp-connectors
    ```
-2. **Download the browser models** (once, ~440 MB, into the gitignored `frontend/public/models/`)
-   ```bash
-   cd frontend && npm run fetch:models && cd ..
-   ```
+2. **OpenAI key** (for the chat widget's ask box): copy `.env.example` to `.env` and set `OPENAI_API_KEY`.
+   Without it the ask box says the assistant is unavailable; the numbered menus still work.
 3. **Free ports** 3000, 8000, 8025 and 8080 (stop any other Docker project using them).
 4. **Build and start** (first build takes about 5 minutes)
    ```bash
@@ -63,11 +60,16 @@ Everything is audited, and actions that arrived through an AI agent carry an **A
 
 ## MCP / AI agents
 
-The FastMCP server is at `/mcp/` (Streamable HTTP). Tools: `get_inventory`, `search_supplier`, `create_purchase_order` (Draft only),
-`get_purchase_order`, `list_requirements`, `get_requirement`, `list_purchase_orders`, and the buyer-assistant tools (SRS §6.1)
-`list_requests`, `get_request_detail`, `compare_responses` (ranking computed in code) and `draft_award` (saves nothing).
-Approving, awarding and closing stay human-only.
-The same tools exist as OpenAPI endpoints under `POST /api/mcp/<tool>` (schema at `/openapi.json`, discovery at `GET /api/mcp/tools`).
+The FastMCP server is at `/mcp/` (Streamable HTTP). 16 tools:
+- **Read:** `list_requests`, `get_request_detail`, `compare_responses` (ranking computed in code), `get_erp_documents`
+  (the mock SAP / Infor LN documents for a request's PO), `search_suppliers`, `get_inventory`, `get_purchase_order`,
+  `list_purchase_orders`, `check_shipments`.
+- **Drafts, which save nothing** and return the REST call that saves it, for a person to confirm in the app: `draft_award`,
+  `draft_request`, `draft_po_approval`, `draft_quote`, `draft_arrival`, `draft_delivery_approval`.
+- **Write:** `create_purchase_order` (Draft orders only). Approving, awarding and closing stay human-only.
+
+The tools that existed before the chat widget used them also exist as OpenAPI endpoints under `POST /api/mcp/<tool>`
+(schema at `/openapi.json`); `GET /api/mcp/tools` lists all 16.
 
 **Authentication**: `Authorization: Bearer <token>`. Each buyer (or admin) creates their own token under **API access** in the app:
 - the token acts as that user: the agent sees only that user's data, and the audit log names the token used;
@@ -92,25 +94,18 @@ cd backend
 - Clients that only speak stdio (for example Claude Desktop) can bridge with `npx mcp-remote http://localhost:8000/mcp/ --header "Authorization: Bearer <token>"`.
 - Custom agents: any MCP SDK client works, for example `fastmcp.Client("http://localhost:8000/mcp/", auth="<token>")`.
 
-## AI Assistant (buyers)
+## Chat assistant (every role)
 
-**AI Assistant** in the buyer menu answers four kinds of questions: list requests, show one request, compare responses,
-and draft an award. Everything runs in the browser:
-- A semantic router (all-MiniLM-L6-v2 in a Web Worker) picks the tool. Its example phrasings are in
-  `frontend/src/lib/router/routes.json`; after editing them, run `npm run build:centroids`.
-- The page calls that tool's `POST /api/mcp/<tool>` and shows the result in a fixed template. No LLM writes the answers.
-- **Confirm award** calls the normal award endpoint. Nothing is saved before that click.
-- The mic button transcribes speech with Moonshine (English). The ~385 MB model loads on the first press.
-
-**Models (once, before `docker compose up --build`).** They are served from `frontend/public/models/`, which is
-gitignored, and never fetched from Hugging Face or a CDN at runtime:
-
-```
-cd frontend && npm run fetch:models
-```
-
-Moonshine is copied from `experiments/moonshine_browser_stt/models/` when present; otherwise it is downloaded and
-re-saved, which needs `uv`. To serve the models from file storage later, set `NEXT_PUBLIC_MODELS_URL`.
+The floating chat widget has numbered menus for each role and, on the menu screen, an ask box:
+- `POST /api/assistant/chat` sends the question and the chat history (earlier questions and tool calls, never tool
+  results) to GPT-4o (`OPENAI_MODEL`) with only the user's role's MCP tools. GPT-4o picks at most one tool and its
+  parameters; the backend runs it as the user (`backend/app/ai/chat.py`).
+  - Buyers: requests, comparisons, ERP documents, suppliers, stock; drafts a request, an award, a PO approval or a PO.
+  - Suppliers: their orders and stock; drafts a quote.
+  - Inspectors: latest requests, shipments, stock; drafts an arrival or a delivery approval.
+- The widget shows the tool's result as it is; no LLM writes the answers. A question no tool fits gets a fixed help list.
+- A draft is shown as a card with what would be saved and the exact REST call. Nothing is saved before the user clicks
+  confirm, which calls the normal endpoint.
 
 ## Local dev (without Docker)
 
