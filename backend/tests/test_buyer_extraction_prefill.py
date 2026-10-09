@@ -2,7 +2,7 @@
 from tests.test_api import login  # noqa: F401  (sets the test environment before the app is imported)
 import json
 import types
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -72,14 +72,18 @@ def test_buyer_extract_rejects_empty_file():
 
 def test_buyer_extract_rejects_oversize_file():
     with pytest.raises(DomainError) as e:
-        buyer_extractor.extract("req.pdf", b"x" * (buyer_extractor.MAX_BYTES + 1), "application/pdf")
+        buyer_extractor.extract(
+            "req.pdf", b"x" * (buyer_extractor.MAX_BYTES + 1), "application/pdf"
+        )
     assert e.value.status_code == 413
 
 
 # ---- extractor: dispatch (PDF file part / image_url part), strict schema ----------------------
 def test_buyer_extract_sends_pdf_as_file_part_with_strict_schema():
     capture: dict = {}
-    buyer_extractor.extract("req.pdf", PDF_BYTES, "application/pdf", client=fake_openai("{}", capture))
+    buyer_extractor.extract(
+        "req.pdf", PDF_BYTES, "application/pdf", client=fake_openai("{}", capture)
+    )
     assert capture["response_format"]["json_schema"]["strict"] is True
     assert capture["response_format"]["json_schema"]["name"] == "requirement_draft"
     file_part = next(p for p in capture["messages"][1]["content"] if p["type"] == "file")
@@ -183,13 +187,30 @@ def test_buyer_extract_multiple_items_requires_choice_and_never_combines():
                 title=None,
                 quantity=None,
                 items=[
-                    {"item_name": "Bolt", "specs": None, "quantity": 100, "unit_of_measure": "EA", "target_price": None},
-                    {"item_name": "Nut", "specs": None, "quantity": 200, "unit_of_measure": "EA", "target_price": None},
+                    {
+                        "item_name": "Bolt",
+                        "specs": None,
+                        "quantity": 100,
+                        "unit_of_measure": "EA",
+                        "target_price": None,
+                    },
+                    {
+                        "item_name": "Nut",
+                        "specs": None,
+                        "quantity": 200,
+                        "unit_of_measure": "EA",
+                        "target_price": None,
+                    },
                 ],
                 # the model also emits a bare "not found" for quantity (as seen on a live RFQ); the
                 # finalize step must drop it so the buyer does not see a duplicate Quantity warning.
                 field_issues=[
-                    {"field": "quantity", "severity": "warning", "code": "not_found", "message": "x"}
+                    {
+                        "field": "quantity",
+                        "severity": "warning",
+                        "code": "not_found",
+                        "message": "x",
+                    }
                 ],
             )
         ),
@@ -218,12 +239,8 @@ def test_rules_is_historical_date():
 
 
 def test_rules_flags_past_needed_by_date():
-    out = buyer_rules.finalize(
-        RequirementDraft(title="Widget", quantity=1, needed_by="2001-01-01")
-    )
-    assert any(
-        i.field == "needed_by" and i.code == "historical_date" for i in out.field_issues
-    )
+    out = buyer_rules.finalize(RequirementDraft(title="Widget", quantity=1, needed_by="2001-01-01"))
+    assert any(i.field == "needed_by" and i.code == "historical_date" for i in out.field_issues)
 
 
 def test_rules_does_not_duplicate_historical_flag():
@@ -310,7 +327,7 @@ def test_tz_conversion_crosses_a_calendar_day():
     # 11:30 PM EST -> the UTC instant is 04:30 the NEXT day; the local date stays the 31st.
     out, _ = _resolve("2024-12-31T23:30:00", "EST")
     assert out == "2024-12-31T23:30:00-05:00"
-    utc = datetime.fromisoformat(out).astimezone(timezone.utc)
+    utc = datetime.fromisoformat(out).astimezone(UTC)
     assert utc.date().isoformat() == "2025-01-01" and utc.hour == 4
 
 
@@ -321,7 +338,9 @@ def test_finalize_resolves_deadline_zone_and_still_flags_past():
         )
     )
     assert out.quote_deadline == "2023-03-10T15:00:00-06:00"
-    assert any(i.field == "quote_deadline" and i.code == "historical_date" for i in out.field_issues)
+    assert any(
+        i.field == "quote_deadline" and i.code == "historical_date" for i in out.field_issues
+    )
 
 
 def test_finalize_unclear_zone_flags_review_future_deadline():
@@ -339,7 +358,9 @@ def test_requirement_extract_requires_buyer_role(client, monkeypatch):
     monkeypatch.setattr(settings, "openai_api_key", "test-key")
     monkeypatch.setattr(buyer_extractor, "extract", lambda *a, **k: {"title": "Widget"})
     sup = login(client, "supplier@demo.com")
-    r = client.post(ENDPOINT, headers=sup, files={"file": ("req.pdf", PDF_BYTES, "application/pdf")})
+    r = client.post(
+        ENDPOINT, headers=sup, files={"file": ("req.pdf", PDF_BYTES, "application/pdf")}
+    )
     assert r.status_code == 403
 
 
@@ -361,9 +382,7 @@ def test_requirement_extract_503_without_key(client, monkeypatch):
 def test_requirement_extract_reports_upload_error_visibly(client, monkeypatch):
     monkeypatch.setattr(settings, "openai_api_key", "test-key")
     buyer = login(client, "buyer@demo.com")
-    r = client.post(
-        ENDPOINT, headers=buyer, files={"file": ("notes.txt", b"hello", "text/plain")}
-    )
+    r = client.post(ENDPOINT, headers=buyer, files={"file": ("notes.txt", b"hello", "text/plain")})
     assert r.status_code == 415
     assert "PDF" in r.json()["detail"]
 
