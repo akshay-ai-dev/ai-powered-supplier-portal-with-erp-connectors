@@ -6,8 +6,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-# Draft extraction package (OpenAI PDF/image -> reviewable requirement draft). Lives beside `app/`
-# as backend/extraction_prefill/ and is wired in here; it creates no requirement, attachment or ERP record.
+# Draft extraction package (OpenAI PDF/image -> reviewable draft). Lives beside `app/` as
+# backend/extraction_prefill/ and is wired in here; it creates no requirement, shipment, attachment
+# or ERP record. One router for supplier shipment pre-fill, one for buyer New-requirement pre-fill.
+from extraction_prefill.buyer_router import router as buyer_extraction_prefill_router
 from extraction_prefill.router import router as extraction_prefill_router
 
 from .config import settings
@@ -124,6 +126,7 @@ for r in (
     assistant.router,
     ai_tools.router,
     extraction_prefill_router,
+    buyer_extraction_prefill_router,
     mock_erp.sap,
     mock_erp.infor,
 ):
