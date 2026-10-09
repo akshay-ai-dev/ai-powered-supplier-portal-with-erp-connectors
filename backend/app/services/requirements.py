@@ -240,6 +240,7 @@ def _notify_invited(conn: sqlite3.Connection, req: dict, supplier_id: int) -> No
         + (f" Quotes are due by {_deadline_text(req)}." if req["quote_deadline"] else ""),
         email_to=s["email"],
         supplier_id=supplier_id,
+        link=f"/requirements/{req['id']}",
     )
 
 
@@ -430,6 +431,7 @@ def submit_quote(conn: sqlite3.Connection, user: dict, req_id: int, data: dict) 
         message=f"{supplier['supplier_name']} quoted {data['unit_price']:.2f} per unit ({data['lead_time_days']} days lead time).",
         email_to=buyer["email"] if buyer else None,
         user_id=buyer["id"] if buyer else None,
+        link=f"/requirements/{req_id}",
     )
     audit(conn, user["id"], "quote", "requirement", req["req_number"], f"supplier={sid}")
     return get_requirement(conn, user, req_id)
@@ -507,6 +509,7 @@ def set_deadline(conn: sqlite3.Connection, user: dict, req_id: int, value: str |
             message=f"The deadline for '{req['title']}' changed. {when}",
             email_to=s["email"],
             supplier_id=sid,
+            link=f"/requirements/{req_id}",
         )
     return get_requirement(conn, user, req_id)
 
@@ -535,6 +538,7 @@ def process_deadlines(conn: sqlite3.Connection, now_dt: datetime | None = None) 
                     message=f"The deadline for '{r['title']}' has passed. {n} quote(s) received. Award a supplier, or extend the deadline to collect more quotes.",
                     email_to=buyer["email"] if buyer else None,
                     user_id=buyer["id"] if buyer else None,
+                    link=f"/requirements/{r['id']}",
                 )
                 conn.execute(
                     "UPDATE requirements SET deadline_closed_notified = 1 WHERE id = ?", (r["id"],)
@@ -551,6 +555,7 @@ def process_deadlines(conn: sqlite3.Connection, now_dt: datetime | None = None) 
                     message=f"The deadline to quote on '{r['title']}' is {_deadline_text(r)}. Log in to submit a quote or decline.",
                     email_to=s["email"],
                     supplier_id=sid,
+                    link=f"/requirements/{r['id']}",
                 )
             conn.execute("UPDATE requirements SET deadline_reminded = 1 WHERE id = ?", (r["id"],))
             reminded += 1
@@ -595,6 +600,7 @@ def award(conn: sqlite3.Connection, user: dict, req_id: int, quote_id: int) -> d
             message=f"Thank you for quoting. The requirement '{req['title']}' was awarded to another supplier.",
             email_to=s["email"],
             supplier_id=s["id"],
+            link=f"/requirements/{req_id}",
         )
     conn.execute(
         "UPDATE requirements SET status='Awarded', po_id = ? WHERE id = ?", (po["id"], req_id)

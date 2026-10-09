@@ -153,24 +153,44 @@ def _buyer(conn: sqlite3.Connection, po: dict):
 
 
 def _tell_inspectors(
-    conn: sqlite3.Connection, title: str, message: str, buyer_id: int | None = None
+    conn: sqlite3.Connection,
+    title: str,
+    message: str,
+    buyer_id: int | None = None,
+    link: str | None = None,
 ) -> None:
     """Company-wide inspectors, plus the inspectors the order's buyer created."""
     for u in conn.execute(
         "SELECT id, email FROM users WHERE role = 'inspector' AND active = 1 AND (owner_id IS NULL OR owner_id = ?)",
         (buyer_id,),
     ):
-        notify(conn, title=title, message=message, email_to=u["email"], user_id=u["id"])
+        notify(conn, title=title, message=message, email_to=u["email"], user_id=u["id"], link=link)
 
 
-def _tell_supplier_and_buyer(conn: sqlite3.Connection, po: dict, title: str, message: str) -> None:
+def _tell_supplier_and_buyer(
+    conn: sqlite3.Connection, po: dict, title: str, message: str, link: str | None = None
+) -> None:
     sup = conn.execute(
         "SELECT id, email FROM suppliers WHERE id = ?", (po["supplier_id"],)
     ).fetchone()
-    notify(conn, title=title, message=message, email_to=sup["email"], supplier_id=sup["id"])
+    notify(
+        conn,
+        title=title,
+        message=message,
+        email_to=sup["email"],
+        supplier_id=sup["id"],
+        link=link,
+    )
     buyer = _buyer(conn, po)
     if buyer:
-        notify(conn, title=title, message=message, email_to=buyer["email"], user_id=buyer["id"])
+        notify(
+            conn,
+            title=title,
+            message=message,
+            email_to=buyer["email"],
+            user_id=buyer["id"],
+            link=link,
+        )
 
 
 # ---------------------------------------------------------------- queries
@@ -564,12 +584,14 @@ def create_shipment(conn: sqlite3.Connection, user: dict, po_id: int, data: dict
             message=msg,
             email_to=buyer["email"],
             user_id=buyer["id"],
+            link=f"/shipments/{sid}",
         )
     _tell_inspectors(
         conn,
         f"Incoming shipment {number}",
         msg + " Please receive and inspect it on arrival.",
         po["created_by"],
+        link=f"/shipments/{sid}",
     )
     return _hydrate(conn, _row(conn, sid))
 
@@ -752,6 +774,7 @@ def record_arrival(
         po,
         f"Shipment {s['shipment_no']} arrived" + (" with a quantity shortfall" if short else ""),
         body,
+        link=f"/shipments/{shipment_id}",
     )
     return get_shipment(conn, user, shipment_id)
 
@@ -834,7 +857,13 @@ def inspect(
                 + "\n- ".join(f"{q} x {c}" for c, q in remaining.items())
                 + "\nPlease ship the remaining quantity."
             )
-        _tell_supplier_and_buyer(conn, po, f"Shipment {s['shipment_no']} approved", text)
+        _tell_supplier_and_buyer(
+            conn,
+            po,
+            f"Shipment {s['shipment_no']} approved",
+            text,
+            link=f"/shipments/{shipment_id}",
+        )
 
     elif decision == "reject":
         reason = (reason or "").strip()
@@ -876,7 +905,11 @@ def inspect(
             text += f"\n\nWhat needs to improve:\n{improvement}"
         text += "\n\nThe goods are in quarantine and the invoice is on hold. Please correct the issue and ship a replacement to fulfil the order."
         _tell_supplier_and_buyer(
-            conn, po, f"Shipment {s['shipment_no']} rejected: improvement required", text
+            conn,
+            po,
+            f"Shipment {s['shipment_no']} rejected: improvement required",
+            text,
+            link=f"/shipments/{shipment_id}",
         )
     else:
         raise DomainError("decision must be 'approve' or 'reject'")
