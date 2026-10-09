@@ -131,6 +131,7 @@ def _notify_new_po(conn: sqlite3.Connection, po: dict) -> None:
         message=f"A new purchase order {po['po_number']} totalling {po['total_amount']:.2f} has been raised for {supplier['supplier_name']}.",
         email_to=supplier["email"],
         supplier_id=supplier["id"],
+        link=f"/purchase-orders/{po['id']}",
     )
 
 
@@ -231,6 +232,7 @@ def update_po(conn: sqlite3.Connection, user: dict, po_id: int, changes: dict) -
                 message=f"Purchase order {po['po_number']} has been approved. Please arrange delivery. ERP ref: {ref['erp_reference']}.",
                 email_to=supplier["email"],
                 supplier_id=supplier["id"],
+                link=f"/purchase-orders/{po_id}",
             )
 
     new_delivery = changes.get("delivery_status")

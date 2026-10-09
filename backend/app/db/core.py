@@ -28,13 +28,14 @@ CREATE TABLE IF NOT EXISTS users (
 );
 CREATE TABLE IF NOT EXISTS inventory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_code TEXT NOT NULL UNIQUE,
+    item_code TEXT NOT NULL,
     description TEXT NOT NULL,
     stock_quantity INTEGER NOT NULL DEFAULT 0,
     warehouse TEXT NOT NULL DEFAULT 'MAIN',
     source TEXT NOT NULL DEFAULT 'sap',
-    created_by INTEGER REFERENCES users(id),
-    updated_at TEXT NOT NULL
+    created_by INTEGER REFERENCES users(id), -- the owner: each buyer and supplier has their own inventory
+    updated_at TEXT NOT NULL,
+    UNIQUE (created_by, item_code)
 );
 CREATE TABLE IF NOT EXISTS purchase_orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,6 +99,16 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages (requirement_id, supplier_id);
+CREATE TABLE IF NOT EXISTS message_attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    filename TEXT NOT NULL,
+    content_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+    size INTEGER NOT NULL,
+    stored_name TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_message_attachments_message ON message_attachments (message_id);
 CREATE TABLE IF NOT EXISTS attachments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     requirement_id INTEGER NOT NULL REFERENCES requirements(id) ON DELETE CASCADE,
@@ -128,6 +139,10 @@ CREATE TABLE IF NOT EXISTS shipments (
     tracking_no TEXT NOT NULL DEFAULT '',
     expected_arrival TEXT,
     notes TEXT NOT NULL DEFAULT '',
+    -- the supplier's reviewed packing-list draft (JSON): ship date, all tracking/lot/serial numbers,
+    -- shipped quantity and unit. Has no length limit, so nothing is lost to the notes cap. NULL for
+    -- shipments created without a reviewed draft (including every shipment made before this column).
+    packing_list_review TEXT,
     status TEXT NOT NULL DEFAULT 'Shipped' CHECK (status IN ('Shipped','Arrived','Approved','Rejected')),
     erp_inbound_ref TEXT,
     erp_movement_ref TEXT,
@@ -218,9 +233,12 @@ CREATE TABLE IF NOT EXISTS notifications (
     supplier_id INTEGER REFERENCES suppliers(id),
     title TEXT NOT NULL,
     message TEXT NOT NULL,
+    link TEXT,
     is_read INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_supplier ON notifications (supplier_id, is_read);
 CREATE TABLE IF NOT EXISTS audit_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -277,6 +295,9 @@ MIGRATIONS = [  # (table, column, DDL) applied to databases created before the c
     ("shipment_items", "quantity_accepted", "INTEGER"),
     ("shipment_files", "unit_id", "INTEGER REFERENCES shipment_units(id) ON DELETE CASCADE"),
     ("users", "owner_id", "INTEGER REFERENCES users(id)"),
+    # supplier's reviewed packing-list draft (JSON), kept out of the length-capped notes field
+    ("shipments", "packing_list_review", "TEXT"),
+    ("notifications", "link", "TEXT"),
 ]
 
 
@@ -323,12 +344,47 @@ def _migrate_users_role(conn: sqlite3.Connection) -> None:
     conn.execute("PRAGMA foreign_keys = ON")
 
 
+def _migrate_inventory_owner(conn: sqlite3.Connection) -> None:
+    """Item codes used to be unique across everyone; now each owner (created_by) has their own inventory.
+    SQLite cannot drop a UNIQUE constraint, so older databases get the table rebuilt."""
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'inventory'"
+    ).fetchone()
+    if not row or "UNIQUE (created_by, item_code)" in row["sql"]:
+        return
+    conn.commit()
+    conn.execute("PRAGMA foreign_keys = OFF")
+    conn.executescript(
+        """
+        BEGIN;
+        CREATE TABLE inventory_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_code TEXT NOT NULL,
+            description TEXT NOT NULL,
+            stock_quantity INTEGER NOT NULL DEFAULT 0,
+            warehouse TEXT NOT NULL DEFAULT 'MAIN',
+            source TEXT NOT NULL DEFAULT 'sap',
+            created_by INTEGER REFERENCES users(id),
+            updated_at TEXT NOT NULL,
+            UNIQUE (created_by, item_code)
+        );
+        INSERT INTO inventory_new (id, item_code, description, stock_quantity, warehouse, source, created_by, updated_at)
+            SELECT id, item_code, description, stock_quantity, warehouse, source, created_by, updated_at FROM inventory;
+        DROP TABLE inventory;
+        ALTER TABLE inventory_new RENAME TO inventory;
+        COMMIT;
+        """
+    )
+    conn.execute("PRAGMA foreign_keys = ON")
+
+
 def init_db() -> None:
     conn = connect()
     try:
         conn.executescript(SCHEMA)
         _migrate(conn)
         _migrate_users_role(conn)
+        _migrate_inventory_owner(conn)
         # Requirements created before invitations existed stay visible to every supplier.
         conn.execute(
             "INSERT OR IGNORE INTO requirement_invites (requirement_id, supplier_id, created_at) "

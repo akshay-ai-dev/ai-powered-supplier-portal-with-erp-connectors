@@ -34,14 +34,6 @@ class GetPOIn(BaseModel):
     po_number: str = Field(examples=["PO1001"])
 
 
-class ListRequirementsIn(BaseModel):
-    stage: str | None = Field(default=None, examples=["Quoted"])
-
-
-class GetRequirementIn(BaseModel):
-    req_number: str = Field(examples=["REQ2001"])
-
-
 class ListPOsIn(BaseModel):
     status: str | None = Field(default=None, examples=["Approved"])
 
@@ -68,16 +60,20 @@ def get_inventory(
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
     user: dict = Depends(agent_user),
 ):
+<<<<<<< HEAD
     return agent_tools.get_inventory(conn, body.item_code, user)
+=======
+    return agent_tools.get_inventory(conn, user, body.item_code)
+>>>>>>> main
 
 
-@router.post("/search_supplier", operation_id="search_supplier")
-def search_supplier(
+@router.post("/search_suppliers", operation_id="search_suppliers")
+def search_suppliers(
     body: SupplierSearchIn,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
     user: dict = Depends(agent_user),
 ):
-    return agent_tools.search_supplier(conn, body.supplier_name)
+    return agent_tools.search_suppliers(conn, body.supplier_name)
 
 
 @router.post("/create_purchase_order", operation_id="create_purchase_order", status_code=201)
@@ -99,24 +95,6 @@ def get_purchase_order(
     user: dict = Depends(agent_user),
 ):
     return agent_tools.get_purchase_order(conn, user, body.po_number)
-
-
-@router.post("/list_requirements", operation_id="list_requirements")
-def list_requirements(
-    body: ListRequirementsIn,
-    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    user: dict = Depends(agent_user),
-):
-    return agent_tools.list_requirements(conn, user, body.stage)
-
-
-@router.post("/get_requirement", operation_id="get_requirement")
-def get_requirement(
-    body: GetRequirementIn,
-    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    user: dict = Depends(agent_user),
-):
-    return agent_tools.get_requirement(conn, user, body.req_number)
 
 
 @router.post("/list_purchase_orders", operation_id="list_purchase_orders")

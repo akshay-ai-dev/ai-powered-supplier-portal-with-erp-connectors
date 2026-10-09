@@ -26,6 +26,8 @@ class Settings:
     mailpit_url: str = os.getenv("MAILPIT_URL", "http://localhost:8025")
     smtp_from: str = os.getenv("SMTP_FROM", "erp-copilot@example.com")
     email_enabled: bool = os.getenv("EMAIL_ENABLED", "true").lower() == "true"
+    # Frontend URL for "Open in the portal" links in notification emails.
+    portal_url: str = os.getenv("PORTAL_BASE_URL", "http://localhost:3000")
     cors_origins: list[str] = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
     # Also allow browsers on private networks (localhost, 10.x, 172.16-31.x, 192.168.x) on any port.
     # Set CORS_ORIGIN_REGEX to an empty string to disable, or tighten it for production.
@@ -39,6 +41,12 @@ class Settings:
     seed_demo_data: bool = os.getenv("SEED_DEMO_DATA", "true").lower() == "true"
     # Which ERP connector backs inventory/vendors: "sap" or "infor"
     erp_backend: str = os.getenv("ERP_BACKEND", "sap")
+    # Chat widget ask box: GPT-4o picks one MCP tool per question (app/ai/chat.py). Empty key = ask box unavailable.
+    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o")
+    # DEBUG=true: the backend also prints debug logs (for now: each chat question and GPT-4o's raw output) to its
+    # console, which `docker compose logs -f backend` shows. Off by default.
+    debug: bool = os.getenv("DEBUG", "false").lower() == "true"
     # How often the background job checks quote deadlines (reminders / "quotes closed"). 0 disables it.
     deadline_check_seconds: int = int(os.getenv("DEADLINE_CHECK_SECONDS", "60"))
 
@@ -51,10 +59,6 @@ class Settings:
     # (https://erp.example.com) or, on a local network, to this computer's address (http://192.168.1.44:3000).
     # Empty = the labels fall back to the address the supplier's browser is on.
     public_app_url: str = _public_url(os.getenv("PUBLIC_APP_URL", ""))
-
-    # In-app assistant: natural-language form filling uses OpenAI structured outputs. Without a key only the numbered menus work.
-    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
-    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o")
 
 
 settings = Settings()

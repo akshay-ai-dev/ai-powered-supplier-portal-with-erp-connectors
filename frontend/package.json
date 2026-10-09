@@ -4,16 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/fetch-models.mjs --ort-only",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "fetch:models": "node scripts/fetch-models.mjs",
-    "build:centroids": "node scripts/build-centroids.mjs"
+    "lint": "eslint"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
-    "@huggingface/transformers": "^4.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "html5-qrcode": "^2.3.8",
@@ -22,7 +18,6 @@
     "lucide-react": "^1.48.0",
     "next": "15.5.26",
     "next-themes": "^0.4.6",
-    "onnxruntime-web": "1.24.1",
     "qrcode": "^1.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",

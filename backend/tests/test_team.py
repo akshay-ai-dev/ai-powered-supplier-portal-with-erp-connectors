@@ -469,7 +469,7 @@ def test_a_buyers_inspector_sees_only_that_buyers_suppliers_inventory_and_erp_do
         and "SCOPE-B-ONLY" not in codes(ia)
         and "SCOPE-B-ONLY" in codes(company)
     )
-    assert "ITEM002" in codes(ia) and "ITEM002" in codes(ib)  # items both buyers ordered
+    assert "ITEM002" in codes(ia) and "ITEM002" not in codes(ib)  # each buyer's own stock only
     assert client.get("/api/inventory/SCOPE-B-ONLY", headers=ia).status_code == 404
     assert client.get("/api/inventory/SCOPE-B-ONLY", headers=ib).status_code == 200
     assert req["id"]

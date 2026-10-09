@@ -16,6 +16,7 @@ from pydantic import ValidationError
 from app.schemas import QuoteIn, RequirementCreate, ShipmentCreate
 from app.services import inventory as inventory_svc
 from app.services import purchase_orders as po_svc
+from app.services import ranking
 from app.services import requirements as req_svc
 from app.services import shipments as ship_svc
 from app.services import suppliers as suppliers_svc
@@ -61,6 +62,8 @@ class Flow:
     submit: Callable[[Ctx], dict]
     warning: str = ""  # shown with the summary for actions that cannot be undone
     readonly: bool = False  # a look-up: no summary to confirm, it finishes (with a link) once the last question is answered
+    # extra (label, value) rows for the summary, computed from the answers (e.g. the exact ERP call)
+    details: Callable[[Ctx], list[tuple[str, str]]] | None = None
 
 
 def _validation_message(exc: ValidationError) -> str:
@@ -77,7 +80,11 @@ def _iso(dt: datetime) -> str:
 
 # ------------------------------------------------------------------ new requirement (buyer, admin)
 def _item_options(ctx: Ctx) -> list[Option]:
+<<<<<<< HEAD
     items = inventory_svc.list_items(ctx.conn, user=ctx.user) if ctx.user["role"] != "admin" else []
+=======
+    items = inventory_svc.list_items(ctx.conn, user=ctx.user)
+>>>>>>> main
     return [Option(None, "Something else (I will describe it)")] + [
         Option(
             i["item_code"],
@@ -197,7 +204,7 @@ def _submit_requirement(ctx: Ctx) -> dict:
     v = ctx.values
     title = v.get("title")
     if v.get("item"):
-        title = inventory_svc.get_item(ctx.conn, v["item"])["description"]
+        title = inventory_svc.get_item(ctx.conn, v["item"], ctx.user)["description"]
     deadline = {
         "7d": _iso(datetime.now(UTC) + timedelta(days=7)),
         "3d": _iso(datetime.now(UTC) + timedelta(days=3)),
@@ -427,17 +434,31 @@ def _awardable(ctx: Ctx) -> list[dict]:
     ]
 
 
+def _ranked(req: dict) -> list[dict]:
+    """The requirement's open quotes in SRS order (ranking.rank_quotes): on time first, then lowest
+    total, then earliest delivery. The same order the AI Assistant's compare and draft-award answers use."""
+    return ranking.rank_quotes(req, [q for q in req["quotes"] if q["status"] == "Submitted"])
+
+
+def _day(iso: str | None) -> str:
+    if not iso:
+        return "no date"
+    d = datetime.fromisoformat(iso)
+    return f"{d:%b} {d.day}"
+
+
 def _award_requirement_options(ctx: Ctx) -> list[Option]:
     out = []
     for r in _awardable(ctx):
-        best = min(
-            q["unit_price"] for q in req_svc.get_requirement(ctx.conn, ctx.user, r["id"])["quotes"]
+        ranked = _ranked(req_svc.get_requirement(ctx.conn, ctx.user, r["id"]))
+        top = (
+            f", top {ranked[0]['supplier_name']} {ranked[0]['total_price']:,.2f}" if ranked else ""
         )
         closed = " - quotes closed" if r["quotes_closed"] else ""
         out.append(
             Option(
                 r["id"],
-                f"{r['req_number']} - {r['title']} (qty {r['quantity']}, {r['quote_count']} quote(s), best {best:,.2f}){closed}",
+                f"{r['req_number']} - {r['title']} (qty {r['quantity']}, {r['quote_count']} quote(s){top}){closed}",
             )
         )
     return out
@@ -448,28 +469,35 @@ def _award_quote_options(ctx: Ctx) -> list[Option]:
     if req_id is None:
         return []
     req = req_svc.get_requirement(ctx.conn, ctx.user, req_id)
-    quotes = sorted(
-        (q for q in req["quotes"] if q["status"] == "Submitted"), key=lambda q: q["unit_price"]
-    )
-    cheapest = quotes[0]["unit_price"] if quotes else None
-    fastest = min((q["lead_time_days"] for q in quotes), default=None)
+    messages = {q["id"]: q["message"] for q in req["quotes"]}
     out = []
-    for q in quotes:
-        tags = [
-            t
-            for t, hit in (
-                ("lowest price", q["unit_price"] == cheapest),
-                ("fastest", q["lead_time_days"] == fastest),
-            )
-            if hit
-        ]
-        label = f"{q['supplier_name']}: {q['unit_price']:,.2f} each = {q['unit_price'] * req['quantity']:,.2f} total, {q['lead_time_days']} days"
-        if tags:
-            label += f" ({', '.join(tags)})"
-        if q["message"]:
-            label += f' - "{q["message"][:60]}"'
-        out.append(Option(q["id"], label))
+    for r in _ranked(req):
+        timing = "on time" if r["meets_need_by"] else "late"
+        label = (
+            f"#{r['rank']} {r['supplier_name']}: {r['unit_price']:,.2f} each = {r['total_price']:,.2f} total, "
+            f"delivery {_day(r['promised_date'])} ({timing})"
+        )
+        if messages.get(r["quote_id"]):
+            label += f' - "{messages[r["quote_id"]][:60]}"'
+        out.append(Option(r["quote_id"], label))
     return out
+
+
+def _award_details(ctx: Ctx) -> list[tuple[str, str]]:
+    """The exact ERP call the award makes (SRS §6.3 "Show the facts"), mirroring requirements.award()."""
+    req = req_svc.get_requirement(ctx.conn, ctx.user, ctx.values["requirement"])
+    chosen = next((r for r in _ranked(req) if r["quote_id"] == ctx.values["quote"]), None)
+    if chosen is None:
+        return []
+    erp = "Infor LN" if req["erp"] == "infor" else req["erp"].upper()
+    item = req["item_code"] or f"REQ{req['id']}"
+    return [
+        (
+            "ERP call",
+            f"{erp} · Create purchase order · {chosen['supplier_name']} · {item} · "
+            f"{req['quantity']} × {chosen['unit_price']:,.2f} = {chosen['total_price']:,.2f}",
+        )
+    ]
 
 
 def _award_steps(ctx: Ctx) -> list[Step]:
@@ -485,7 +513,7 @@ def _award_steps(ctx: Ctx) -> list[Step]:
         Step(
             "quote",
             "Winning quote",
-            "Which quote wins? (cheapest first)",
+            "Which quote wins? (ranked: on time first, then lowest total, then earliest delivery)",
             "choice",
             options=_award_quote_options,
             empty="This requirement has no quotes to award.",
@@ -852,6 +880,7 @@ FLOWS: dict[str, Flow] = {
             _award_steps,
             _submit_award,
             warning="Awarding creates the purchase order for this supplier and tells the other suppliers they were not selected. It cannot be undone.",
+            details=_award_details,
         ),
         Flow(
             "approve_po",

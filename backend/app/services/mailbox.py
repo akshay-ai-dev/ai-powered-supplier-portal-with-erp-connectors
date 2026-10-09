@@ -78,6 +78,11 @@ def list_inbox(conn: sqlite3.Connection, user: dict, limit: int = 50) -> list[di
     return [_summary(m) for m in newest_first[:limit]]
 
 
+def unread_count(conn: sqlite3.Connection, user: dict) -> int:
+    """How many of the user's emails are still unread. Mailpit marks an email read once it is opened."""
+    return sum(1 for m in list_inbox(conn, user, limit=200) if not m["read"])
+
+
 def get_email(conn: sqlite3.Connection, user: dict, message_id: str) -> dict:
     msg = _mailpit(f"/api/v1/message/{urllib.parse.quote(message_id, safe='')}")
     if not (_recipients(msg) & my_addresses(conn, user)):

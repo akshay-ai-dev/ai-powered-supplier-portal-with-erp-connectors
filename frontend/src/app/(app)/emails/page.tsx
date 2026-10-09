@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Mail, RefreshCw } from "lucide-react";
 import { dateTime } from "@/lib/api";
 import { useFetch } from "@/lib/use-fetch";
+import { EMAILS_CHANGED } from "@/lib/use-unread-emails";
 import { Button } from "@/components/ui/button";
 import { ErrorNote, PageHeader } from "@/components/page-header";
 
@@ -13,6 +14,7 @@ interface EmailSummary {
   to: string[];
   snippet: string;
   created: string;
+  read: boolean;
 }
 interface EmailFull {
   id: string;
@@ -27,6 +29,13 @@ export default function EmailsPage() {
   const inbox = useFetch<EmailSummary[]>("/api/emails");
   const [selected, setSelected] = useState<string | null>(null);
   const mail = useFetch<EmailFull>(selected ? `/api/emails/${selected}` : null);
+  const [opened, setOpened] = useState<Set<string>>(new Set());
+  const openedId = mail.data?.id;
+  useEffect(() => {
+    if (!openedId) return;
+    setOpened((s) => (s.has(openedId) ? s : new Set(s).add(openedId)));
+    window.dispatchEvent(new Event(EMAILS_CHANGED));
+  }, [openedId]);
 
   return (
     <>
@@ -42,18 +51,25 @@ export default function EmailsPage() {
           {inbox.loading && !inbox.data && <p className="p-4 text-sm text-muted-foreground">Loading…</p>}
           {inbox.data?.length === 0 && <p className="p-4 text-sm text-muted-foreground">No emails yet.</p>}
           <ul className="divide-y">
-            {inbox.data?.map((m) => (
-              <li key={m.id}>
-                <button
-                  onClick={() => setSelected(m.id)}
-                  className={`w-full px-4 py-3 text-left transition-colors hover:bg-accent/50 ${selected === m.id ? "bg-accent" : ""}`}
-                >
-                  <div className="truncate text-sm font-medium">{m.subject || "(no subject)"}</div>
-                  <div className="truncate text-xs text-muted-foreground">{m.snippet}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">{dateTime(m.created)}</div>
-                </button>
-              </li>
-            ))}
+                        {inbox.data?.map((m) => {
+              const unread = !m.read && !opened.has(m.id);
+              return (
+                <li key={m.id}>
+                  <button
+                    onClick={() => setSelected(m.id)}
+                    className={`w-full px-4 py-3 text-left transition-colors hover:bg-accent/50 ${selected === m.id ? "bg-accent" : ""}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {unread && <span className="size-2 shrink-0 rounded-full bg-primary" aria-hidden />}
+                      <span className={`truncate text-sm ${unread ? "font-semibold" : "font-medium"}`}>{m.subject || "(no subject)"}</span>
+                      {unread && <span className="sr-only">(unread)</span>}
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">{m.snippet}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{dateTime(m.created)}</div>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
 

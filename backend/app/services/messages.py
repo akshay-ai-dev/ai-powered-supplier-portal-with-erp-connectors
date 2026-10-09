@@ -2,14 +2,17 @@
 
 The thread starts while the requirement is open (clarifying questions), and carries on after award so the buyer
 and the winning supplier can keep talking through PO approval and delivery. Other suppliers never see it.
+A message can carry one file (drawing, photo, certificate); only the two sides of the thread can download it.
 """
 
 import sqlite3
+from pathlib import Path
 
 from ..db import now
+from . import attachments as attachments_svc
 from . import requirements as req_svc
 from . import suppliers as suppliers_svc
-from .errors import DomainError, Forbidden
+from .errors import DomainError, Forbidden, NotFound
 from .notifications import audit, notify
 
 MAX_LEN = 2000
@@ -67,32 +70,65 @@ def list_messages(
         "LEFT JOIN users u ON u.id = m.sender_id WHERE m.requirement_id = ? AND m.supplier_id = ? ORDER BY m.id",
         (req_id, sid),
     ).fetchall()
+    files: dict[int, list[dict]] = {}
+    for a in conn.execute(
+        "SELECT a.id, a.message_id, a.filename, a.size FROM message_attachments a "
+        "JOIN messages m ON m.id = a.message_id WHERE m.requirement_id = ? AND m.supplier_id = ? ORDER BY a.id",
+        (req_id, sid),
+    ):
+        files.setdefault(a["message_id"], []).append(
+            {"id": a["id"], "filename": a["filename"], "size": a["size"]}
+        )
     return {
         "supplier_id": sid,
         "supplier_name": suppliers_svc.get_supplier(conn, sid)["supplier_name"],
         "can_post": _can_post(conn, req, sid),
-        "messages": [{**dict(r), "mine": r["sender_role"] == me} for r in rows],
+        "messages": [
+            {**dict(r), "mine": r["sender_role"] == me, "attachments": files.get(r["id"], [])}
+            for r in rows
+        ],
     }
 
 
 def post_message(
-    conn: sqlite3.Connection, user: dict, req_id: int, body: str, supplier_id: int | None = None
+    conn: sqlite3.Connection,
+    user: dict,
+    req_id: int,
+    body: str,
+    supplier_id: int | None = None,
+    file: tuple[str, bytes, str | None] | None = None,
 ) -> dict:
+    """Send a message. `file` is (filename, data, content type) for a message with an attachment; the text is then optional."""
     body = (body or "").strip()
-    if not body:
+    if not body and file is None:
         raise DomainError("Message is empty")
     if len(body) > MAX_LEN:
         raise DomainError(f"Message is longer than {MAX_LEN} characters")
     req, sid = _resolve(conn, user, req_id, supplier_id)
     if not _can_post(conn, req, sid):
         raise DomainError("This conversation is closed")
+    stored = attachments_svc.store(file[0], file[1]) if file else None  # checks type and size first
     me = _role(user)
-    conn.execute(
+    cur = conn.execute(
         "INSERT INTO messages (requirement_id, supplier_id, sender_id, sender_role, body, created_at) VALUES (?,?,?,?,?,?)",
         (req_id, sid, user["id"], me, body, now()),
     )
+    if stored:
+        conn.execute(
+            "INSERT INTO message_attachments (message_id, filename, content_type, size, stored_name, created_at) VALUES (?,?,?,?,?,?)",
+            (
+                cur.lastrowid,
+                stored["filename"],
+                file[2] or "application/octet-stream",
+                stored["size"],
+                stored["stored_name"],
+                now(),
+            ),
+        )
     supplier = suppliers_svc.get_supplier(conn, sid)
     preview = body if len(body) <= 300 else body[:300] + "…"
+    if stored:
+        preview = (preview + "\n\n" if preview else "") + f"Attached file: {stored['filename']}"
     if me == "supplier":
         buyer = conn.execute(
             "SELECT id, email FROM users WHERE id = ?", (req["created_by"],)
@@ -103,6 +139,7 @@ def post_message(
             message=f"{preview}\n\nReply in the app under Requirements > {req['req_number']}.",
             email_to=buyer["email"] if buyer else None,
             user_id=buyer["id"] if buyer else None,
+            link=f"/requirements/{req_id}",
         )
     else:
         notify(
@@ -111,9 +148,35 @@ def post_message(
             message=f"{preview}\n\nReply in the app under Requirements > {req['req_number']}.",
             email_to=supplier["email"],
             supplier_id=sid,
+            link=f"/requirements/{req_id}",
         )
-    audit(conn, user["id"], "message", "requirement", req["req_number"], f"{me} -> supplier {sid}")
+    audit(
+        conn,
+        user["id"],
+        "message",
+        "requirement",
+        req["req_number"],
+        f"{me} -> supplier {sid}" + (f" with file {stored['filename']}" if stored else ""),
+    )
     return list_messages(conn, user, req_id, sid)
+
+
+def open_attachment(conn: sqlite3.Connection, user: dict, att_id: int) -> tuple[sqlite3.Row, Path]:
+    """A message file and its path on disk, for the buyer or the supplier of that thread only (404 for anyone else)."""
+    row = conn.execute(
+        "SELECT a.*, m.requirement_id, m.supplier_id FROM message_attachments a "
+        "JOIN messages m ON m.id = a.message_id WHERE a.id = ?",
+        (att_id,),
+    ).fetchone()
+    if row is None:
+        raise NotFound("Attachment not found")
+    _, sid = _resolve(conn, user, row["requirement_id"], row["supplier_id"])
+    if sid != row["supplier_id"]:  # a supplier asking for another supplier's file
+        raise NotFound("Attachment not found")
+    path = attachments_svc.path_of(row)
+    if not path.is_file():
+        raise NotFound("File is missing")
+    return row, path
 
 
 def decline(conn: sqlite3.Connection, user: dict, req_id: int, reason: str) -> dict:
@@ -150,6 +213,7 @@ def decline(conn: sqlite3.Connection, user: dict, req_id: int, reason: str) -> d
         + (f" Reason: {reason}" if reason else ""),
         email_to=buyer["email"] if buyer else None,
         user_id=buyer["id"] if buyer else None,
+        link=f"/requirements/{req_id}",
     )
     conn.execute(
         "INSERT INTO messages (requirement_id, supplier_id, sender_id, sender_role, body, created_at) VALUES (?,?,?,?,?,?)",

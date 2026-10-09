@@ -6,6 +6,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+# Draft extraction package (OpenAI PDF/image -> reviewable requirement draft). Lives beside `app/`
+# as backend/extraction_prefill/ and is wired in here; it creates no requirement, attachment or ERP record.
+from extraction_prefill.router import router as extraction_prefill_router
+
 from .config import settings
 from .db import get_conn, init_db
 from .mcp_server import build_mcp_app
@@ -28,6 +32,13 @@ from .services.errors import DomainError
 
 mcp_inner, mcp_asgi = build_mcp_app()
 
+
+# App logs ("erp.*" loggers) go to the console, where Docker collects them (`docker compose logs -f backend`).
+# DEBUG=true adds the debug lines, such as each chat question and GPT-4o's raw output (logger "erp.llm").
+_console = logging.StreamHandler()
+_console.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+logging.getLogger("erp").addHandler(_console)
+logging.getLogger("erp").setLevel(logging.DEBUG if settings.debug else logging.INFO)
 
 log = logging.getLogger("erp.deadlines")
 
@@ -112,6 +123,7 @@ for r in (
     tokens.router,
     assistant.router,
     ai_tools.router,
+    extraction_prefill_router,
     mock_erp.sap,
     mock_erp.infor,
 ):
