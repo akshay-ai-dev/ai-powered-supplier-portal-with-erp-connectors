@@ -26,6 +26,8 @@ class Settings:
     mailpit_url: str = os.getenv("MAILPIT_URL", "http://localhost:8025")
     smtp_from: str = os.getenv("SMTP_FROM", "erp-copilot@example.com")
     email_enabled: bool = os.getenv("EMAIL_ENABLED", "true").lower() == "true"
+    # Frontend URL for "Open in the portal" links in notification emails.
+    portal_url: str = os.getenv("PORTAL_BASE_URL", "http://localhost:3000")
     cors_origins: list[str] = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
     # Also allow browsers on private networks (localhost, 10.x, 172.16-31.x, 192.168.x) on any port.
     # Set CORS_ORIGIN_REGEX to an empty string to disable, or tighten it for production.
