@@ -40,7 +40,7 @@ _BUYER = [
 ]
 ROLE_TOOLS = {
     "buyer": _BUYER,
-    "admin": _BUYER,
+    "admin": [tool for tool in _BUYER if tool != "get_inventory"],
     "supplier": ["get_inventory", "get_purchase_order", "list_purchase_orders", "draft_quote"],
     "inspector": [
         "list_requests",

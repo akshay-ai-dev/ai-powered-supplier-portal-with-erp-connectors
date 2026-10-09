@@ -30,13 +30,8 @@ def usage_count(conn: sqlite3.Connection, item: dict) -> int:
 
 
 def can_manage(user: dict | None, item: dict) -> bool:
-<<<<<<< HEAD
     """Creators may edit/delete their own items. ERP-synced items have no creator."""
     if user is None or user["role"] == "admin":
-=======
-    """Owners may edit/delete their own items; admins may manage any."""
-    if user is None:
->>>>>>> main
         return False
     return item.get("created_by") is not None and item["created_by"] == user["id"]
 
@@ -69,20 +64,14 @@ def list_items(
 
 
 def get_item(conn: sqlite3.Connection, item_code: str, user: dict | None = None) -> dict:
-<<<<<<< HEAD
     if user is not None and user["role"] == "admin":
         raise Forbidden("Administrators cannot access inventory")
-    row = conn.execute(
-        "SELECT * FROM inventory WHERE item_code = ? COLLATE NOCASE", (item_code,)
-    ).fetchone()
-=======
     sql, args = "SELECT * FROM inventory WHERE item_code = ? COLLATE NOCASE", [item_code]
     owner = owner_of(user)
     if owner is not None:
         sql += " AND created_by = ?"
         args.append(owner)
     row = conn.execute(sql + " ORDER BY id", args).fetchone()
->>>>>>> main
     if row is None:
         raise NotFound(f"Item {item_code} not found")
     return dict(row)

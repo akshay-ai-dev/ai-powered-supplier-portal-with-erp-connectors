@@ -60,11 +60,7 @@ def get_inventory(
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
     user: dict = Depends(agent_user),
 ):
-<<<<<<< HEAD
     return agent_tools.get_inventory(conn, body.item_code, user)
-=======
-    return agent_tools.get_inventory(conn, user, body.item_code)
->>>>>>> main
 
 
 @router.post("/search_suppliers", operation_id="search_suppliers")

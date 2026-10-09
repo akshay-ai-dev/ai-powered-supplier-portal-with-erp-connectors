@@ -2,11 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-<<<<<<< HEAD
-import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Sparkles, Truck, Users, UserCog, X } from "lucide-react";
-=======
-import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Radar, Truck, Users, UserCog, X } from "lucide-react";
->>>>>>> main
+import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Truck, Users, UserCog, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { roleLabel } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
@@ -27,17 +23,13 @@ const baseNav = [
   { href: "/emails", label: "Emails", icon: Mail },
 ];
 // A buyer creates and manages their own inspectors. /units/[code] and the QR label page are reached by link or scan, so they have no entry.
-<<<<<<< HEAD
 const buyerNav = [
-  ...baseNav.slice(0, 4),
+  ...baseNav.slice(0, 3),
   { href: "/purchase-orders", label: "Purchase Orders", icon: ClipboardList },
-  ...baseNav.slice(4, 6),
+  ...baseNav.slice(3, 5),
   { href: "/team", label: "My inspectors", icon: UserCog },
-  ...baseNav.slice(6),
+  ...baseNav.slice(5),
 ];
-=======
-const buyerNav = [...baseNav.slice(0, 6), { href: "/team", label: "My inspectors", icon: UserCog }, ...baseNav.slice(6)];
->>>>>>> main
 const adminNav = [
   ...baseNav.filter(({ href }) => href !== "/inventory" && href !== "/shipments"),
   { href: "/purchase-orders", label: "Purchase Orders", icon: ClipboardList },
@@ -93,7 +85,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         const className = `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
           active ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
         }`;
-        
+
         if (href === "/emails") {
           const tip =
             unreadEmails === null ? "Emails" : unreadEmails === 0 ? "No unread emails" : `${unreadEmails} unread email${unreadEmails === 1 ? "" : "s"}`;

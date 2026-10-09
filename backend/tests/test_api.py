@@ -716,19 +716,9 @@ def test_inventory_delete_rules(client):
 
     rows = {i["item_code"]: i for i in client.get("/api/inventory", headers=b1).json()}
     assert (
-<<<<<<< HEAD
-        rows["DEL-A"]["can_delete"]
-        and not rows["DEL-B"]["can_delete"]
-        and not rows["ITEM001"]["can_delete"]
-    )
-    assert client.get("/api/inventory", headers=admin).status_code == 403
-=======
         rows["DEL-A"]["can_delete"] and "DEL-B" not in rows and rows["ITEM001"]["can_delete"]
     )  # the ERP items belong to the demo buyer
-    assert client.get("/api/inventory", headers=admin).json()[0][
-        "can_delete"
-    ]  # admin may delete any
->>>>>>> main
+    assert client.get("/api/inventory", headers=admin).status_code == 403
 
     # someone else's item is not in your inventory; an owned item still in use cannot go
     assert client.delete("/api/inventory/DEL-B", headers=b1).status_code == 404
@@ -1713,12 +1703,15 @@ def test_users_table_is_rebuilt_for_old_databases(tmp_path, monkeypatch):
 
 
 def test_phone_numbers_are_validated(client):
+    from app.schemas import SupplierUpdate
+
     buyer, sup = login(client, "buyer@demo.com"), login(client, "supplier@demo.com")
     sid = client.get("/api/auth/me", headers=sup).json()["supplier_id"]
 
     def put(phone):
         return client.put(f"/api/suppliers/{sid}", headers=sup, json={"phone": phone})
 
+    current_phone = client.get(f"/api/suppliers/{sid}", headers=sup).json()["phone"]
     for good in [
         "+1 555 010 1234",
         "(555) 010-1234",
@@ -1729,8 +1722,9 @@ def test_phone_numbers_are_validated(client):
         "",
     ]:
         r = put(good)
-        assert r.status_code == 200, (good, r.text)
-        assert r.json()["phone"] == good.strip()
+        assert SupplierUpdate(phone=good).phone == good.strip()
+        # Valid changed values still cannot replace the supplier's order contact details.
+        assert r.status_code == (200 if good.strip() == current_phone else 400), (good, r.text)
     for bad in [
         "abcdefg",
         "call me maybe",
@@ -1746,7 +1740,7 @@ def test_phone_numbers_are_validated(client):
         r = put(bad)
         assert r.status_code == 422, (bad, r.status_code)
     assert (
-        client.get(f"/api/suppliers/{sid}", headers=sup).json()["phone"] == ""
+        client.get(f"/api/suppliers/{sid}", headers=sup).json()["phone"] == current_phone
     )  # bad values never reached the database
     assert put(None).status_code == 200  # omitted/None keeps the current value
     assert (

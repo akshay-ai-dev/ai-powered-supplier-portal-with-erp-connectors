@@ -93,11 +93,8 @@ export function MessageThread({ requirementId, supplierId, onActivity }: { requi
       setThread(t);
       count.current = t.messages.length;
       setDraft("");
-<<<<<<< HEAD
       onActivity?.();
-=======
       setFile(null);
->>>>>>> main
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not send");
     } finally {

@@ -80,11 +80,7 @@ def _iso(dt: datetime) -> str:
 
 # ------------------------------------------------------------------ new requirement (buyer, admin)
 def _item_options(ctx: Ctx) -> list[Option]:
-<<<<<<< HEAD
     items = inventory_svc.list_items(ctx.conn, user=ctx.user) if ctx.user["role"] != "admin" else []
-=======
-    items = inventory_svc.list_items(ctx.conn, user=ctx.user)
->>>>>>> main
     return [Option(None, "Something else (I will describe it)")] + [
         Option(
             i["item_code"],

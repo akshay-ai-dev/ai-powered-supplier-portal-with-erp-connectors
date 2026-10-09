@@ -153,13 +153,8 @@ def list_inventory(
     q: str | None = None,
     warehouse: str | None = None,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-<<<<<<< HEAD
-    # Suppliers may read stock levels (Inventory Dashboard); writes stay buyer-only.
+    # Each buyer and supplier sees their own items; admins cannot access inventory.
     user: dict = Depends(require_roles("buyer", "inspector", "supplier")),
-=======
-    # Each buyer and supplier sees only their own items (see services/inventory.py).
-    user: dict = Depends(require_roles("buyer", "admin", "inspector", "supplier")),
->>>>>>> main
 ):
     return inventory_svc.list_items(conn, q, warehouse, user)
 

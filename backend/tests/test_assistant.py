@@ -327,7 +327,11 @@ def test_ship_order_conversation(client):
     assert "upload" not in done["result"]
     ship_id = int(done["result"]["href"].rsplit("/", 1)[1])
     ship = client.get(f"/api/shipments/{ship_id}", headers=sup).json()
-    assert ship["carrier"] == "DHL" and ship["tracking_no"] == "TRK-1_A" and ship["items"][0]["quantity_shipped"] == 3
+    assert (
+        ship["carrier"] == "DHL"
+        and ship["tracking_no"] == "TRK-1_A"
+        and ship["items"][0]["quantity_shipped"] == 3
+    )
     assert not ship.get("unit_level")  # the assistant ships at lot level: no per-unit QR codes
     assert (
         next(
@@ -358,7 +362,9 @@ def test_submit_errors_keep_the_conversation_and_tampering_is_refused(client):
     _, po_id = _approved_po(client, buyer, sup, item="ITEM002", qty=5)
     po_number = client.get(f"/api/purchase-orders/{po_id}", headers=buyer).json()["po_number"]
 
-    r = say(client, sup, start(client, sup, 2), po_number, "1", "0", "#", "#", "#", "#", "#")
+    r = say(
+        client, sup, start(client, sup, 2), po_number, "1", "0", "DHL", "TRK-TEST", "#", "#", "#"
+    )
     assert r["stage"] == "summary"
     r = turn(client, sup, r["state"], "#")  # all quantities zero
     assert r["stage"] == "summary" and "at least one item" in r["error"]

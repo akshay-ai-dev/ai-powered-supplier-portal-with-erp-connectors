@@ -16,11 +16,7 @@ from . import suppliers as suppliers_svc
 from .errors import DomainError, NotFound
 
 
-<<<<<<< HEAD
 def get_inventory(conn: sqlite3.Connection, item_code: str, user: dict | None = None) -> dict:
-=======
-def get_inventory(conn: sqlite3.Connection, user: dict, item_code: str) -> dict:
->>>>>>> main
     item = inventory_svc.get_item(conn, item_code, user)
     return {
         "item_code": item["item_code"],

@@ -26,21 +26,6 @@ export default function NewPurchaseOrderPage() {
   ]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-<<<<<<< HEAD
-  const ai = useAiFill("new_purchase_order", (v) => {
-    if (v.supplier_id != null) setSupplierId(String(v.supplier_id));
-    if (Array.isArray(v.items) && v.items.length > 0) {
-      setItems(
-        v.items.map((l: { item_code: string | null; quantity: number | null; unit_price: number | null }) => ({
-          item_code: l.item_code ?? "",
-          quantity: String(l.quantity ?? 1),
-          unit_price: String(l.unit_price ?? 1),
-        })),
-      );
-    }
-  });
-=======
->>>>>>> main
 
   if (user && user.role !== "buyer" && user.role !== "admin") return <ErrorNote message="Only buyers can create purchase orders." />;
 
@@ -87,15 +72,10 @@ export default function NewPurchaseOrderPage() {
           <div className="space-y-3">
             <Label>Items</Label>
             {items.map((it, i) => (
-<<<<<<< HEAD
-              <div key={i} className={cn("grid grid-cols-[1fr_90px_110px_auto] items-end gap-2 rounded-md", ai.ring("items"))}>
+              <div key={i} className="grid grid-cols-[1fr_90px_110px_auto] items-end gap-2 rounded-md">
                 {user?.role === "admin" ? (
                   <Input aria-label="Item code" placeholder="Item code" value={it.item_code} onChange={(e) => update(i, { item_code: e.target.value })} />
                 ) : <select aria-label="Item" className={selectCls} value={it.item_code} onChange={(e) => update(i, { item_code: e.target.value })}>
-=======
-              <div key={i} className="grid grid-cols-[1fr_90px_110px_auto] items-center gap-2 rounded-md">
-                <select aria-label="Item" className={selectCls} value={it.item_code} onChange={(e) => update(i, { item_code: e.target.value })}>
->>>>>>> main
                   <option value="">Select item…</option>
                   {inventory.data?.map((inv) => (
                     <option key={inv.id} value={inv.item_code}>

@@ -58,11 +58,7 @@ def _run(fn, write: bool = False):
 @mcp.tool
 def get_inventory(item_code: str) -> dict:
     """Get current stock for an item code, e.g. ITEM001."""
-<<<<<<< HEAD
     return _run(lambda c: agent_tools.get_inventory(c, item_code, _acting_user(c)))
-=======
-    return _run(lambda c: agent_tools.get_inventory(c, _acting_user(c), item_code))
->>>>>>> main
 
 
 @mcp.tool

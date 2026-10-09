@@ -98,7 +98,6 @@ export default function NewRequirementPage() {
   return (
     <>
       <PageHeader title="New requirement" description="Open it to every supplier, or invite specific ones. Only they can see it and respond with a quote." />
-<<<<<<< HEAD
       <Card className="max-w-3xl min-w-0">
         <CardContent className="pt-6">
           <form onSubmit={submit}>
@@ -111,97 +110,6 @@ export default function NewRequirementPage() {
                   <div className="space-y-2">
                     <Label htmlFor="ship-date">Ship date</Label>
                     <Input id="ship-date" type="date" required value={f.ship_date} onChange={set("ship_date")} />
-=======
-      <div className="max-w-2xl">
-      </div>
-      <Card className="max-w-2xl">
-        <CardContent className="pt-6">
-          <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="item">Item</Label>
-              <select id="item" value={f.item_code} onChange={set("item_code")} className={selectCls}>
-                <option value="">New item (not in inventory)</option>
-                {inventory.data?.map((i) => (
-                  <option key={i.id} value={i.item_code}>
-                    {i.item_code} · {i.description}
-                  </option>
-                ))}
-              </select>
-              {chosen ? (
-                <p className="text-xs text-muted-foreground">
-                  In stock: <b>{chosen.stock_quantity.toLocaleString()}</b> at {chosen.warehouse}. Suppliers will see it as &quot;{chosen.description}&quot;.
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">Choose an item you already stock, or describe a new one below.</p>
-              )}
-            </div>
-            {!chosen && (
-              <div className="space-y-2">
-                <Label htmlFor="title">New item name</Label>
-                <Input id="title" required value={f.title} onChange={set("title")} placeholder="e.g. Hydraulic pump assembly" />
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="desc">Specs and notes (optional)</Label>
-              <Textarea id="desc" value={f.description} onChange={set("description")} placeholder="Specs, quality, delivery location…" />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="qty">Quantity</Label>
-                <Input id="qty" type="number" min={1} required value={f.quantity} onChange={set("quantity")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="erp">ERP system</Label>
-                <select id="erp" value={f.erp} onChange={set("erp")} className={selectCls}>
-                  <option value="sap">SAP</option>
-                  <option value="infor">Infor LN</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tp">Target unit price (optional)</Label>
-                <Input id="tp" type="number" min={0} step="0.01" value={f.target_price} onChange={set("target_price")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nb">Needed by (optional)</Label>
-                <Input id="nb" type="date" value={f.needed_by} onChange={set("needed_by")} />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="dl">Quote deadline</Label>
-                <div className="flex gap-2">
-                  <Input id="dl" type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
-                  <Button type="button" variant="outline" onClick={() => setDeadline("")} disabled={!deadline}>
-                    No deadline
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Suppliers can quote until this time. After it, quotes are closed and you can award or extend the deadline. Suppliers who haven&apos;t quoted get a reminder a day before.
-                </p>
-              </div>
-            </div>
-
-            <fieldset className="space-y-2 rounded-md">
-              <legend className="text-sm font-medium">Who can respond?</legend>
-              <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm">
-                <input type="radio" name="audience" className="mt-1" checked={audience === "all"} onChange={() => setAudience("all")} />
-                <span>
-                  <b>Open to all suppliers</b>
-                  <span className="block text-xs text-muted-foreground">Every supplier can see and quote it, including suppliers who join later.</span>
-                </span>
-              </label>
-              <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm">
-                <input type="radio" name="audience" className="mt-1" checked={audience === "selected"} onChange={() => setAudience("selected")} />
-                <span>
-                  <b>Selected suppliers only</b>
-                  <span className="block text-xs text-muted-foreground">Only the suppliers you tick below can see it.</span>
-                </span>
-              </label>
-              {audience === "selected" && (
-                <div className="space-y-2 pl-1">
-                  <div className="flex justify-end">
-                    <button type="button" className="text-xs underline" onClick={() => setInvited(invited.length === allIds.length ? [] : allIds)}>
-                      {invited.length === allIds.length ? "Clear all" : "Select all"}
-                    </button>
->>>>>>> main
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="carrier">Carrier</Label>

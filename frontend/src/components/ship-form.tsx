@@ -115,17 +115,6 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
       const res = await api<QuantityComparison>(`/api/extraction-prefill/shipments/${po.id}/compare`, {
         body: { shipped_quantity: Number.isFinite(n as number) ? n : null, item_code: itemCode },
       });
-<<<<<<< HEAD
-      setF((p) => ({
-        carrier: v.carrier ?? p.carrier,
-        tracking_no: v.tracking_no?.toUpperCase() ?? p.tracking_no,
-        expected_arrival: v.expected_arrival ?? p.expected_arrival,
-        notes: v.notes ?? p.notes,
-      }));
-    },
-    po.id,
-  );
-=======
       setCmp(res);
     } catch {
       setCmp(null);
@@ -173,7 +162,6 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
   }
 
 
->>>>>>> main
 
   if (remaining.every((r) => r.left === 0)) return null;
 
@@ -442,27 +430,7 @@ export function ShipForm({ po, toShip, onDone, initialReplace }: { po: PurchaseO
               </div>
             ))}
           </div>
-<<<<<<< HEAD
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-1">
-              <Label htmlFor="carrier">Carrier</Label>
-              <Input id="carrier" value={f.carrier} onChange={(e) => setF({ ...f, carrier: e.target.value })} className={ai.ring("carrier")} />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="track">Tracking number</Label>
-              <Input
-                id="track"
-                value={f.tracking_no}
-                onChange={(e) => setF({ ...f, tracking_no: e.target.value.toUpperCase() })}
-                className={ai.ring("tracking_no")}
-                pattern="[A-Z0-9_-]*"
-                title="Use only letters, numbers, hyphens, and underscores."
-              />
-              <p className="text-xs text-muted-foreground">Use letters, numbers, hyphens, or underscores. Letters are converted to uppercase.</p>
-            </div>
-=======
           <div className="grid gap-4 sm:grid-cols-2">
->>>>>>> main
             <div className="space-y-1">
               <Label htmlFor="eta">Expected arrival</Label>
               <Input id="eta" type="date" value={f.expected_arrival} onChange={(e) => setF({ ...f, expected_arrival: e.target.value })} />
