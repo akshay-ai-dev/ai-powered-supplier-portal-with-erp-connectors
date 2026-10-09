@@ -137,6 +137,7 @@ def post_message(
             message=f"{preview}\n\nReply in the app under Requirements > {req['req_number']}.",
             email_to=buyer["email"] if buyer else None,
             user_id=buyer["id"] if buyer else None,
+            link=f"/requirements/{req_id}",
         )
     else:
         notify(
@@ -145,6 +146,7 @@ def post_message(
             message=f"{preview}\n\nReply in the app under Requirements > {req['req_number']}.",
             email_to=supplier["email"],
             supplier_id=sid,
+            link=f"/requirements/{req_id}",
         )
     audit(
         conn,
@@ -209,6 +211,7 @@ def decline(conn: sqlite3.Connection, user: dict, req_id: int, reason: str) -> d
         + (f" Reason: {reason}" if reason else ""),
         email_to=buyer["email"] if buyer else None,
         user_id=buyer["id"] if buyer else None,
+        link=f"/requirements/{req_id}",
     )
     conn.execute(
         "INSERT INTO messages (requirement_id, supplier_id, sender_id, sender_role, body, created_at) VALUES (?,?,?,?,?,?)",

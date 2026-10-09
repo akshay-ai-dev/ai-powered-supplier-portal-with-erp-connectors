@@ -7,6 +7,9 @@ import { useAuth } from "@/lib/auth";
 import { roleLabel } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useUnreadEmails } from "@/lib/use-unread-emails";
+import { NotificationBell } from "@/components/notification-bell";
 import { ChatWidget } from "@/components/chat-widget";
 
 const baseNav = [
@@ -52,6 +55,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const unreadEmails = useUnreadEmails(!!user);
   const leaving = useRef(false); // signing out on purpose: do not remember this page as where to return to
 
   useEffect(() => {
@@ -76,6 +80,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         const className = `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
           active ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
         }`;
+        
+        if (href === "/emails") {
+          const tip =
+            unreadEmails === null ? "Emails" : unreadEmails === 0 ? "No unread emails" : `${unreadEmails} unread email${unreadEmails === 1 ? "" : "s"}`;
+          return (
+            <Tooltip key={href}>
+              <TooltipTrigger
+                delay={150}
+                render={
+                  <Link href={href} className={className} aria-label={unreadEmails ? `${label}, ${tip}` : label}>
+                    <Icon className="size-4" />
+                    {label}
+                    {!!unreadEmails && (
+                      <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none text-primary-foreground">
+                        {unreadEmails > 99 ? "99+" : unreadEmails}
+                      </span>
+                    )}
+                  </Link>
+                }
+              />
+              <TooltipContent side="right">{tip}</TooltipContent>
+            </Tooltip>
+          );
+        }
         return (
           <Link key={href} href={href} className={className}>
             <Icon className="size-4" />
@@ -106,6 +134,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {open ? <X className="size-4" /> : <Menu className="size-4" />}
           </Button>
           <div className="ml-auto flex items-center gap-1">
+            <NotificationBell />
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={() => {
                 leaving.current = true;

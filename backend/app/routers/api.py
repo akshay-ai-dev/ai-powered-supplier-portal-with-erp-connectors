@@ -211,11 +211,39 @@ def dashboard(
     return {"role": "buyer", **dashboard_svc.buyer_dashboard(conn, user)}
 
 
-@misc.get("/notifications")
+@misc.get("/notifications", summary="Newest notifications for the signed-in user")
 def notifications(
-    conn: sqlite3.Connection = Depends(db_dep, scope="function"), user: dict = Depends(current_user)
+    limit: int = Query(50, ge=1, le=100),
+    unread_only: bool = False,
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
+    user: dict = Depends(current_user),
 ):
-    return notif_svc.list_for_user(conn, user)
+    return notif_svc.list_for_user(conn, user, limit=limit, unread_only=unread_only)
+
+
+@misc.get("/notifications/unread-count", summary="Badge count for the notification bell")
+def notifications_unread_count(
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
+    user: dict = Depends(current_user),
+):
+    return {"unread": notif_svc.unread_count(conn, user)}
+
+
+@misc.post("/notifications/read-all", summary="Mark every notification read")
+def notifications_read_all(
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
+    user: dict = Depends(current_user),
+):
+    return {"updated": notif_svc.mark_all_read(conn, user)}
+
+
+@misc.post("/notifications/{notification_id}/read", summary="Mark one notification read")
+def notification_read(
+    notification_id: int,
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
+    user: dict = Depends(current_user),
+):
+    return notif_svc.mark_read(conn, user, notification_id)
 
 
 # ---- Requirements & quotes ----

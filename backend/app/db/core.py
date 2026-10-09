@@ -139,6 +139,10 @@ CREATE TABLE IF NOT EXISTS shipments (
     tracking_no TEXT NOT NULL DEFAULT '',
     expected_arrival TEXT,
     notes TEXT NOT NULL DEFAULT '',
+    -- the supplier's reviewed packing-list draft (JSON): ship date, all tracking/lot/serial numbers,
+    -- shipped quantity and unit. Has no length limit, so nothing is lost to the notes cap. NULL for
+    -- shipments created without a reviewed draft (including every shipment made before this column).
+    packing_list_review TEXT,
     status TEXT NOT NULL DEFAULT 'Shipped' CHECK (status IN ('Shipped','Arrived','Approved','Rejected')),
     erp_inbound_ref TEXT,
     erp_movement_ref TEXT,
@@ -229,9 +233,12 @@ CREATE TABLE IF NOT EXISTS notifications (
     supplier_id INTEGER REFERENCES suppliers(id),
     title TEXT NOT NULL,
     message TEXT NOT NULL,
+    link TEXT,
     is_read INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_supplier ON notifications (supplier_id, is_read);
 CREATE TABLE IF NOT EXISTS audit_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -288,6 +295,9 @@ MIGRATIONS = [  # (table, column, DDL) applied to databases created before the c
     ("shipment_items", "quantity_accepted", "INTEGER"),
     ("shipment_files", "unit_id", "INTEGER REFERENCES shipment_units(id) ON DELETE CASCADE"),
     ("users", "owner_id", "INTEGER REFERENCES users(id)"),
+    # supplier's reviewed packing-list draft (JSON), kept out of the length-capped notes field
+    ("shipments", "packing_list_review", "TEXT"),
+    ("notifications", "link", "TEXT"),
 ]
 
 

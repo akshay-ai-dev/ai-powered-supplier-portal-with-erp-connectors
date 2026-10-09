@@ -54,7 +54,10 @@ export function tzMinutes(): number {
 }
 
 export const money = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-export const shortDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+// A date-only string ("2019-04-15") is parsed as UTC midnight by `new Date`, which renders a day
+// early in sub-UTC time zones; pin it to local midnight so the calendar date shows as written.
+// Full timestamps (which contain "T") are left untouched.
+export const shortDate = (iso: string) => new Date(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T00:00:00` : iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 export const dateTime = (iso: string) => new Date(iso).toLocaleString();
 
 /** Uploads one file as multipart form data; `fields` adds plain form fields next to it (empty values are left out). */
