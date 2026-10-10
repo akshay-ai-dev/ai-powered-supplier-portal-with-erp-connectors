@@ -84,6 +84,7 @@ export function InventoryDashboard({ stats }: { stats?: React.ReactNode }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Description</TableHead>
+                <TableHead>Item code</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Warehouse</TableHead>
               </TableRow>
@@ -99,6 +100,7 @@ export function InventoryDashboard({ stats }: { stats?: React.ReactNode }) {
               {reorder.map((i) => (
                 <TableRow key={i.id}>
                   <TableCell>{i.description}</TableCell>
+                  <TableCell>{i.item_code}</TableCell>
                   <TableCell>
                     <Stock qty={i.stock_quantity} />
                   </TableCell>
