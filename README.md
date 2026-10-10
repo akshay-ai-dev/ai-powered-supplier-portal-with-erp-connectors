@@ -106,6 +106,8 @@ The floating chat widget has numbered menus for each role and, on the menu scree
 - The widget shows the tool's result as it is; no LLM writes the answers. A question no tool fits gets a fixed help list.
 - A draft is shown as a card with what would be saved and the exact REST call. Nothing is saved before the user clicks
   confirm, which calls the normal endpoint.
+- **Buyer Assistant** (sidebar, below Dashboard; buyers and admins): the same chat as a full page, with a starter card for
+  each of the 10 buyer tools. The floating widget is hidden there.
 
 ## Local dev (without Docker)
 

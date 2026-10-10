@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Radar, Truck, Users, UserCog, X } from "lucide-react";
+import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Radar, Sparkles, Truck, Users, UserCog, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { roleLabel } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { ChatWidget } from "@/components/chat-widget";
 
 const baseNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/assistant", label: "Buyer Assistant", icon: Sparkles },
   { href: "/suppliers", label: "Suppliers", icon: Truck },
   { href: "/requirements", label: "Requirements", icon: FileSearch },
   { href: "/purchase-orders", label: "Purchase Orders", icon: ClipboardList },
@@ -24,7 +25,7 @@ const baseNav = [
   { href: "/emails", label: "Emails", icon: Mail },
 ];
 // A buyer creates and manages their own inspectors. /units/[code] and the QR label page are reached by link or scan, so they have no entry.
-const buyerNav = [...baseNav.slice(0, 6), { href: "/team", label: "My inspectors", icon: UserCog }, ...baseNav.slice(6)];
+const buyerNav = [...baseNav.slice(0, 7), { href: "/team", label: "My inspectors", icon: UserCog }, ...baseNav.slice(7)];
 const adminNav = [
   ...baseNav,
   { href: "/admin/users", label: "Users", icon: Users },
@@ -147,10 +148,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 p-4 md:p-8">{children}</main>
       </div>
-      {/* the floating chat assistant, for every role, and never on paper */}
-      <div className="print:hidden">
-        <ChatWidget />
-      </div>
+      {/* the floating chat assistant, for every role, and never on paper; the Buyer Assistant page is already a chat */}
+      {pathname !== "/assistant" && (
+        <div className="print:hidden">
+          <ChatWidget />
+        </div>
+      )}
 
     </div>
   );

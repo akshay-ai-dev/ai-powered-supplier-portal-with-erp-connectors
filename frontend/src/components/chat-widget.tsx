@@ -7,6 +7,7 @@ import { api, uploadFile } from "@/lib/api";
 import type { AssistantResponse, ChatReply } from "@/lib/types";
 import { useAuth } from "@/lib/auth";
 import { AnswerView } from "@/components/assistant/answer-templates";
+import { stampDraft } from "@/components/assistant/confirm-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -58,6 +59,7 @@ export function ChatWidget() {
   const [busy, setBusy] = useState(false);
   const file = useRef<File | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
+  const [restored, setRestored] = useState(false); // never save before the saved conversation is back
   const userId = user?.id;
 
   useEffect(() => {
@@ -65,15 +67,16 @@ export function ChatWidget() {
     const saved = loadSaved(userId);
     setResp(saved.resp);
     setLines(saved.lines);
+    setRestored(true);
   }, [userId]);
   useEffect(() => {
-    if (userId == null) return;
+    if (userId == null || !restored) return;
     try {
       sessionStorage.setItem(storeKey(userId), JSON.stringify({ resp, lines: lines.slice(-60) }));
     } catch {
       /* storage unavailable: the conversation just is not remembered */
     }
-  }, [userId, resp, lines]);
+  }, [userId, restored, resp, lines]);
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: "end" });
   }, [lines, resp, open]);
@@ -127,7 +130,7 @@ export function ChatWidget() {
     const history = chatHistory(lines);
     setLines((l) => [...l, { from: "me", text: question, asked: true }]);
     try {
-      const reply = await api<ChatReply>("/api/assistant/chat", { body: { message: question, history, tz_offset: new Date().getTimezoneOffset() } });
+      const reply = stampDraft(await api<ChatReply>("/api/assistant/chat", { body: { message: question, history, tz_offset: new Date().getTimezoneOffset() } }));
       setLines((l) => [...l, { from: "answer", reply }]);
     } catch (err) {
       fail(err);

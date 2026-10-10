@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api, money } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ErrorAnswer, RankingList, erpName, type Comparison, type RankedResponse } from "./answer-templates";
+import { useDraftOutcome } from "./confirm-card";
 
 export interface DraftAward extends Comparison {
   requirement_id: number;
@@ -13,12 +14,16 @@ export interface DraftAward extends Comparison {
   proposed: RankedResponse;
   erp_call: { erp: string; operation: string; supplier_name: string; item_code: string | null; quantity: number; unit_price: number; total_price: number };
   confirm: { method: "POST"; path: string; body: { quote_id: number } };
+  draft_id?: string;
 }
 
-type State = { kind: "draft" } | { kind: "saving" } | { kind: "cancelled" } | { kind: "awarded"; poNumber: string; poId: number } | { kind: "error"; message: string };
+type Done = { kind: "cancelled" } | { kind: "awarded"; poNumber: string; poId: number };
+type State = { kind: "draft" } | { kind: "saving" } | Done | { kind: "error"; message: string };
 
 export function DraftAwardCard({ draft, onNavigate }: { draft: DraftAward; onNavigate?: () => void }) {
-  const [state, setState] = useState<State>({ kind: "draft" });
+  const [done, setDone] = useDraftOutcome<Done>(draft.draft_id); // remembered, so it cannot be awarded twice from here
+  const [pending, setState] = useState<State>({ kind: "draft" });
+  const state: State = done ?? pending;
   const call = draft.erp_call;
   const erp = erpName(call.erp);
 
@@ -26,7 +31,7 @@ export function DraftAwardCard({ draft, onNavigate }: { draft: DraftAward; onNav
     setState({ kind: "saving" });
     try {
       const r = await api<{ po_number: string; po_id: number }>(draft.confirm.path, { body: draft.confirm.body });
-      setState({ kind: "awarded", poNumber: r.po_number, poId: r.po_id });
+      setDone({ kind: "awarded", poNumber: r.po_number, poId: r.po_id });
     } catch (e) {
       setState({ kind: "error", message: e instanceof Error ? e.message : "Award failed" });
     }
@@ -60,7 +65,7 @@ export function DraftAwardCard({ draft, onNavigate }: { draft: DraftAward; onNav
         <>
           {state.kind === "error" && <ErrorAnswer message={state.message} />}
           <div className="flex justify-end gap-2">
-            <Button size="sm" variant="outline" onClick={() => setState({ kind: "cancelled" })} disabled={state.kind === "saving"}>
+            <Button size="sm" variant="outline" onClick={() => setDone({ kind: "cancelled" })} disabled={state.kind === "saving"}>
               Cancel
             </Button>
             <Button size="sm" onClick={confirm} disabled={state.kind === "saving"}>
