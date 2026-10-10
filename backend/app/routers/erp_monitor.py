@@ -1,17 +1,17 @@
-"""The ERP Monitor page's data: what the mock ERPs hold, for people who are signed in.
+"""The ERP Monitor page's data: what the mock ERPs hold, for buyers and admins only.
 
-The mock ERPs themselves (/mock/*) stand in for external systems and have no login. This feed reads the same records and, for a
-buyer's own inspector, keeps only the documents that belong to that buyer's purchase orders (every ERP document carries the
-PO's ERP reference) and only the items that buyer's work uses.
+The mock ERPs themselves (/mock/*) stand in for external systems and have no login. This feed reads the same records for
+the ERP Monitor page, which only buyers and admins can open. The narrowing below (a buyer's own inspector sees only that
+buyer's documents) stays in place in case inspectors are given access again.
 """
 
 import sqlite3
 
 from fastapi import APIRouter, Depends
 
-from ..connectors import get_connector
+from ..connectors import get_connector, sap_live
 from ..db import db_dep
-from ..deps import require_reader
+from ..deps import require_buyer
 from ..services import scope
 from ..services.errors import NotFound
 
@@ -38,13 +38,13 @@ VIEWS = {
 
 @router.get(
     "/{erp}/{view}",
-    summary="Records the mock ERP holds (a buyer's own inspector sees only that buyer's)",
+    summary="Records the mock ERP holds (buyers and admins only)",
 )
 def monitor(
     erp: str,
     view: str,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    user: dict = Depends(require_reader),
+    user: dict = Depends(require_buyer),
 ):
     spec = VIEWS.get(erp, {}).get(view)
     if spec is None:
@@ -60,3 +60,13 @@ def monitor(
         for r in rows
         if (str(r.get(key) or "") if kind == "po" else str(r.get(key) or "").upper()) in mine
     ]
+
+
+@router.get(
+    "/live/sap/{view}",
+    summary="Live records from SAP S/4HANA, read-only (buyers and admins only)",
+)
+def live_sap(view: str, q: str | None = None, user: dict = Depends(require_buyer)):
+    """Reads SAP directly (sandbox or a company's system, see SAP_MODE). Not narrowed per buyer: this is SAP's own data.
+    `q` looks up one record by its number (PO number, supplier ID, ...)."""
+    return sap_live.read(view, q)
