@@ -170,6 +170,7 @@ def receive(conn: sqlite3.Connection, user: dict, shipment_id: int, code: str) -
             po,
             f"Unit {u['code']} was found",
             f"{u['code']} (shipment {s['shipment_no']}, {po['po_number']}) was reported missing at arrival, and the inspector has now marked it received. It still needs to be tested.",
+            link=f"/shipments/{shipment_id}",
         )
     audit(
         conn,
@@ -917,7 +918,7 @@ def decide(
                 )["movement_ref"]
             )
         for ln in lines_ok:
-            inventory_svc.receive_stock(conn, ln["item_code"], ln["quantity"])
+            inventory_svc.receive_stock(conn, po["created_by"], ln["item_code"], ln["quantity"])
         for it in ship["items"]:
             conn.execute(
                 "UPDATE shipment_items SET quantity_accepted = ? WHERE shipment_id = ? AND item_code = ? COLLATE NOCASE",
@@ -1037,5 +1038,5 @@ def decide(
     if override_reason:
         text += f"\n\nInspector's note on the decision: {override_reason}"
     text += "\n\nOpen the shipment in the portal for the full per-unit report."
-    ship_svc._tell_supplier_and_buyer(conn, po, title, text)
+    ship_svc._tell_supplier_and_buyer(conn, po, title, text, link=f"/shipments/{s['id']}")
     return ship_svc.get_shipment(conn, user, s["id"])

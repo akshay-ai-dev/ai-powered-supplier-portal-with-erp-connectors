@@ -16,6 +16,13 @@ def inbox(
     return mailbox.list_inbox(conn, user)
 
 
+@router.get("/unread-count", summary="How many of the logged-in user's emails are unread")
+def unread_count(
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"), user: dict = Depends(current_user)
+):
+    return {"unread": mailbox.unread_count(conn, user)}
+
+
 @router.get("/{message_id}", summary="One email (only if addressed to the logged-in user)")
 def read_email(
     message_id: str,

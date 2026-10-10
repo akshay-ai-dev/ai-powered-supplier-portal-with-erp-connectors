@@ -109,9 +109,10 @@ def test_rbac(client):
     assert (
         client.get("/api/inventory", headers=sup).status_code == 200
     )  # supplier Dashboard shows stock levels
+    insp = login(client, "inspector@demo.com")
     assert (
         client.post(
-            "/api/inventory", headers=sup, json={"item_code": "X1", "description": "x"}
+            "/api/inventory", headers=insp, json={"item_code": "X1", "description": "x"}
         ).status_code
         == 403
     )
@@ -213,16 +214,21 @@ def test_openapi_tools(client):
     buyer = login(client, "buyer@demo.com")
     assert {t["name"] for t in client.get("/api/mcp/tools").json()} == {
         "get_inventory",
-        "search_supplier",
+        "search_suppliers",
         "create_purchase_order",
         "get_purchase_order",
-        "list_requirements",
-        "get_requirement",
         "list_purchase_orders",
         "list_requests",
         "get_request_detail",
         "compare_responses",
         "draft_award",
+        "get_erp_documents",
+        "check_shipments",
+        "draft_request",
+        "draft_po_approval",
+        "draft_quote",
+        "draft_arrival",
+        "draft_delivery_approval",
     }
     assert (
         client.post("/api/mcp/get_inventory", headers=buyer, json={"item_code": "ITEM001"}).json()[
@@ -539,7 +545,6 @@ def test_buyers_can_add_and_edit_inventory(client):
         "stock_quantity": 25,
         "warehouse": "WH-9",
     }
-    assert client.post("/api/inventory", headers=sup, json=body).status_code == 403
     assert client.post("/api/inventory", json=body).status_code == 401
     created = client.post("/api/inventory", headers=buyer, json=body)
     assert created.status_code == 201
@@ -577,8 +582,8 @@ def test_buyers_can_add_and_edit_inventory(client):
     )
     assert (
         client.put("/api/inventory/NEW-ITEM_1", headers=sup, json={"stock_quantity": 1}).status_code
-        == 403
-    )
+        == 404
+    )  # not in the supplier's own inventory
     # usable straight away in a PO
     assert (
         client.post(
@@ -623,18 +628,18 @@ def test_inventory_delete_rules(client):
 
     rows = {i["item_code"]: i for i in client.get("/api/inventory", headers=b1).json()}
     assert (
-        rows["DEL-A"]["can_delete"]
-        and not rows["DEL-B"]["can_delete"]
-        and not rows["ITEM001"]["can_delete"]
-    )
+        rows["DEL-A"]["can_delete"] and "DEL-B" not in rows and rows["ITEM001"]["can_delete"]
+    )  # the ERP items belong to the demo buyer
     assert client.get("/api/inventory", headers=admin).json()[0][
         "can_delete"
     ]  # admin may delete any
 
-    # someone else's item, an ERP item and a supplier are all refused
-    assert client.delete("/api/inventory/DEL-B", headers=b1).status_code == 403
-    assert client.delete("/api/inventory/ITEM001", headers=b1).status_code == 403
-    assert client.delete("/api/inventory/DEL-A", headers=sup).status_code == 403
+    # someone else's item is not in your inventory; an owned item still in use cannot go
+    assert client.delete("/api/inventory/DEL-B", headers=b1).status_code == 404
+    assert client.delete("/api/inventory/DEL-A", headers=sup).status_code == 404
+    assert (
+        client.delete("/api/inventory/ITEM001", headers=b1).status_code == 409
+    )  # seeded POs use it
     assert client.delete("/api/inventory/NOPE", headers=b1).status_code == 404
 
     # in use by a PO -> blocked even for the creator; also blocked when a requirement references it
@@ -660,7 +665,32 @@ def test_inventory_delete_rules(client):
     assert client.delete("/api/inventory/DEL-B", headers=admin).status_code == 200
 
 
-def test_inventory_edit_is_restricted_to_creator(client):
+def test_buyers_and_suppliers_have_separate_inventories(client):
+    buyer, sup = login(client, "buyer@demo.com"), login(client, "supplier@demo.com")
+
+    def codes(h):
+        return {i["item_code"]: i for i in client.get("/api/inventory", headers=h).json()}
+
+    assert (
+        "ITEM001" in codes(buyer) and codes(sup) == {}
+    )  # a supplier starts with an empty inventory
+    # the same item code may exist once per owner
+    body = {"item_code": "ITEM001", "description": "Our bolts", "stock_quantity": 7}
+    assert client.post("/api/inventory", headers=sup, json=body).status_code == 201
+    assert client.post("/api/inventory", headers=sup, json=body).status_code == 409
+    mine = codes(sup)
+    assert (
+        list(mine) == ["ITEM001"] and mine["ITEM001"]["can_edit"] and mine["ITEM001"]["can_delete"]
+    )
+    assert codes(buyer)["ITEM001"]["description"] != "Our bolts"  # the buyer's row is untouched
+
+    upd = client.put("/api/inventory/ITEM001", headers=sup, json={"stock_quantity": 3}).json()
+    assert upd["stock_quantity"] == 3 and codes(buyer)["ITEM001"]["stock_quantity"] != 3
+    assert client.delete("/api/inventory/ITEM001", headers=sup).status_code == 200
+    assert "ITEM001" in codes(buyer)
+
+
+def test_inventory_edit_is_restricted_to_owner(client):
     b1, admin = login(client, "buyer@demo.com"), login(client, "admin@demo.com")
     r = client.post(
         "/api/auth/register",
@@ -679,19 +709,21 @@ def test_inventory_edit_is_restricted_to_creator(client):
     )
 
     rows = {i["item_code"]: i for i in client.get("/api/inventory", headers=b2).json()}
-    assert not rows["EDIT-1"]["can_edit"] and not rows["ITEM001"]["can_edit"]
+    assert "EDIT-1" not in rows and "ITEM001" not in rows  # b2 has their own (empty) inventory
     assert {i["item_code"]: i for i in client.get("/api/inventory", headers=b1).json()}["EDIT-1"][
         "can_edit"
     ]
 
     assert (
         client.put("/api/inventory/EDIT-1", headers=b2, json={"stock_quantity": 99}).status_code
-        == 403
+        == 404
     )
     assert (
-        client.put("/api/inventory/ITEM001", headers=b1, json={"stock_quantity": 99}).status_code
-        == 403
-    )  # ERP item
+        client.put("/api/inventory/ITEM001", headers=b1, json={"stock_quantity": 99}).json()[
+            "stock_quantity"
+        ]
+        == 99
+    )  # ERP-loaded items belong to the demo buyer, who may edit them
     assert (
         client.put("/api/inventory/EDIT-1", headers=b1, json={"stock_quantity": 9}).json()[
             "stock_quantity"
@@ -1095,23 +1127,23 @@ def test_agent_read_tools_are_scoped_to_the_acting_buyer(client):
     ).json()
     b2 = {"Authorization": f"Bearer {r['access_token']}"}
     client.post("/api/requirements", headers=b1, json={"title": "Agent visible", "quantity": 1})
-    mine = client.post("/api/mcp/list_requirements", headers=b1, json={}).json()
+    mine = client.post("/api/mcp/list_requests", headers=b1, json={}).json()
     assert any(x["title"] == "Agent visible" for x in mine)
-    assert client.post("/api/mcp/list_requirements", headers=b2, json={}).json() == []
+    assert client.post("/api/mcp/list_requests", headers=b2, json={}).json() == []
     num = next(x["req_number"] for x in mine if x["title"] == "Agent visible")
     assert (
-        "quotes"
+        "responses"
         in client.post(
-            "/api/mcp/get_requirement", headers=b1, json={"req_number": num.lower()}
+            "/api/mcp/get_request_detail", headers=b1, json={"req_number": num.lower()}
         ).json()
     )
     assert (
-        client.post("/api/mcp/get_requirement", headers=b2, json={"req_number": num}).status_code
+        client.post("/api/mcp/get_request_detail", headers=b2, json={"req_number": num}).status_code
         == 404
     )
     assert (
         client.post(
-            "/api/mcp/get_requirement", headers=b1, json={"req_number": "REQ9999"}
+            "/api/mcp/get_request_detail", headers=b1, json={"req_number": "REQ9999"}
         ).status_code
         == 404
     )
@@ -1718,14 +1750,12 @@ def test_api_tokens_lifecycle_and_scopes(client):
     client.post("/api/requirements", headers=buyer, json={"title": "Token visible", "quantity": 1})
     assert any(
         r["title"] == "Token visible"
-        for r in client.post("/api/mcp/list_requirements", headers=t, json={}).json()
+        for r in client.post("/api/mcp/list_requests", headers=t, json={}).json()
     )
     other_tok = _new_token(client, other, "other buyer")["token"]
     assert all(
         r["title"] != "Token visible"
-        for r in client.post(
-            "/api/mcp/list_requirements", headers=_bearer(other_tok), json={}
-        ).json()
+        for r in client.post("/api/mcp/list_requests", headers=_bearer(other_tok), json={}).json()
     )
 
     # read scope cannot create; write scope can, as the owner, flagged and attributed to the token in the audit trail
@@ -1846,9 +1876,13 @@ def test_token_expiry_disabled_users_and_rate_limit(client, monkeypatch):
             "role": "buyer",
         },
     ).json()
-    tok = _bearer(
-        _new_token(client, login(client, "agentowner@x.com", "longenough1"), "owner token")["token"]
-    )
+    owner = login(client, "agentowner@x.com", "longenough1")
+    client.post(
+        "/api/inventory",
+        headers=owner,
+        json={"item_code": "ITEM001", "description": "Bolt", "stock_quantity": 1},
+    )  # inventory is per owner, so the new buyer stocks the item the agent looks up
+    tok = _bearer(_new_token(client, owner, "owner token")["token"])
     assert (
         client.post(
             "/api/mcp/get_inventory", headers=tok, json={"item_code": "ITEM001"}

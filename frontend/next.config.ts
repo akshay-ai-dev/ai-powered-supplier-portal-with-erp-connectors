@@ -1,17 +1,17 @@
 import type { NextConfig } from "next";
 
-// Cross-origin isolation for the AI Assistant only: it lets the browser models (served from /models) run
-// multi-threaded WASM. Workers and ORT's thread workers are separate scripts, so they need COEP too.
-const coep = { key: "Cross-Origin-Embedder-Policy", value: "require-corp" };
+// Cross-origin isolation on every page: the buyer assistant (the floating chat widget, on all pages) runs its browser
+// models (served from /models) as multi-threaded WASM, which needs SharedArrayBuffer. Same-origin assets and the
+// CORS API calls to the backend are unaffected; QR codes are generated as data: URLs.
+const isolation = [
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
+];
 
 const nextConfig: NextConfig = {
   output: "standalone",
   async headers() {
-    return [
-      { source: "/assistant", headers: [{ key: "Cross-Origin-Opener-Policy", value: "same-origin" }, coep] },
-      { source: "/_next/static/:path*", headers: [coep] },
-      { source: "/models/:path*", headers: [coep] },
-    ];
+    return [{ source: "/:path*", headers: isolation }];
   },
 };
 

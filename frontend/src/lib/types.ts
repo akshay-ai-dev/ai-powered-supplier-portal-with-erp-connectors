@@ -58,6 +58,8 @@ export interface Notification {
   id: number;
   title: string;
   message: string;
+  /** Portal path the bell opens on click, e.g. "/requirements/7". Null for older notifications. */
+  link: string | null;
   is_read: number;
   created_at: string;
 }
@@ -176,6 +178,16 @@ export interface Shipment {
   photos: ShipmentFile[];
   quality: { key: string; label: string; passed: boolean | null }[];
   improvement_request: string;
+  // The supplier's reviewed packing-list draft, stored in full (null for shipments made without one).
+  packing_list_review?: {
+    ship_date: string | null;
+    carrier: string | null;
+    shipped_quantity: number | null;
+    unit_of_measure: string | null;
+    tracking_numbers: string[];
+    lot_numbers: string[];
+    serial_numbers: string[];
+  } | null;
 }
 export interface InspectorDashboard {
   role: "inspector";
@@ -348,23 +360,79 @@ export interface AssistantResponse {
   warning?: string;
   progress?: { done: number; total: number };
   result: AssistantResult | null;
-  ai?: boolean; // menu only: natural-language filling is available (an OpenAI key is configured)
 }
 
-/** One turn of natural-language form filling. It never saves anything: `fill` carries values for the user to review in the real form. */
-export interface FillResponse {
-  mode: "fill";
-  stage: "pick" | "describe" | "ask" | "ready" | "cancelled";
-  state: Record<string, unknown> | null;
+/** A draft tool's result: what would be saved and the REST call that saves it. Nothing is saved until the user confirms. */
+export interface ChatDraft {
+  saved: false;
+  summary: Record<string, string | number>;
+  confirm: { method: string; path: string; body: unknown; label: string };
+}
+/** One answer from the ask box (POST /api/assistant/chat): the one MCP tool GPT-4o picked, its arguments and its result as is. */
+export interface ChatReply {
+  tool: string | null;
+  args?: Record<string, unknown>;
+  result?: unknown;
+  error?: string;
+  help?: string[];
+}
+
+/** A field-level note on an extracted packing-list draft. A review aid from the model, not verified proof. */
+export interface FieldIssue {
+  field: string;
+  severity: "review" | "warning" | "info";
+  code: string;
   message: string;
-  error: string | null;
-  form?: string | null;
-  title?: string;
-  options: AssistantOption[];
-  controls: Partial<AssistantControls>;
-  values: { label: string; value: string }[];
-  missing: { key: string; label: string }[];
-  notes: string[];
-  filter?: string;
-  fill: { form: string; route: string; target: number | null; values: Record<string, unknown> } | null;
+}
+
+/** The reviewable draft returned by POST /api/extraction-prefill/shipments/{po_id}. Saves nothing. */
+export interface ExtractionDraft {
+  ship_date: string | null;
+  carrier: string | null;
+  tracking_numbers: string[];
+  shipped_quantity: number | null;
+  unit_of_measure: string | null;
+  lot_numbers: string[];
+  serial_numbers: string[];
+  items: { item_number: string | null; description: string | null; quantity_ordered: number | null; quantity_shipped: number | null; quantity_backordered: number | null; unit_of_measure: string | null }[];
+  references: { value: string; label: string | null; page: number | null; kind: string }[];
+  evidence: { field: string; page: number | null; text: string }[];
+  field_issues: FieldIssue[];
+}
+
+/** One requested item in a buyer requirement draft. Used to let the buyer choose when a document
+ * lists several items; quantities of different items are never combined. */
+export interface RequirementDraftItem {
+  item_name: string | null;
+  specs: string | null;
+  quantity: number | null;
+  unit_of_measure: string | null;
+  target_price: number | null;
+}
+
+/** The reviewable buyer draft returned by POST /api/extraction-prefill/requirements. Saves nothing:
+ * no requirement, attachment or ERP call. The ERP system is not extracted; the buyer selects it. */
+export interface RequirementDraft {
+  title: string | null;
+  description: string | null;
+  quantity: number | null;
+  target_price: number | null;
+  needed_by: string | null;
+  quote_deadline: string | null;
+  quote_deadline_tz?: string | null;
+  items: RequirementDraftItem[];
+  references: { value: string; label: string | null; page: number | null; kind: string }[];
+  evidence: { field: string; page: number | null; text: string }[];
+  field_issues: FieldIssue[];
+}
+
+/** Result of comparing a reviewed shipped quantity against the PO (POST …/shipments/{po_id}/compare). */
+export interface QuantityComparison {
+  status: "match" | "over_shipped" | "under_shipped" | "cannot_compare";
+  reason: string;
+  item_code: string | null;
+  po_quantity: number | null;
+  shipped_quantity: number | null;
+  difference: number | null;
+  unit_note: string;
 }

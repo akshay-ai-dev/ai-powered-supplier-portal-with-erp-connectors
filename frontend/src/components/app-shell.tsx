@@ -2,16 +2,18 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Radar, Sparkles, Truck, Users, UserCog, X } from "lucide-react";
+import { Boxes, ClipboardList, FileSearch, LayoutDashboard, Mail, Database, KeyRound, LogOut, Menu, PackageCheck, Radar, Truck, Users, UserCog, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { roleLabel } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useUnreadEmails } from "@/lib/use-unread-emails";
+import { NotificationBell } from "@/components/notification-bell";
 import { ChatWidget } from "@/components/chat-widget";
 
 const baseNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/assistant", label: "AI Assistant", icon: Sparkles },
   { href: "/suppliers", label: "Suppliers", icon: Truck },
   { href: "/requirements", label: "Requirements", icon: FileSearch },
   { href: "/purchase-orders", label: "Purchase Orders", icon: ClipboardList },
@@ -22,7 +24,7 @@ const baseNav = [
   { href: "/emails", label: "Emails", icon: Mail },
 ];
 // A buyer creates and manages their own inspectors. /units/[code] and the QR label page are reached by link or scan, so they have no entry.
-const buyerNav = [...baseNav.slice(0, 7), { href: "/team", label: "My inspectors", icon: UserCog }, ...baseNav.slice(7)];
+const buyerNav = [...baseNav.slice(0, 6), { href: "/team", label: "My inspectors", icon: UserCog }, ...baseNav.slice(6)];
 const adminNav = [
   ...baseNav,
   { href: "/admin/users", label: "Users", icon: Users },
@@ -39,7 +41,7 @@ const inspectorNav = [
 ];
 const supplierNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/supplier-inventory", label: "Inventory", icon: Boxes },
+  { href: "/inventory", label: "Inventory", icon: Boxes },
   { href: "/requirements", label: "Requirements", icon: FileSearch },
   { href: "/purchase-orders", label: "My Orders", icon: ClipboardList },
   { href: "/shipments", label: "Shipments", icon: PackageCheck },
@@ -52,6 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const unreadEmails = useUnreadEmails(!!user);
   const leaving = useRef(false); // signing out on purpose: do not remember this page as where to return to
 
   useEffect(() => {
@@ -76,14 +79,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         const className = `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
           active ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
         }`;
-        // The assistant needs a full page load: its cross-origin isolation headers (next.config.ts) only apply to a
-        // freshly loaded document, and they give the speech model multi-threaded WASM.
-        if (href === "/assistant") {
+        
+        if (href === "/emails") {
+          const tip =
+            unreadEmails === null ? "Emails" : unreadEmails === 0 ? "No unread emails" : `${unreadEmails} unread email${unreadEmails === 1 ? "" : "s"}`;
           return (
-            <a key={href} href={href} className={className}>
-              <Icon className="size-4" />
-              {label}
-            </a>
+            <Tooltip key={href}>
+              <TooltipTrigger
+                delay={150}
+                render={
+                  <Link href={href} className={className} aria-label={unreadEmails ? `${label}, ${tip}` : label}>
+                    <Icon className="size-4" />
+                    {label}
+                    {!!unreadEmails && (
+                      <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none text-primary-foreground">
+                        {unreadEmails > 99 ? "99+" : unreadEmails}
+                      </span>
+                    )}
+                  </Link>
+                }
+              />
+              <TooltipContent side="right">{tip}</TooltipContent>
+            </Tooltip>
           );
         }
         return (
@@ -116,6 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {open ? <X className="size-4" /> : <Menu className="size-4" />}
           </Button>
           <div className="ml-auto flex items-center gap-1">
+            <NotificationBell />
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={() => {
                 leaving.current = true;

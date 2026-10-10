@@ -4,10 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from .. import agent_auth
-from ..ai import engine, fill, llm
+from ..ai import chat, engine
 from ..db import db_dep
 from ..deps import current_user
-from ..services.errors import DomainError
 
 router = APIRouter(prefix="/api/assistant", tags=["Assistant"])
 
@@ -30,15 +29,21 @@ class StepIn(BaseModel):
     )
 
 
-class FillIn(StepIn):
-    form: str | None = Field(
-        default=None,
-        description="Start directly on this form (when the user is already on its page)",
+class ChatTurn(BaseModel):
+    role: str = Field(description="user (a question) or assistant (a tool call)")
+    content: str = Field(default="", max_length=2000, description="The question (user turns)")
+    tool: str | None = Field(default=None, description="The tool called (assistant turns)")
+    args: dict | None = Field(default=None, description="Its arguments (assistant turns)")
+
+
+class ChatIn(BaseModel):
+    message: str = Field(min_length=1, max_length=500)
+    history: list[ChatTurn] = Field(
+        default_factory=list,
+        max_length=20,
+        description="Earlier turns of this chat session: the user's questions and the tools called with their arguments",
     )
-    target: int | None = Field(
-        default=None,
-        description="Requirement id (submit_quote) or purchase order id (ship_order) when already known",
-    )
+    tz_offset: int = Field(default=0, ge=-840, le=840)
 
 
 def _limit(user: dict) -> None:
@@ -49,8 +54,7 @@ def _limit(user: dict) -> None:
 
 @router.get("/menu", summary="The forms the assistant can fill for your role")
 def menu(user: dict = Depends(current_user)):
-    # natural-language filling only helps roles that have fill-able forms (inspectors have none)
-    return {**engine.menu(user), "ai": llm.get_llm() is not None and bool(fill.forms_for(user))}
+    return engine.menu(user)
 
 
 @router.post(
@@ -63,29 +67,22 @@ def step(
     user: dict = Depends(current_user),
 ):
     _limit(user)
-    result = engine.advance(conn, user, body.state, body.input, body.tz_offset)
-    if result["stage"] == "menu":
-        # tells the widget whether to offer natural-language filling
-        result["ai"] = llm.get_llm() is not None and bool(fill.forms_for(user))
-    return result
+    return engine.advance(conn, user, body.state, body.input, body.tz_offset)
 
 
 @router.post(
-    "/fill",
-    summary="One turn of natural-language form filling. Never saves: it returns values for the user to review in the real form",
+    "/chat",
+    summary="Ask in your own words: GPT-4o picks one MCP tool for your role and the tool's result is returned as is",
 )
-def fill_turn(
-    body: FillIn,
+async def ask(
+    body: ChatIn,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
     user: dict = Depends(current_user),
 ):
     _limit(user)
-    model = llm.get_llm()
-    if model is None:
-        raise DomainError(
-            "The AI assistant is not configured (no OPENAI_API_KEY). Use the numbered menus instead.",
-            503,
+    try:
+        return await chat.answer(
+            conn, user, body.message, [t.model_dump() for t in body.history], body.tz_offset
         )
-    return fill.advance(
-        conn, user, body.state, body.input, body.tz_offset, model, body.form, body.target
-    )
+    except chat.AssistantUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc

@@ -24,7 +24,7 @@ const EMPTY = { item_code: "", description: "", stock_quantity: "0", warehouse: 
 
 export default function InventoryPage() {
   const { user } = useAuth();
-  const canWrite = user?.role === "buyer" || user?.role === "admin";
+  const canWrite = user?.role === "buyer" || user?.role === "admin" || user?.role === "supplier"; // each manages their own items
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
   useEffect(() => {

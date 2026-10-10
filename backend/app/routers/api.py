@@ -139,12 +139,17 @@ def update_po(
 
 
 # ---- Inventory ----
+_inventory_owner = require_roles(
+    "buyer", "admin", "supplier"
+)  # may add, edit and delete their own items
+
+
 @inventory.get("")
 def list_inventory(
     q: str | None = None,
     warehouse: str | None = None,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    # Suppliers may read stock levels (Inventory Dashboard); writes stay buyer/admin-only.
+    # Each buyer and supplier sees only their own items (see services/inventory.py).
     user: dict = Depends(require_roles("buyer", "admin", "inspector", "supplier")),
 ):
     return inventory_svc.list_items(conn, q, warehouse, user)
@@ -154,7 +159,7 @@ def list_inventory(
 def create_inventory_item(
     body: InventoryCreate,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    user: dict = Depends(require_buyer),
+    user: dict = Depends(_inventory_owner),
 ):
     return inventory_svc.create_item(conn, user, body.model_dump())
 
@@ -164,7 +169,7 @@ def update_inventory_item(
     item_code: str,
     body: InventoryUpdate,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    user: dict = Depends(require_buyer),
+    user: dict = Depends(_inventory_owner),
 ):
     return inventory_svc.update_item(conn, user, item_code, body.model_dump(exclude_unset=True))
 
@@ -175,7 +180,7 @@ def update_inventory_item(
 def delete_inventory_item(
     item_code: str,
     conn: sqlite3.Connection = Depends(db_dep, scope="function"),
-    user: dict = Depends(require_buyer),
+    user: dict = Depends(_inventory_owner),
 ):
     inventory_svc.delete_item(conn, user, item_code)
     return {"deleted": item_code.upper()}
@@ -206,11 +211,39 @@ def dashboard(
     return {"role": "buyer", **dashboard_svc.buyer_dashboard(conn, user)}
 
 
-@misc.get("/notifications")
+@misc.get("/notifications", summary="Newest notifications for the signed-in user")
 def notifications(
-    conn: sqlite3.Connection = Depends(db_dep, scope="function"), user: dict = Depends(current_user)
+    limit: int = Query(50, ge=1, le=100),
+    unread_only: bool = False,
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
+    user: dict = Depends(current_user),
 ):
-    return notif_svc.list_for_user(conn, user)
+    return notif_svc.list_for_user(conn, user, limit=limit, unread_only=unread_only)
+
+
+@misc.get("/notifications/unread-count", summary="Badge count for the notification bell")
+def notifications_unread_count(
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
+    user: dict = Depends(current_user),
+):
+    return {"unread": notif_svc.unread_count(conn, user)}
+
+
+@misc.post("/notifications/read-all", summary="Mark every notification read")
+def notifications_read_all(
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
+    user: dict = Depends(current_user),
+):
+    return {"updated": notif_svc.mark_all_read(conn, user)}
+
+
+@misc.post("/notifications/{notification_id}/read", summary="Mark one notification read")
+def notification_read(
+    notification_id: int,
+    conn: sqlite3.Connection = Depends(db_dep, scope="function"),
+    user: dict = Depends(current_user),
+):
+    return notif_svc.mark_read(conn, user, notification_id)
 
 
 # ---- Requirements & quotes ----

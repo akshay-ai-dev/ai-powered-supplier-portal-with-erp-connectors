@@ -72,7 +72,6 @@ def test_inspector_menu_and_boundaries(client, who):
         "Check shipments",
         "Check stock",
     ]
-    assert r["ai"] is False  # inspectors have no forms to fill in natural language
 
     def enter(headers, flow):
         return client.post(

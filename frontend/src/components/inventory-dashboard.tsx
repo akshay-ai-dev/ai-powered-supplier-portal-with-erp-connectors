@@ -77,7 +77,7 @@ export function InventoryDashboard({ stats }: { stats?: React.ReactNode }) {
       </Card>
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Needs reorder</CardTitle>
+          <CardTitle>Needs manufacturing</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
