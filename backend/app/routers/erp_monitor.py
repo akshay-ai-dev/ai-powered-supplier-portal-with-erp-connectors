@@ -9,7 +9,7 @@ import sqlite3
 
 from fastapi import APIRouter, Depends
 
-from ..connectors import get_connector
+from ..connectors import get_connector, sap_live
 from ..db import db_dep
 from ..deps import require_buyer
 from ..services import scope
@@ -60,3 +60,13 @@ def monitor(
         for r in rows
         if (str(r.get(key) or "") if kind == "po" else str(r.get(key) or "").upper()) in mine
     ]
+
+
+@router.get(
+    "/live/sap/{view}",
+    summary="Live records from SAP S/4HANA, read-only (buyers and admins only)",
+)
+def live_sap(view: str, q: str | None = None, user: dict = Depends(require_buyer)):
+    """Reads SAP directly (sandbox or a company's system, see SAP_MODE). Not narrowed per buyer: this is SAP's own data.
+    `q` looks up one record by its number (PO number, supplier ID, ...)."""
+    return sap_live.read(view, q)

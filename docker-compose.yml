@@ -35,6 +35,13 @@ services:
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      SAP_MODE: ${SAP_MODE:-}
+      SAP_API_HUB_URL: ${SAP_API_HUB_URL:-}
+      SAP_API_HUB_KEY: ${SAP_API_HUB_KEY:-}
+      SAP_BASE_URL: ${SAP_BASE_URL:-}
+      SAP_CLIENT: ${SAP_CLIENT:-}
+      SAP_USERNAME: ${SAP_USERNAME:-}
+      SAP_PASSWORD: ${SAP_PASSWORD:-}
     volumes:
       - erp_data:/data
     ports:
